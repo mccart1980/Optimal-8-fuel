@@ -2,8 +2,15 @@ import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 import { VitePWA } from "vite-plugin-pwa";
 
+/* GitHub Pages serves a project site at /<repo>/ and that path is
+   case-sensitive, so the base has to match the repository name exactly.
+   In CI we take it straight from GITHUB_REPOSITORY, which means renaming
+   the repo fixes the site by itself on the next push. */
+const REPO = (process.env.GITHUB_REPOSITORY || "mccart1980/Optimal-8-fuel").split("/")[1];
+const BASE = "/" + REPO + "/";
+
 export default defineConfig({
-  base: "/optimal-8-fuel/",
+  base: BASE,
   plugins: [
     react(),
     VitePWA({
@@ -14,9 +21,9 @@ export default defineConfig({
         name: "Fuel",
         short_name: "Fuel",
         description: "The fuelling companion to the Optimal 8 program.",
-        id: "/optimal-8-fuel/",
-        start_url: "/optimal-8-fuel/",
-        scope: "/optimal-8-fuel/",
+        id: BASE,
+        start_url: BASE,
+        scope: BASE,
         display: "standalone",
         orientation: "portrait",
         theme_color: "#14110D",
@@ -30,7 +37,7 @@ export default defineConfig({
       workbox: {
         // Everything the app is made of is precached, so it opens with no signal.
         globPatterns: ["**/*.{js,css,html,png,svg,ico,webmanifest}"],
-        navigateFallback: "/optimal-8-fuel/index.html",
+        navigateFallback: BASE + "index.html",
         cleanupOutdatedCaches: true,
         clientsClaim: true,
         runtimeCaching: [

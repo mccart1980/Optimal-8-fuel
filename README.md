@@ -3,7 +3,7 @@
 The fuelling companion to the 16-week Optimal 8 strength and conditioning program.
 Every feed, every day, with the times that matter and the reason behind each one.
 
-**The app lives here: https://mccart1980.github.io/optimal-8-fuel/**
+**The app lives here: https://mccart1980.github.io/Optimal-8-fuel/**
 
 ---
 
@@ -12,7 +12,7 @@ Every feed, every day, with the times that matter and the reason behind each one
 Do this once. After that it opens like any other app — full screen, no address
 bar, and it works with no signal at all.
 
-1. Open **https://mccart1980.github.io/optimal-8-fuel/** in **Safari**.
+1. Open **https://mccart1980.github.io/Optimal-8-fuel/** in **Safari**.
    (It has to be Safari. Chrome on iPhone can't add home-screen apps.)
 2. Tap the **Share** button — the square with the arrow coming out of the top,
    at the bottom of the screen.
@@ -113,7 +113,7 @@ npm run icons    # regenerate the app icons in public/
 - `src/storage.js` — the app was born as a claude.ai artifact and talks to
   `window.storage`. This provides the same four calls backed by `localStorage`,
   so the `fu8-…` keys persist on the phone with no server.
-- `vite.config.js` — base path `/optimal-8-fuel/` and the PWA/service-worker
+- `vite.config.js` — base path `/Optimal-8-fuel/` and the PWA/service-worker
   setup (`registerType: 'autoUpdate'`).
 - `.github/workflows/deploy.yml` — every push to `main` tests, builds and
   deploys to GitHub Pages.
