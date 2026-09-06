@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 
 /* ================================================================
-   FUEL — OPTIMAL 6 · companion app
+   FUEL — OPTIMAL 8 · companion app
    Warm kitchen palette. Ember = the feeds that decide sessions.
    Honey = carbs/energy. Sage = done/protein. Copper = warnings.
    ================================================================ */
@@ -10,9 +10,11 @@ const C = {
   ember: "#D97742", honey: "#D8A24A", sage: "#8C9C64", copper: "#C24E33", frost: "#8CA6B5",
 };
 const FONTS = `
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Barlow:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;700&display=swap');
+/* Barlow / Barlow Condensed / IBM Plex Mono are loaded by a <link> in index.html.
+   With no signal they simply never arrive and the fallback stacks below take over. */
 * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
 html, body { background: ${C.ink}; }
+body { font-family: 'Barlow', system-ui, -apple-system, sans-serif; }
 input, button, textarea { font-family: inherit; }
 input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
 input[type=date] { color-scheme: dark; }
@@ -61,22 +63,22 @@ const B = {
   ufitban:   { n: "UFIT + BANANA", kcal: 255, p: 21, c: 42, f: 1, i: [["UFIT", "1"], ["Banana", "1"]] },
 };
 
-/* Day plans — Optimal 6's actual clock */
+/* Day plans — Optimal 8's actual clock */
 const F = (t, b, o) => Object.assign({ t, b }, o);
 const E = (t, n, o) => Object.assign({ t, ev: n }, o);
 const D = {
-  mon: { n: "MONDAY", kcal: 3741, p: 228, c: 535, f: 80, tag: "3am engine 2 → evening upper strength", star: 1,
-    call: ["THE 3:10 SHAKE FUELS THE INTERVALS · THE 5PM FEED FUELS THE BENCH", "Train at 6 instead of 7? Move the 3pm and 5pm feeds an hour earlier — the gap is what matters, not the clock."],
-    feeds: [F("03:10", "shake", { crit: 1, note: "Made the night before, in the fridge." }), E("03:30", "ENGINE 2 + HANDS · ~43 MIN"), F("04:50", "porridge", { note: "Thermos, eaten on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr", { crit: 1, note: "The pre-load starts here." }), F("17:00", "topup", { crit: 1, note: "Two hours out. THIS IS THE SESSION." }), E("19:00", "★ UPPER STRENGTH · 60 MIN"), F("20:15", "steak")] },
-  tue: { n: "TUESDAY", kcal: 3369, p: 240, c: 428, f: 80, tag: "3am jumps + engine 1 ~51 min",
-    call: ["START FUELLED", "Jumps into an interval session. The bike work is 24 minutes — it needs to start fuelled, not be fed mid-way. Water and electrolytes during."],
-    feeds: [F("03:10", "shake", { crit: 1, note: "Non-negotiable. This fuels the intervals." }), E("03:30", "TRAIN — JUMPS + ENGINE 1 · ~51 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steak"), F("21:00", "ufit")] },
-  wed: { n: "WEDNESDAY", kcal: 3878, p: 222, c: 566, f: 84, tag: "3am easy fasted → evening heavy lower", star: 1,
-    call: ["THE MOST IMPORTANT WEEKDAY FEED", "Muscle fuel takes hours to load. Eating at 6:30 does nothing for a 7pm trap bar. If the evening feels flat, the fault was at 3pm."],
-    feeds: [E("03:15", "BOX JUMPS + EASY RIDE — FASTED", { sub: "Water and electrolytes only. Weeks 6–10: 20 min, otherwise 30." }), F("04:30", "porridgeb", { note: "After the ride, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr", { crit: 1, note: "The pre-load starts here." }), F("17:00", "topup", { crit: 1, note: "Two hours out. THIS IS THE SESSION." }), F("18:45", "banana"), E("19:00", "★ SLED · TRAP BAR · PAUSE SQUAT · RDL · ~59 MIN"), F("20:30", "steakbig")] },
-  thu: { n: "THURSDAY", kcal: 3369, p: 240, c: 428, f: 80, tag: "3am throws + size + easy ride ~67 min",
-    call: ["HAVE THE SHAKE ANYWAY", "Throws, the size block and an easy ride — the lightest morning. The habit is worth more than the exception."],
-    feeds: [F("03:10", "shake", { crit: 1, note: "Non-negotiable." }), E("03:30", "TRAIN — THROWS + SIZE + EASY RIDE · ~67 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steak"), F("21:00", "ufit")] },
+  mon: { n: "MONDAY", kcal: 3369, p: 240, c: 428, f: 80, tag: "3am upper strength + box jumps ~72 min", star: 0,
+    call: ["THE 3:10 SHAKE FUELS THE BENCH", "Bench throws, box jumps and bench at 3:30 — a real session, not a warm-up. Shake at 3:10, porridge in the thermos at 4:50."],
+    feeds: [F("03:10", "shake", { crit: 1, note: "Made the night before, in the fridge." }), E("03:30", "UPPER STRENGTH + BOX JUMPS · ~72 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steak"), F("21:00", "ufit")] },
+  tue: { n: "TUESDAY", kcal: 3741, p: 228, c: 535, f: 80, tag: "3am jumps + engine 1 ~61 min → load Wednesday", star: 1,
+    call: ["THE 5PM FEED LOADS WEDNESDAY'S TRAP BAR", "Muscle fuel takes hours to load. Tomorrow's sled, trap bar and pause squat at 3:30am run on today's 5pm carb feed. If Wednesday feels flat, the fault was here."],
+    feeds: [F("03:10", "shake", { crit: 1, note: "Non-negotiable. Jumps into an interval session." }), E("03:30", "JUMPS + ENGINE 1 + HANDS + TRUNK · ~61 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("17:00", "topup", { crit: 1, note: "This loads Wednesday morning." }), F("20:15", "steak")] },
+  wed: { n: "WEDNESDAY", kcal: 3626, p: 258, c: 462, f: 86, tag: "3am sled · trap bar · pause squat · RDL ~67 min", star: 1,
+    call: ["NOT FASTED — THE HEAVIEST WEEKDAY MORNING", "The loading was done last night at 5pm; the 3:10 shake is non-negotiable. Porridge big after, steak & eggs big tonight. The session is finished by 4:10am — there is nothing at 7pm."],
+    feeds: [F("03:10", "shake", { crit: 1, note: "Made the night before." }), E("03:30", "SLED · TRAP BAR · PAUSE SQUAT · RDL · ~67 MIN"), F("04:50", "porridgeb", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steakbig"), F("21:00", "ufit")] },
+  thu: { n: "THURSDAY", kcal: 3369, p: 240, c: 428, f: 80, tag: "3am throws + engine 2 + size + neck ~74 min", star: 0,
+    call: ["24 MINUTES OF INTERVALS — THE SHAKE IS NOT OPTIONAL", "Throws, the second bike session, then the size block. The longest weekday morning. Shake at 3:10, thermos at 4:50."],
+    feeds: [F("03:10", "shake", { crit: 1, note: "Non-negotiable." }), E("03:30", "THROWS + LANDMINE · ENGINE 2 · SIZE A · NECK · ~74 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steak"), F("21:00", "ufit")] },
   fri: { n: "FRIDAY", kcal: 3496, p: 208, c: 526, f: 65, tag: "3am easy ride fasted → load Saturday", star: 1,
     call: ["THE 5PM FEED LOADS SATURDAY", "Muscle fuel takes hours to load. Tomorrow's sprints, jumps and squat run on today's 5pm carb feed. If Saturday feels flat, the fault was here."],
     feeds: [E("03:15", "EASY RIDE — FASTED", { sub: "Water and electrolytes only. Weeks 6–10: 40 min, otherwise 50." }), F("04:30", "porridge", { note: "After the ride, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("17:00", "topup", { crit: 1, note: "This loads SATURDAY. The most important feed of the week." }), F("19:30", "pasta")] },
@@ -101,36 +103,36 @@ const YIELDS = [["White rice", "×2.6 from dry"], ["Pasta", "×2.2 from dry"], [
 
 const PLANREF = [
   ["THE NUMBERS", C.honey, [
-    ["Maintenance ~3,450 (no boxing in the week for now) · target ~3,650 · surplus ~190 kcal/day → ~0.7 kg/month. Muscle has a rate limit — a bigger surplus just adds fat, which enters the punch without producing force.", 1],
+    ["Maintenance ~3,400 (9¼-hour training week, no boxing for now) · target ~3,600 · surplus ~190 kcal/day → ~0.7 kg/month. Muscle has a rate limit — a bigger surplus just adds fat, which enters the punch without producing force.", 1],
     ["WHEN DAILY BOXING RETURNS: on every boxing day without a 5pm feed already, add a CARB TOP-UP at 17:30 and push dinner to 20:15. That lifts the average to ~3,800. Sparring day adds the banana + electrolytes at 18:45. Nothing else changes.", 1],
-    ["Protein 235g (2.9 g/kg) — above requirement, a by-product of your food. Carbs 507g (6.3 g/kg) — rises again when boxing returns. Fat 79g (1.0 g/kg) — at the floor, never lower.", 0],
-    ["Calories cycle with the session: Saturday 4,126, Tuesday 3,369. Same week, 750 apart.", 0]]],
+    ["Protein 240g (3.0 g/kg) — above requirement, a by-product of your food. Carbs 493g (6.1 g/kg) — rises again when boxing returns. Fat 79g (1.0 g/kg) — at the floor, never lower.", 0],
+    ["Calories cycle with the session: Saturday 4,126, Monday and Thursday 3,369. Same week, 750 apart.", 0]]],
   ["EASY WEEKS & THE TAPER", C.sage, [
-    ["Easy weeks (5, 10, 18): keep eating exactly as written. The training drops; the building doesn't. Only change: no fight rounds = no mid-session banana Sunday.", 1],
+    ["Easy weeks (5 and 10 — and 18 only if the 18-week cycle is switched on in Settings): keep eating exactly as written. The training drops; the building doesn't. Only change: no fight rounds = no mid-session banana Sunday.", 1],
     ["Taper (15–16): do not cut carbs. Volume drops, food holds, and you walk into test day full. Test day eats exactly like a normal Saturday.", 1]]],
   ["THE HONEST GAP — CORRECTED", C.copper, [
     ["Your fibre is ~35–40g/day — above the guideline. Vitamin C ~150–200mg — covered. Potassium — excellent. The no-veg hole is exactly three things: vitamin D in winter, omega-3, maybe magnesium. The supplement row on the shop list closes all three.", 1],
-    ["Sodium: salt food to taste, electrolytes daily, and the urine check stands — pale straw. Dark at 10am means Wednesday's 7pm was compromised before lunch.", 0]]],
+    ["Sodium: salt food to taste, electrolytes daily, and the urine check stands — pale straw. Dark at 10am means the 3am sessions are being run on a half-empty tank.", 0]]],
   ["AROUND THE SESSION", C.ember, [
-    ["BEFORE — the meal that fuels a session is hours out, not minutes. 3am sessions: last night's dinner plus the 3:10 shake. Evening sessions: the 3pm shake and the 5pm carb feed. Weekend sessions: the 5pm feed the evening before.", 1],
+    ["BEFORE — the meal that fuels a session is hours out, not minutes. The 3am sessions run on last night's dinner plus the 3:10 shake. Wednesday's heavy morning runs on Tuesday's 5pm feed as well. The weekend sessions run on the 5pm feed the evening before.", 1],
     ["DURING — water and electrolytes everywhere, except fight-round Sundays: banana in the throws → rounds gap.", 0],
-    ["AFTER — on Mon/Tue/Thu you go straight to a scaffold at 5:15. The meal you skip rushing is the one that costs you the muscle. Thermos of porridge, made the night before. No decisions at 4:50am.", 0]]],
+    ["AFTER — Monday to Thursday you go straight to the scaffold at 5:15. The meal you skip rushing is the one that costs you the muscle. Thermos of porridge, made the night before. No decisions at 4:50am.", 0]]],
   ["THE FEEDBACK LOOP", C.honey, [
     ["Tape every 4–6 weeks. Waist decides. Arms/shoulders up, waist flat → change nothing. Waist climbing faster → cut 100–150 kcal from the 3pm shake on non-training days. Nothing moving in 6 weeks → add one CARB TOP-UP. Bodyweight falling, sessions unchanged → eat more; the answer is never a program change.", 1],
-    ["Log the tape in the Optimal 6 app (TRACK → BODY) so everything lives in one place.", 0]]],
+    ["Log the tape in the Optimal 8 app (TRACK → BODY) so everything lives in one place.", 0]]],
   ["IF YOU EVER MAKE WEIGHT", C.frost, [
     ["Calories to maintenance → ~3,100. Protein becomes deliberate: 190–200g. Carbs 380–420g — cut here, never from protein. Fat holds at 70g.", 0],
     ["Cut in order: 3pm shake on non-training days → Sunday's top-up → BATCH BIG back to standard. Never cut: the pre-session shake, the 5pm feeds, Saturday.", 1]]],
   ["THE COACHING NOTE", C.ember, [
-    ["The four 5pm feeds — Monday and Wednesday load the evening sessions, Friday and Saturday load the weekend.", 1],
-    ["The 3:10 shake on Monday, Tuesday and Thursday — intervals and power doses before a shift. An empty tank at 3am is the cheapest mistake to make.", 1],
+    ["The three 5pm feeds — Tuesday loads Wednesday's trap bar, Friday loads Saturday, Saturday loads Sunday.", 1],
+    ["The 3:10 shake Monday to Thursday — strength, intervals and power doses before a shift. An empty tank at 3am is the cheapest mistake to make.", 1],
     ["Eat for it. The training only writes the cheque.", 0]]],
 ];
 
 /* ================================================================
    ATOMS + a small timer
    ================================================================ */
-const Card = ({ children, s, ac }) => <div style={Object.assign({ background: C.card, border: "1px solid " + C.line, borderLeft: ac ? "3px solid " + ac : "1px solid " + C.line, borderRadius: 6, marginBottom: 10, padding: 14 }, s)}>{children}</div>;
+const Card = ({ children, s, ac, tid }) => <div data-testid={tid} style={Object.assign({ background: C.card, border: "1px solid " + C.line, borderLeft: ac ? "3px solid " + ac : "1px solid " + C.line, borderRadius: 6, marginBottom: 10, padding: 14 }, s)}>{children}</div>;
 const Eye = ({ children, c, s }) => <div style={Object.assign({}, mno, { fontSize: 9.5, letterSpacing: 1.6, color: c || C.ash, marginBottom: 8, textTransform: "uppercase" }, s)}>{children}</div>;
 const Lab = ({ children }) => <div style={Object.assign({}, mno, { fontSize: 8, color: C.ash, marginBottom: 3, letterSpacing: 1, textTransform: "uppercase" })}>{children}</div>;
 const Fld = ({ v, on, ph, type, s }) => <input value={v == null ? "" : v} onChange={(e) => on(e.target.value)} placeholder={ph} inputMode={type === "date" ? undefined : "decimal"} type={type || "text"}
@@ -198,15 +200,14 @@ function MacroBar({ label, val, max, c }) {
       <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 3 }}><div style={{ width: Math.min(100, val / max * 100) + "%", height: "100%", background: c, borderRadius: 2, transition: "width .3s" }} /></div>
     </div>);
 }
-function Today({ day, setDay, week, done, tick, cook, sound }) {
+function Today({ day, setDay, week, cycle, done, tick, cook, sound }) {
   const d = D[day], today = todayKey(), isToday = day === today;
   const dl = done || {};
   const eaten = d.feeds.reduce((a, f, i) => f.b && dl[i] ? { k: a.k + B[f.b].kcal, p: a.p + B[f.b].p, c: a.c + B[f.b].c, f: a.f + B[f.b].f } : a, { k: 0, p: 0, c: 0, f: 0 });
   const nm = nowMin();
   const nextIdx = isToday ? d.feeds.findIndex((f, i) => f.b && !dl[i] && tMin(f.t) >= nm - 5) : -1;
   const [open, setOpen] = useState(null);
-  const dload = week === 5 || week === 10 || week === 18, taper = week === 15 || week === 16;
-  const wedRide = week >= 6 && week <= 10 ? "20" : "30";
+  const dload = week === 5 || week === 10 || (week === 18 && cycle === 18), taper = week === 15 || week === 16;
   return (
     <div>
       {dload ? <Card ac={C.sage}><Eye c={C.sage}>Easy week {week}</Eye><Note c={C.bone} s={{ marginTop: 0 }}>Keep eating exactly as written — the training drops, the building doesn't. No fight sim Saturday, so skip the mid-session banana.</Note></Card> : null}
@@ -251,13 +252,14 @@ function Today({ day, setDay, week, done, tick, cook, sound }) {
         if (f.ev) return (
           <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", padding: "9px 2px", opacity: .95 }}>
             <span style={Object.assign({}, mno, { fontSize: 10, color: C.ash, width: 40, flexShrink: 0 })}>{f.t}</span>
-            <span style={{ flex: 1, borderTop: "1px dashed " + C.line, position: "relative" }}>
-              <span style={Object.assign({}, dsp, { position: "absolute", top: -9, left: 8, background: C.ink, padding: "0 8px", fontSize: 13, fontWeight: 700, letterSpacing: 1, color: f.ev.indexOf("★") >= 0 ? C.ember : C.ash })}>{f.ev.replace("EASY RIDE — FASTED", "EASY RIDE " + (f.t === "03:15" && f.ev.indexOf("BOX") >= 0 ? (week >= 6 && week <= 10 ? "20" : "30") : (week >= 6 && week <= 10 ? "40" : "50")) + " MIN — FASTED")}</span>
+            <span style={{ flex: 1, minWidth: 0, position: "relative" }}>
+              <span style={{ position: "absolute", top: "50%", left: 0, right: 0, borderTop: "1px dashed " + C.line }} />
+              <span style={Object.assign({}, dsp, { position: "relative", display: "inline-block", background: C.ink, padding: "0 8px", fontSize: 13, fontWeight: 700, letterSpacing: 1, lineHeight: 1.25, color: f.ev.indexOf("★") >= 0 ? C.ember : C.ash })}>{f.ev.replace("EASY RIDE — FASTED", "EASY RIDE " + (f.t === "03:15" && f.ev.indexOf("BOX") >= 0 ? (week >= 6 && week <= 10 ? "20" : "30") : (week >= 6 && week <= 10 ? "40" : "50")) + " MIN — FASTED")}</span>
             </span>
           </div>);
         const bl = B[f.b], on = !!dl[i], isNext = i === nextIdx, isOpen = open === i;
         return (
-          <Card key={i} ac={on ? C.sage : f.crit ? C.ember : C.line} s={{ padding: 0, opacity: on ? .68 : 1, borderColor: isNext ? C.ember : C.line }}>
+          <Card key={i} tid="feed" ac={on ? C.sage : f.crit ? C.ember : C.line} s={{ padding: 0, opacity: on ? .68 : 1, borderColor: isNext ? C.ember : C.line }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px" }}>
               <span onClick={() => setOpen(isOpen ? null : i)} style={{ flex: 1, minWidth: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
                 <span style={Object.assign({}, mno, { fontSize: 11, color: isNext ? C.ember : C.ash, width: 40, flexShrink: 0, fontWeight: isNext ? 700 : 400 })}>{f.t}</span>
@@ -282,7 +284,7 @@ function Today({ day, setDay, week, done, tick, cook, sound }) {
       <Card s={{ padding: "10px 14px" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
           <span style={Object.assign({}, mno, { fontSize: 9, color: C.frost, letterSpacing: 1 })}>HYDRATION</span>
-          <span style={Object.assign({}, bdy, { fontSize: 12, color: C.ash, flex: 1 })}>Electrolytes on site · urine pale straw — dark at 10am means tonight was compromised before lunch.</span>
+          <span style={Object.assign({}, bdy, { fontSize: 12, color: C.ash, flex: 1 })}>Electrolytes on site · urine pale straw — dark at 10am means tomorrow's 3:30 is compromised before lunch.</span>
         </div>
       </Card>
     </div>);
@@ -446,7 +448,72 @@ function PlanView() {
         </Card>))}
     </div>);
 }
-function Settings({ st, setSt, week, close }) {
+
+/* ================================================================
+   BACKUP — everything lives on this phone, so it must be exportable
+   ================================================================ */
+const backupName = () => "fuel-backup-" + iso(new Date()) + ".json";
+
+async function shareOrDownload(text) {
+  const name = backupName();
+  try {
+    if (typeof File !== "undefined" && navigator.canShare && navigator.share) {
+      const file = new File([text], name, { type: "application/json" });
+      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Fuel backup" }); return "Sent to the share sheet."; }
+    }
+  } catch (e) { if (e && e.name === "AbortError") return ""; }
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return "Saved as " + name + ".";
+  } catch (e) { return "Couldn't save the file — use COPY BACKUP instead."; }
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return "Backup copied. Paste it somewhere safe."; } catch (e) {}
+  try {
+    const ta = document.createElement("textarea"); ta.value = text;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); const ok = document.execCommand("copy"); ta.remove();
+    if (ok) return "Backup copied. Paste it somewhere safe.";
+  } catch (e) {}
+  return "Couldn't reach the clipboard — use EXPORT TO FILE instead.";
+}
+
+function Backup({ onExport, onImport }) {
+  const [txt, setTxt] = useState("");
+  const [msg, setMsg] = useState(null);
+  const fileRef = useRef(null);
+  const say = (m) => { if (m) { setMsg(m); buzz(30); } };
+  const doImport = async (text) => { const r = await onImport(text); say(r.msg); if (r.ok) setTxt(""); };
+  return (
+    <div style={{ borderTop: "1px solid " + C.line, marginTop: 14, paddingTop: 14 }}>
+      <Eye c={C.frost}>Backup — your data lives only on this phone</Eye>
+      <Note s={{ marginTop: 0 }}>Nothing is stored on a server and there is no sign-in. Export before you change phone, clear Safari's data, or delete the app.</Note>
+      <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+        <Btn small c={C.frost} s={{ flex: 1 }} on={async () => say(await copyText(await onExport()))}>COPY BACKUP</Btn>
+        <Btn small c={C.frost} s={{ flex: 1 }} on={async () => say(await shareOrDownload(await onExport()))}>EXPORT TO FILE</Btn>
+      </div>
+      <div style={{ marginTop: 14 }}>
+        <Lab>Restore — paste a backup here</Lab>
+        <textarea value={txt} onChange={(e) => setTxt(e.target.value)} placeholder='{"app":"optimal-8-fuel",…}' rows={3}
+          style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: 12, padding: 8, resize: "vertical" })} />
+        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+          <Btn small c={C.sage} s={{ flex: 1 }} dis={!txt.trim()} on={() => doImport(txt)}>IMPORT PASTED TEXT</Btn>
+          <Btn small c={C.sage} s={{ flex: 1 }} on={() => fileRef.current && fileRef.current.click()}>IMPORT FROM FILE</Btn>
+        </div>
+        <input ref={fileRef} type="file" accept="application/json,.json,text/plain" style={{ display: "none" }}
+          onChange={async (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+            try { await doImport(await f.text()); } catch (err) { say("Couldn't read that file."); } }} />
+      </div>
+      {msg ? <Note c={C.honey}>{msg}</Note> : null}
+      <Note s={{ fontStyle: "italic" }}>Importing replaces what's in the app with what's in the backup.</Note>
+    </div>);
+}
+
+function Settings({ st, setSt, week, close, onExport, onImport }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(20,17,13,.94)", zIndex: 95, overflowY: "auto" }} onClick={close}>
       <div className="rise" onClick={(e) => e.stopPropagation()} style={{ background: C.card, maxWidth: 640, margin: "24px auto", borderRadius: 8, border: "1px solid " + C.line, padding: 16 }}>
@@ -454,7 +521,7 @@ function Settings({ st, setSt, week, close }) {
           <span style={Object.assign({}, dsp, { fontSize: 20, fontWeight: 800, letterSpacing: 1.4, color: C.bone })}>SETTINGS</span>
           <Btn on={close} c={C.ash} small>CLOSE</Btn>
         </div>
-        <Lab>Monday of Optimal 6 week 1 — keeps the easy-week and taper banners honest</Lab>
+        <Lab>Monday of Optimal 8 week 1 — keeps the easy-week and taper banners honest</Lab>
         <Fld type="date" v={st.start} on={(v) => { if (v) setSt(Object.assign({}, st, { start: iso(mondayOf(parseISO(v))) })); }} s={{ textAlign: "left" }} />
         <Note>Today reads as <span style={{ color: C.honey }}>week {week}</span>.</Note>
         {[["iron", "18-week cycle (Hell Week + reload)", "Match the Optimal 8 app. Off = 16 weeks."], ["sound", "Chimes", "Feed-time chime while the app is open, plus timer bells."]].map((x) => (
@@ -463,13 +530,15 @@ function Settings({ st, setSt, week, close }) {
               <span style={{ position: "absolute", top: 2, left: st[x[0]] ? 18 : 2, width: 18, height: 18, borderRadius: 9, background: C.bone, transition: "left .15s" }} /></span>
             <span style={{ flex: 1 }}><div style={Object.assign({}, bdy, { fontSize: 13.5, fontWeight: 600, color: C.bone })}>{x[1]}</div><div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash })}>{x[2]}</div></span>
           </div>))}
+        <Backup onExport={onExport} onImport={onImport} />
       </div>
     </div>);
 }
 
 const KEYS = { st: "fu8-settings", done: "fu8-done", cook: "fu8-cook", foods: "fu8-foods", shop: "fu8-shop" };
+const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true });
 export default function App() {
-  const [st, setStRaw] = useState({ start: iso(mondayOf(new Date())), iron: true, sound: true });
+  const [st, setStRaw] = useState(DEFAULT_ST);
   const [loaded, setLoaded] = useState(false);
   const [tab, setTab] = useState("today");
   const [day, setDay] = useState(todayKey());
@@ -483,6 +552,31 @@ export default function App() {
   const chimed = useRef({});
   const mk = (setter, key) => (v) => { setter(v); save(key, v); };
   const setSt = mk(setStRaw, KEYS.st), setDoneAll = mk(setDoneRaw, KEYS.done), setCook = mk(setCookRaw, KEYS.cook), setFoods = mk(setFoodsRaw, KEYS.foods), setShop = mk(setShopRaw, KEYS.shop);
+
+  /* --- backup: all five fu8 keys, out and back in --------------------- */
+  const buildBackup = useCallback(async () => {
+    const data = {};
+    for (const short of Object.keys(KEYS)) data[KEYS[short]] = await load(KEYS[short], null);
+    return JSON.stringify({ app: "optimal-8-fuel", version: 1, exported: new Date().toISOString(), data }, null, 2);
+  }, []);
+  const applyBackup = useCallback(async (text) => {
+    let obj;
+    try { obj = JSON.parse(String(text).trim()); } catch (e) { return { ok: 0, msg: "That isn't a Fuel backup — check you pasted the whole thing." }; }
+    const data = obj && typeof obj === "object" && obj.data && typeof obj.data === "object" ? obj.data : obj;
+    if (!data || typeof data !== "object") return { ok: 0, msg: "That isn't a Fuel backup." };
+    const setters = { st: setStRaw, done: setDoneRaw, cook: setCookRaw, foods: setFoodsRaw, shop: setShopRaw };
+    const found = Object.keys(KEYS).filter((short) => Object.prototype.hasOwnProperty.call(data, KEYS[short]));
+    if (!found.length) return { ok: 0, msg: "No Fuel data found in that backup." };
+    for (const short of found) {
+      let v = data[KEYS[short]];
+      if (short === "st") v = Object.assign(DEFAULT_ST(), v || {});
+      if (short === "done" || short === "shop") v = v || {};
+      if (short === "foods") v = Array.isArray(v) ? v : [];
+      await save(KEYS[short], v);
+      setters[short](v);
+    }
+    return { ok: 1, msg: "Restored " + found.length + " of 5 sections. You're back." };
+  }, []);
   useEffect(() => { (async () => {
     const s = await load(KEYS.st, null); if (s) setStRaw(s); else save(KEYS.st, st);
     setDoneRaw(await load(KEYS.done, {})); setCookRaw(await load(KEYS.cook, null)); setFoodsRaw(await load(KEYS.foods, [])); setShopRaw(await load(KEYS.shop, {}));
@@ -500,13 +594,13 @@ export default function App() {
   return (
     <div style={Object.assign({}, bdy, { background: C.ink, minHeight: "100vh", color: C.bone })}>
       <style>{FONTS}</style>
-      {showSet ? <Settings st={st} setSt={setSt} week={week} close={() => setShowSet(false)} /> : null}
+      {showSet ? <Settings st={st} setSt={setSt} week={week} close={() => setShowSet(false)} onExport={buildBackup} onImport={applyBackup} /> : null}
       <div style={{ borderBottom: "1px solid " + C.line, background: C.slab, position: "sticky", top: 0, zIndex: 30 }}>
         <div style={{ borderTop: "3px solid " + C.ember }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 13px", maxWidth: 640, margin: "0 auto" }}>
           <span style={Object.assign({}, dsp, { fontSize: 19, fontWeight: 800, letterSpacing: 2, color: C.bone })}>FUEL<span style={{ color: C.ember }}>·</span>O8</span>
           <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Chip c={C.honey}>WK {week} · ~3,650 KCAL</Chip>
+            <Chip c={C.honey}>WK {week} · ~3,600 KCAL</Chip>
             <button onClick={() => setShowSet(true)} aria-label="Settings" style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: 32, height: 32, cursor: "pointer", fontSize: 14 })}>⚙</button>
           </span>
         </div>
@@ -519,7 +613,7 @@ export default function App() {
       <div style={{ padding: "13px 13px 150px", maxWidth: 640, margin: "0 auto" }}>
         {!loaded ? <div style={Object.assign({}, mno, { fontSize: 11, color: C.ash, padding: "40px 0", textAlign: "center" })}>LOADING…</div> : (
           <div>
-            {tab === "today" ? <Today day={day} setDay={setDay} week={week} done={dayDone} tick={tick} cook={cook} sound={st.sound} /> : null}
+            {tab === "today" ? <Today day={day} setDay={setDay} week={week} cycle={L} done={dayDone} tick={tick} cook={cook} sound={st.sound} /> : null}
             {tab === "cook" ? <Cook cook={cook} setCook={setCook} foods={foods} setFoods={setFoods} K={K} /> : null}
             {tab === "shop" ? <Shop shop={shop} setShop={setShop} /> : null}
             {tab === "plan" ? <PlanView /> : null}
