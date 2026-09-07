@@ -7,7 +7,10 @@ describe("Fuel · Optimal 8", () => {
   it("mounts and gets past LOADING", async () => {
     render(<App />);
     await waitFor(() => expect(screen.queryByText("LOADING…")).toBeNull());
-    expect(screen.getByText(/FUEL/)).toBeTruthy();
+    // The brand mark is split across elements ("FUEL", "·", "O8"), and a bare
+    // /FUEL/ also catches the "…SHAKE FUELS THE BENCH" tagline — so match the
+    // one element whose whole text is the brand.
+    expect(screen.getByText((_, el) => el && el.textContent === "FUEL·O8")).toBeTruthy();
   });
 
   it("shows the 03:10 shake as Wednesday's first feed", async () => {
