@@ -177,7 +177,7 @@ function KDock({ K }) {
   const t = K.t; if (!t) return null;
   const frac = t.done ? 1 : 1 - t.left / (t.total || 1);
   return (
-    <div style={{ position: "fixed", left: 0, right: 0, bottom: 58, zIndex: 70, background: C.slab, borderTop: "1px solid " + C.line }}>
+    <div style={{ position: "fixed", left: 0, right: 0, bottom: "calc(58px + env(safe-area-inset-bottom))", zIndex: 70, background: C.slab, borderTop: "1px solid " + C.line }}>
       <div style={{ height: 4, background: C.ink }}><div style={{ width: frac * 100 + "%", height: "100%", background: t.done ? C.sage : C.ember, transition: "width .2s linear" }} /></div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", maxWidth: 640, margin: "0 auto" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
@@ -516,10 +516,10 @@ function Backup({ onExport, onImport }) {
 function Settings({ st, setSt, week, close, onExport, onImport }) {
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(20,17,13,.94)", zIndex: 95, overflowY: "auto" }} onClick={close}>
-      <div className="rise" onClick={(e) => e.stopPropagation()} style={{ background: C.card, maxWidth: 640, margin: "24px auto", borderRadius: 8, border: "1px solid " + C.line, padding: 16 }}>
+      <div className="rise" onClick={(e) => e.stopPropagation()} style={{ background: C.card, maxWidth: 640, margin: "24px auto", marginTop: "calc(24px + env(safe-area-inset-top))", marginBottom: "calc(24px + env(safe-area-inset-bottom))", borderRadius: 8, border: "1px solid " + C.line, padding: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
           <span style={Object.assign({}, dsp, { fontSize: 20, fontWeight: 800, letterSpacing: 1.4, color: C.bone })}>SETTINGS</span>
-          <Btn on={close} c={C.ash} small>CLOSE</Btn>
+          <Btn on={close} c={C.ash} small s={{ minWidth: 44, minHeight: 44 }}>CLOSE</Btn>
         </div>
         <Lab>Monday of Optimal 8 week 1 — keeps the easy-week and taper banners honest</Lab>
         <Fld type="date" v={st.start} on={(v) => { if (v) setSt(Object.assign({}, st, { start: iso(mondayOf(parseISO(v))) })); }} s={{ textAlign: "left" }} />
@@ -595,13 +595,13 @@ export default function App() {
     <div style={Object.assign({}, bdy, { background: C.ink, minHeight: "100vh", color: C.bone })}>
       <style>{FONTS}</style>
       {showSet ? <Settings st={st} setSt={setSt} week={week} close={() => setShowSet(false)} onExport={buildBackup} onImport={applyBackup} /> : null}
-      <div style={{ borderBottom: "1px solid " + C.line, background: C.slab, position: "sticky", top: 0, zIndex: 30 }}>
+      <div style={{ borderBottom: "1px solid " + C.line, background: C.slab, position: "sticky", top: 0, zIndex: 30, paddingTop: "env(safe-area-inset-top)" }}>
         <div style={{ borderTop: "3px solid " + C.ember }} />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 13px", maxWidth: 640, margin: "0 auto" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 13px", paddingLeft: "max(13px, env(safe-area-inset-left))", paddingRight: "max(13px, env(safe-area-inset-right))", maxWidth: 640, margin: "0 auto" }}>
           <span style={Object.assign({}, dsp, { fontSize: 19, fontWeight: 800, letterSpacing: 2, color: C.bone })}>FUEL<span style={{ color: C.ember }}>·</span>O8</span>
           <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
             <Chip c={C.honey}>WK {week} · ~3,600 KCAL</Chip>
-            <button onClick={() => setShowSet(true)} aria-label="Settings" style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: 32, height: 32, cursor: "pointer", fontSize: 14 })}>⚙</button>
+            <button onClick={() => setShowSet(true)} aria-label="Settings" style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: 44, height: 44, cursor: "pointer", fontSize: 16 })}>⚙</button>
           </span>
         </div>
         {tab === "today" ? (
@@ -621,7 +621,7 @@ export default function App() {
           </div>)}
       </div>
       <KDock K={K} />
-      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, background: C.slab, borderTop: "1px solid " + C.line }}>
+      <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, background: C.slab, borderTop: "1px solid " + C.line, paddingBottom: "env(safe-area-inset-bottom)" }}>
         <div style={{ display: "flex", maxWidth: 640, margin: "0 auto" }}>
           {TABS.map((x) => <button key={x[0]} onClick={() => setTab(x[0])} style={Object.assign({}, dsp, { flex: 1, fontSize: 11, fontWeight: 700, letterSpacing: .8, background: "transparent", border: "none", borderTop: "2px solid " + (tab === x[0] ? C.ember : "transparent"), color: tab === x[0] ? C.bone : C.ash, padding: "12px 2px 14px", cursor: "pointer", minHeight: 50 })}>{x[1]}</button>)}
         </div>
