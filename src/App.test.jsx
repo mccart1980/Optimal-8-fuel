@@ -36,6 +36,22 @@ describe("Fuel · Optimal 8 Fighter", () => {
     expect(screen.getByText(/SLEEP DAY/)).toBeTruthy();
   });
 
+  it("ends every day with the night shake and feeds the work mornings at 07:00", async () => {
+    await mounted();
+    for (const day of ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]) {
+      fireEvent.click(screen.getByText(day));
+      const feeds = screen.getAllByTestId("feed");
+      const last = within(feeds[feeds.length - 1]);
+      expect(last.getByText("21:30")).toBeTruthy();
+      expect(last.getByText(/NIGHT SHAKE/)).toBeTruthy();
+    }
+    for (const day of ["MON", "TUE", "WED", "THU", "FRI"]) {
+      fireEvent.click(screen.getByText(day));
+      expect(screen.getByText("07:00")).toBeTruthy();
+      expect(screen.getAllByText(/EGGS \+ BANANA/).length).toBeGreaterThan(0);
+    }
+  });
+
   it("renders every section of the plan document", async () => {
     await mounted();
     fireEvent.click(screen.getByText("PLAN"));

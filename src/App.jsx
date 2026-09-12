@@ -53,14 +53,15 @@ const B = {
   batchbig:  { n: "BATCH BIG", kcal: 671, p: 47, c: 76, f: 20, cook: "big", i: [["Beef mince 5%", "200g raw"], ["Sweet potato", "350g raw"], ["Passata + beef stock", "150g"], ["Mushrooms (optional)", "150g"]] },
   porridge:  { n: "PORRIDGE", kcal: 570, p: 16, c: 105, f: 10, bn: "Made with hot milk in the thermos; add a splash of water if it's thick.", i: [["Quaker Oat So Simple Golden Syrup", "2 sachets · 2 × 36g"], ["Milk", "250ml"], ["Honey", "20g"], ["Banana", "1"]] },
   porridgeb: { n: "PORRIDGE BIG", kcal: 710, p: 19, c: 130, f: 12, bn: "Made with hot milk in the thermos; add a splash of water if it's thick.", i: [["Quaker Oat So Simple Golden Syrup", "3 sachets"], ["Milk", "250ml"], ["Honey", "20g"], ["Banana", "1"]] },
-  shake:     { n: "PRE-SESSION SHAKE", kcal: 225, p: 25, c: 30, f: 2, i: [["Whey", "30g"], ["Banana", "1"], ["Water", ""]] },
+  shake:     { n: "PRE-SESSION SHAKE", kcal: 255, p: 21, c: 42, f: 1, bn: "Out of the fridge. No scoop, no shaker, no decisions at three in the morning.", i: [["UFIT", "1"], ["Banana", "1"]] },
+  snack:     { n: "EGGS + BANANA", kcal: 245, p: 14, c: 28, f: 10, bn: "Boiled on cook day, straight from the fridge into the bag.", i: [["Eggs, boiled", "2"], ["Banana", "1"]] },
   topup:     { n: "CARB TOP-UP", kcal: 522, p: 8, c: 122, f: 1, i: [["Rice", "100g dry"], ["Banana", "1"], ["Honey", "20g"]] },
   shakefr:   { n: "SHAKE + FRUIT", kcal: 360, p: 24, c: 60, f: 3, i: [["UFIT", "1"], ["Bananas", "2"]] },
   steak:     { n: "STEAK & EGGS", kcal: 936, p: 79, c: 79, f: 33, i: [["Steak", "200g"], ["Eggs", "3"], ["Rice", "100g dry"]] },
   steakbig:  { n: "STEAK & EGGS BIG", kcal: 1117, p: 94, c: 99, f: 37, i: [["Steak", "250g"], ["Eggs", "3"], ["Rice", "125g dry"]] },
   pasta:     { n: "CHICKEN PASTA", kcal: 916, p: 84, c: 100, f: 20, i: [["Chicken breast", "250g"], ["Pasta", "125g dry"], ["Passata", "150g"], ["Mushrooms", "150g"]] },
   banana:    { n: "BANANA + ELECTROLYTES", kcal: 105, p: 1, c: 27, f: 0, i: [["Banana", "1"], ["Electrolytes", ""]] },
-  ufit:      { n: "UFIT", kcal: 150, p: 20, c: 15, f: 1, i: [["UFIT", "1"]] },
+  ufit:      { n: "NIGHT SHAKE", kcal: 150, p: 20, c: 15, f: 1, bn: "The smallest feed here and the easiest to skip. Don't — you sleep about five hours.", i: [["UFIT", "1"]] },
   ufitban:   { n: "UFIT + BANANA", kcal: 255, p: 21, c: 42, f: 1, i: [["UFIT", "1"], ["Banana", "1"]] },
 };
 
@@ -68,34 +69,34 @@ const B = {
 const F = (t, b, o) => Object.assign({ t, b }, o);
 const E = (t, n, o) => Object.assign({ t, ev: n }, o);
 const D = {
-  mon: { n: "MONDAY", kcal: 3327, p: 236, c: 421, f: 79, tag: "3:30 upper strength + rings ~65 min", star: 0,
-    call: ["THE 3:10 SHAKE FUELS THE BENCH", "Bench throws, box jumps, bench, dips, chins, rows — a real session, not a warm-up. Shake at 3:10, porridge in the thermos at 4:50."],
-    feeds: [F("03:10", "shake", { crit: 1, note: "Made the night before, in the fridge." }), E("03:30", "UPPER STRENGTH + POWER + RINGS · ~65 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steak"), F("21:00", "ufit")] },
-  tue: { n: "TUESDAY", kcal: 3699, p: 224, c: 528, f: 79, tag: "3:30 jumps, pistols, engine 1 ~65 min → load Wednesday", star: 0,
+  mon: { n: "MONDAY", kcal: 3602, p: 246, c: 461, f: 88, tag: "3:30 upper strength + rings ~65 min", star: 0,
+    call: ["THE 3:10 SHAKE FUELS THE BENCH", "Bench throws, box jumps, bench, dips, chins, rows — a real session, not a warm-up. Shake at 3:10, thermos at 4:50, eggs and a banana at 7."],
+    feeds: [F("03:10", "shake", { crit: 1, note: "Out of the fridge, twenty minutes before you start." }), E("03:30", "UPPER STRENGTH + POWER + RINGS · ~65 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("07:00", "snack", { note: "From the bag, on the scaffold. This closes the four-hour hole." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steak"), F("21:30", "ufit", { note: "Before bed. Seven nights." })] },
+  tue: { n: "TUESDAY", kcal: 4124, p: 254, c: 583, f: 89, tag: "3:30 jumps, pistols, engine 1 ~65 min → load Wednesday", star: 0,
     call: ["THE 5PM FEED LOADS WEDNESDAY'S TRAP BAR", "Muscle fuel takes hours to load. Tomorrow's sled, trap bar and pause squat at 3:30am run on today's 5pm carb feed. If Wednesday feels flat, the fault was here."],
-    feeds: [F("03:10", "shake", { crit: 1, note: "Non-negotiable. Jumps into an interval session." }), E("03:30", "JUMPS · PISTOLS · ENGINE 1 · TRUNK · ACHILLES · ~65 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("17:00", "topup", { crit: 1, note: "This loads Wednesday morning." }), F("20:15", "steak")] },
-  wed: { n: "WEDNESDAY", kcal: 3648, p: 254, c: 466, f: 85, tag: "3:30 sled · trap bar · pause squat · RDL ~60 min", star: 1,
+    feeds: [F("03:10", "shake", { crit: 1, note: "Non-negotiable. Jumps into an interval session." }), E("03:30", "JUMPS · PISTOLS · ENGINE 1 · TRUNK · ACHILLES · ~65 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("07:00", "snack"), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("17:00", "topup", { crit: 1, note: "This loads Wednesday morning." }), F("20:15", "steak"), F("21:30", "ufit", { note: "Before bed. Seven nights." })] },
+  wed: { n: "WEDNESDAY", kcal: 3923, p: 264, c: 506, f: 94, tag: "3:30 sled · trap bar · pause squat · RDL ~60 min", star: 1,
     call: ["NOT FASTED. EVER.", "The loading was done last night at 5pm; the 3:10 shake is non-negotiable. The session is finished by 4:30am — there is nothing at 7pm. Porridge big after it, steak and eggs big tonight: the heavy lower day gets the bigger recovery."],
-    feeds: [F("03:10", "shake", { crit: 1, note: "The loading was done last night. This is non-negotiable." }), E("03:30", "SLED · TRAP BAR · PAUSE SQUAT · RDL · RING ROWS · ~60 MIN"), F("04:50", "porridgeb", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steakbig"), F("21:00", "ufit")] },
-  thu: { n: "THURSDAY", kcal: 3327, p: 236, c: 421, f: 79, tag: "3:30 throws, split squat, engine 2, neck ~61 min", star: 0,
-    call: ["24 MINUTES OF INTERVALS — THE SHAKE IS NOT OPTIONAL", "Throws, split squat, tendon hold, the bike, neck. Shake at 3:10, thermos at 4:50."],
-    feeds: [F("03:10", "shake", { crit: 1, note: "24 minutes of intervals. The shake is not optional." }), E("03:30", "THROWS · SPLIT SQUAT · TENDON · ENGINE 2 · NECK · ~61 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steak"), F("21:00", "ufit")] },
-  fri: { n: "FRIDAY", kcal: 3454, p: 204, c: 519, f: 64, tag: "sleep day → work → load Saturday", star: 0,
+    feeds: [F("03:10", "shake", { crit: 1, note: "The loading was done last night. This is non-negotiable." }), E("03:30", "SLED · TRAP BAR · PAUSE SQUAT · RDL · RING ROWS · ~60 MIN"), F("04:50", "porridgeb", { note: "Thermos, on the way to work." }), F("07:00", "snack"), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steakbig"), F("21:30", "ufit", { note: "Before bed. Seven nights." })] },
+  thu: { n: "THURSDAY", kcal: 3602, p: 246, c: 461, f: 88, tag: "3:30 throws, split squat, engine 2, neck ~61 min", star: 0,
+    call: ["24 MINUTES OF INTERVALS — THE SHAKE IS NOT OPTIONAL", "Throws, split squat, tendon hold, the bike, neck. Shake at 3:10, thermos at 4:50, eggs and a banana at 7."],
+    feeds: [F("03:10", "shake", { crit: 1, note: "24 minutes of intervals. The shake is not optional." }), E("03:30", "THROWS · SPLIT SQUAT · TENDON · ENGINE 2 · NECK · ~61 MIN"), F("04:50", "porridge", { note: "Thermos, on the way to work." }), F("07:00", "snack"), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr"), F("18:30", "steak"), F("21:30", "ufit", { note: "Before bed. Seven nights." })] },
+  fri: { n: "FRIDAY", kcal: 3849, p: 238, c: 562, f: 75, tag: "sleep day → work → load Saturday", star: 0,
     call: ["NO SESSION, SAME FOOD", "A rest day is not a low-food day when the biggest session of the week is tomorrow morning. The 5pm carb feed is the most important feed of the week — Saturday's sprints, jumps and squat run on it. If Saturday feels flat, the fault was Friday at 5pm."],
-    feeds: [E("", "SLEEP DAY — NO SESSION"), F("07:00", "porridge", { tl: "WAKE", note: "Breakfast, no session in front of it." }), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr", { note: "The pre-load starts here." }), F("17:00", "topup", { crit: 1, note: "This loads SATURDAY. The most important feed of the week." }), F("19:30", "pasta")] },
-  sat: { n: "SATURDAY", kcal: 4148, p: 253, c: 583, f: 90, tag: "legs & power ~96 min, then the easy hour", star: 1,
-    call: ["THE BIGGEST DAY OF TRAINING AND FOOD", "Porridge big 6:30, shake 7:45, start 8:15. Water and electrolytes during. Today's 5pm carb feed loads Sunday's rounds."],
-    feeds: [F("06:30", "porridgeb"), F("07:45", "shake"), E("08:15", "★ THE LEG & POWER SESSION · ~96 MIN", { sub: "Get-ups, sprints, jumps, squat, circuit, push press." }), F("10:30", "shakefr", { crit: 1, note: "Within the hour after finishing." }), F("11:30", "batchbig"), F("14:30", "batch", { note: "The easy hour, if it's today, sits between the 11:30 and 14:30 feeds or after this one — water only." }), F("17:00", "topup", { crit: 1, note: "This loads SUNDAY." }), F("20:00", "steakbig")] },
-  sun: { n: "SUNDAY", kcal: 3552, p: 245, c: 494, f: 68, tag: "throws · Nordics · fight rounds · core ~80 min", star: 1,
+    feeds: [E("", "SLEEP DAY — NO SESSION"), F("05:00", "porridge", { tl: "WAKE", note: "Breakfast, no session in front of it. The one morning you sleep — protect it." }), F("07:00", "snack"), F("09:00", "batch"), F("12:30", "batch"), F("15:00", "shakefr", { note: "The pre-load starts here." }), F("17:00", "topup", { crit: 1, note: "This loads SATURDAY. The most important feed of the week." }), F("19:30", "pasta"), F("21:30", "ufit", { note: "Before bed. Seven nights." })] },
+  sat: { n: "SATURDAY", kcal: 4328, p: 269, c: 610, f: 90, tag: "legs & power ~96 min, then the easy hour", star: 1,
+    call: ["THE BIGGEST DAY OF TRAINING AND FOOD", "Porridge big 6:30, shake 7:45, start 8:15. Water and electrolytes during. No 7am snack today — the weekend feeds sit close enough together without it. Today's 5pm carb feed loads Sunday's rounds."],
+    feeds: [F("06:30", "porridgeb"), F("07:45", "shake"), E("08:15", "★ THE LEG & POWER SESSION · ~96 MIN", { sub: "Get-ups, sprints, jumps, squat, circuit, push press." }), F("10:30", "shakefr", { crit: 1, note: "Within the hour after finishing." }), F("11:30", "batchbig"), F("14:30", "batch", { note: "The easy hour, if it's today, sits between the 11:30 and 14:30 feeds or after this one — water only." }), F("17:00", "topup", { crit: 1, note: "This loads SUNDAY." }), F("20:00", "steakbig"), F("21:30", "ufit", { note: "Before bed. Seven nights." })] },
+  sun: { n: "SUNDAY", kcal: 3732, p: 261, c: 521, f: 68, tag: "throws · Nordics · fight rounds · core ~80 min", star: 1,
     call: ["THE ROUNDS DRAIN THE TANK", "Electrolytes throughout, and a banana in the gap between the throws and the Nordics on fight-sim weeks. Weeks 1 and 16 the rounds are the 20-minute bike test — same rule."],
-    feeds: [F("06:30", "porridgeb"), F("07:45", "shake"), E("08:15", "★ THROWS · NORDICS · FIGHT ROUNDS · CORE · ~80 MIN", { sub: "Sim weeks: banana in the throws → Nordics gap." }), F("10:00", "shakefr", { crit: 1, note: "Within the hour after finishing." }), F("11:30", "batch"), F("14:30", "batch", { note: "If the easy hour is today, it's after this feed." }), F("17:00", "ufitban"), F("19:30", "pasta")] },
+    feeds: [F("06:30", "porridgeb"), F("07:45", "shake"), E("08:15", "★ THROWS · NORDICS · FIGHT ROUNDS · CORE · ~80 MIN", { sub: "Sim weeks: banana in the throws → Nordics gap." }), F("10:00", "shakefr", { crit: 1, note: "Within the hour after finishing." }), F("11:30", "batch"), F("14:30", "batch", { note: "If the easy hour is today, it's after this feed." }), F("17:00", "ufitban"), F("19:30", "pasta"), F("21:30", "ufit", { note: "Before bed. Seven nights." })] },
 };
 
 /* Shopping list */
 const SHOP = [
-  ["MEAT & EGGS", [["Beef mince 5%", "2.2 kg raw"], ["Steak", "5 × 200–250g"], ["Chicken breast", "2 × 250g"], ["Eggs", "15–18"]]],
-  ["CARBS", [["Sweet potato", "4.3 kg raw"], ["Quaker Oat So Simple Golden Syrup sachets", "17 a week — two boxes of 15 last under a fortnight"], ["Honey", "~200g"], ["Rice, dry", "1 kg"], ["Pasta, dry", "250g"], ["Bananas", "~30 — not a typo. Buy green on Sunday."]]],
-  ["THE REST", [["Passata", "2.1 L"], ["Beef stock", "as needed"], ["Mushrooms", "1 kg"], ["Milk", "2 L"], ["Whey", "1 tub"], ["UFIT", "8–10 bottles"], ["Electrolytes", "as needed — you sweat for a living"]]],
+  ["MEAT & EGGS", [["Beef mince 5%", "2.2 kg raw"], ["Steak", "5 × 200–250g"], ["Chicken breast", "2 × 250g"], ["Eggs", "25–28 — fifteen for dinners, ten boiled for the snacks"]]],
+  ["CARBS", [["Sweet potato", "4.3 kg raw"], ["Quaker Oat So Simple Golden Syrup sachets", "17 a week — two boxes of 15 last under a fortnight"], ["Honey", "~200g"], ["Rice, dry", "1 kg"], ["Pasta, dry", "250g"], ["Bananas", "~36 — buy green on Sunday, they ripen across the week"]]],
+  ["THE REST", [["Passata", "2.1 L"], ["Beef stock", "as needed"], ["Mushrooms", "1 kg"], ["Milk", "2 L"], ["UFIT", "21 bottles — 6 pre-session, 7 at 3pm, 7 before bed, 1 Sunday teatime"], ["Electrolytes", "as needed — you sweat for a living"]]],
   ["SUPPLEMENTS", [["Creatine monohydrate", "5g every day, any time, in a shake"], ["Omega-3 (fish oil)", "1–2g EPA+DHA daily — there is no oily fish anywhere in your diet"], ["Vitamin D", "1,000–2,000 IU daily · October to April"], ["Multivitamin", "cheap insurance"], ["Beta-alanine (optional)", "3.2g/day split in two · needs four-plus weeks, so start week 1 or don't bother · tingling is harmless"]]],
 ];
 
@@ -693,7 +694,7 @@ export default function App() {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 13px", paddingLeft: "max(13px, env(safe-area-inset-left))", paddingRight: "max(13px, env(safe-area-inset-right))", maxWidth: 640, margin: "0 auto" }}>
           <span style={Object.assign({}, dsp, { fontSize: 19, fontWeight: 800, letterSpacing: 2, color: C.bone })}>FUEL<span style={{ color: C.ember }}>·</span>O8</span>
           <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Chip c={C.honey}>WK {week} · ~3,600 KCAL</Chip>
+            <Chip c={C.honey}>WK {week} · ~3,880 KCAL</Chip>
             <button onClick={() => setShowSet(true)} aria-label="Settings" style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: 44, height: 44, cursor: "pointer", fontSize: 16 })}>⚙</button>
           </span>
         </div>
