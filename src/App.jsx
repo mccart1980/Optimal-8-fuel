@@ -249,13 +249,14 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound }) {
                 {bl.i.map((it, j) => <div key={j} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderTop: j ? "1px solid " + C.line : "none" }}>
                   <span style={Object.assign({}, bdy, { fontSize: 13, color: C.bone })}>{it[0]}</span>
                   <span style={Object.assign({}, mno, { fontSize: 11, color: C.honey })}>{it[1]}</span></div>)}
-{bl.cook && cook && cook.mince && cook.potato ? (
-                  <div style={{ marginTop: 8 }}>
-                    <div style={Object.assign({}, mno, { fontSize: 10.5, color: C.sage })}>COOKED MINCE ≈ {cook.mince[bl.cook]}g</div>
-                    <div style={Object.assign({}, mno, { fontSize: 10.5, color: C.sage, marginTop: 2 })}>COOKED SWEET POTATO ≈ {cook.potato[bl.cook]}g</div>
-                    <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 3 })}>WEIGHED {cook.date}</div>
-                  </div>
-                ) : bl.cook ? <div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash, marginTop: 8, fontStyle: "italic" })}>Weigh the two pans once in COOK and this card shows what one portion of each looks like cooked.</div> : null}
+{bl.cook ? (() => {
+                  const parts = [];
+                  if (cook && cook.mince) parts.push("cooked mince ≈ " + cook.mince[bl.cook] + " g");
+                  if (cook && cook.potato) parts.push("cooked sweet potato ≈ " + cook.potato[bl.cook] + " g");
+                  return parts.length
+                    ? <div style={Object.assign({}, mno, { fontSize: 10.5, color: C.sage, marginTop: 8, lineHeight: 1.5 })}>{parts.join(" · ")}</div>
+                    : <div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash, marginTop: 8, fontStyle: "italic" })}>Weigh each pan once in COOK and this card shows what one portion of each looks like cooked.</div>;
+                })() : null}
                 {bl.bn ? <Note s={{ fontStyle: "italic" }}>{bl.bn}</Note> : null}
                 {f.note ? <Note s={{ fontStyle: "italic" }}>{f.note}</Note> : null}
               </div>) : null}
@@ -274,84 +275,105 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound }) {
 /* ================================================================
    COOK — the raw→cooked problem, solved
    ================================================================ */
-function Cook({ cook, setCook, foods, setFoods, K }) {
-  const [std, setStd] = useState(6); const [big, setBig] = useState(1);
-  const [minceIn, setMinceIn] = useState(""); const [spIn, setSpIn] = useState(""); const [mode, setMode] = useState("half");
-  const [uRaw, setURaw] = useState(""); const [uCooked, setUCooked] = useState(""); const [uTarget, setUTarget] = useState(""); const [uName, setUName] = useState("");
-  const setPreset = (m) => { setMode(m); if (m === "half") { setStd(6); setBig(1); } if (m === "full") { setStd(12); setBig(2); } };
-  const S = Number(std) || 0, G = Number(big) || 0;
-  const mince = S * 150 + G * 200, sp = S * 300 + G * 350, pas = (S + G) * 150;
-  /* Both pans divide the same way: a standard portion is 300 parts, a big one 350.
-     Mince pan — 150g mince + 150g passata standard, 200 + 150 big.
-     Sweet potato — 300g standard, 350g big. */
-  const rawTot = S * 300 + G * 350;
-  const share = (cooked) => { const w = num(cooked); return w && rawTot ? { std: Math.round(w * 300 / rawTot), big: Math.round(w * 350 / rawTot), pct: Math.round(w / rawTot * 100) } : null; };
-  const mOut = share(minceIn), sOut = share(spIn);
-  const Step = ({ n, t }) => <div style={{ display: "flex", gap: 10, alignItems: "baseline", marginBottom: 6 }}><span style={Object.assign({}, mno, { fontSize: 11, fontWeight: 700, color: C.ember, width: 16, flexShrink: 0 })}>{n}</span><span style={Object.assign({}, bdy, { fontSize: 13, color: C.bone, lineHeight: 1.45 })}>{t}</span></div>;
-  const Pan = ({ title, colour, val, on, ph, out, hint }) => (
-    <div style={{ flex: 1, minWidth: 0, background: C.ink, border: "1px solid " + colour, borderRadius: 5, padding: "11px 10px" }}>
-      <Eye c={colour} s={{ marginBottom: 6 }}>{title}</Eye>
-      <Fld v={val} on={on} ph={ph} />
-      {out ? (
-        <div className="rise" style={{ marginTop: 10, textAlign: "center" }}>
-          <div style={Object.assign({}, mno, { fontSize: 8, color: C.ash, letterSpacing: 1.2 })}>ONE STANDARD</div>
-          <div style={Object.assign({}, mno, { fontSize: 30, fontWeight: 700, color: colour, lineHeight: 1.1 })}>{out.std}<span style={{ fontSize: 13, color: C.ash }}>g</span></div>
-          {G > 0 ? <div style={{ marginTop: 6, paddingTop: 6, borderTop: "1px solid " + C.line }}>
-            <div style={Object.assign({}, mno, { fontSize: 8, color: C.ash, letterSpacing: 1.2 })}>ONE BIG</div>
-            <div style={Object.assign({}, mno, { fontSize: 22, fontWeight: 700, color: C.bone, lineHeight: 1.1 })}>{out.big}<span style={{ fontSize: 11, color: C.ash }}>g</span></div>
-          </div> : null}
-          <div style={Object.assign({}, mno, { fontSize: 9, color: out.pct >= 55 && out.pct <= 95 ? C.ash : C.copper, marginTop: 7 })}>YIELD {out.pct}%</div>
-        </div>
-      ) : <div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash, marginTop: 8, fontStyle: "italic", lineHeight: 1.4 })}>{hint}</div>}
+const Step = ({ n, t }) => <div style={{ display: "flex", gap: 10, alignItems: "baseline", marginBottom: 6 }}><span style={Object.assign({}, mno, { fontSize: 11, fontWeight: 700, color: C.ember, width: 16, flexShrink: 0 })}>{n}</span><span style={Object.assign({}, bdy, { fontSize: 13, color: C.bone, lineHeight: 1.45 })}>{t}</span></div>;
+const Big = ({ v, on, ph, lab }) => (
+  <div style={{ flex: 1, minWidth: 0 }}>
+    <Lab>{lab}</Lab>
+    <input value={v} onChange={(e) => on(e.target.value)} placeholder={ph} inputMode="decimal" type="text"
+      style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 5, color: C.bone, fontSize: 20, fontWeight: 700, padding: "12px 8px", textAlign: "center", minHeight: 56 })} />
+  </div>
+);
+const Out = ({ lab, v, colour }) => (
+  <div style={{ flex: 1, background: C.card, border: "1px solid " + colour, borderRadius: 6, padding: "14px 6px", textAlign: "center" }}>
+    <div style={Object.assign({}, mno, { fontSize: 8.5, color: C.ash, letterSpacing: 1.2 })}>{lab}</div>
+    <div style={Object.assign({}, mno, { fontSize: 40, fontWeight: 700, color: colour, lineHeight: 1.05 })}>{v}<span style={{ fontSize: 15, color: C.ash }}>g</span></div>
+  </div>
+);
+/* One calculator: two inputs, two live outputs, a portion count and a save. */
+const Calc = ({ title, colour, blurb, rawLab, rawPh, ckLab, ckPh, raw, setRaw, ck, setCk, out, count, countLab, saved, onSave }) => (
+  <Card ac={colour}>
+    <Eye c={colour}>{title}</Eye>
+    <Note s={{ marginTop: 0 }}>{blurb}</Note>
+    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+      <Big lab={rawLab} ph={rawPh} v={raw} on={setRaw} />
+      <Big lab={ckLab} ph={ckPh} v={ck} on={setCk} />
     </div>
-  );
+    {out ? (
+      <div className="rise" style={{ marginTop: 12 }}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Out lab="ONE STANDARD" v={out.std} colour={colour} />
+          <Out lab="ONE BIG" v={out.big} colour={C.bone} />
+        </div>
+        <Btn c={C.sage} fill s={{ width: "100%", marginTop: 10 }} on={() => { onSave(out); buzz([60, 40, 60]); }}>SAVE — SHOW ON EVERY BATCH FEED</Btn>
+      </div>
+    ) : <Note s={{ fontStyle: "italic" }}>Type both weights and the two numbers appear here.</Note>}
+    {count ? <div style={Object.assign({}, mno, { fontSize: 10, color: C.ash, marginTop: 10, letterSpacing: .6 })}>{countLab} {count} STANDARD PORTIONS</div> : null}
+    {saved ? <div style={Object.assign({}, mno, { fontSize: 9.5, color: C.sage, marginTop: 6 })}>SAVED · {saved.std}g STANDARD · {saved.big}g BIG{saved.date ? " · " + saved.date : ""}</div> : null}
+  </Card>
+);
+
+function Cook({ cook, setCook, foods, setFoods, K }) {
+  /* Two independent calculators. Each takes the raw weight that went in and the
+     cooked weight that came out, and scales one portion's raw share by the loss.
+     Mince pot: 150g raw mince standard, 200g big. Sweet potato: 300g and 350g. */
+  const [mRaw, setMRaw] = useState(""); const [mCooked, setMCooked] = useState("");
+  const [sRaw, setSRaw] = useState(""); const [sCooked, setSCooked] = useState("");
+  const [uRaw, setURaw] = useState(""); const [uCooked, setUCooked] = useState(""); const [uTarget, setUTarget] = useState(""); const [uName, setUName] = useState("");
+
+  const portion = (raw, cooked, stdShare, bigShare) => {
+    const r = num(raw), c = num(cooked);
+    return r > 0 && c > 0 ? { std: r5(c * stdShare / r), big: r5(c * bigShare / r) } : null;
+  };
+  const countOf = (raw, share) => { const r = num(raw); return r > 0 ? Math.round(r / share * 10) / 10 : null; };
+  const mOut = portion(mRaw, mCooked, 150, 200);
+  const sOut = portion(sRaw, sCooked, 300, 350);
+  const mCount = countOf(mRaw, 150), sCount = countOf(sRaw, 300);
+
+
+
+
+
   const uOut = num(uCooked) && num(uRaw) && num(uTarget) ? r5(num(uCooked) * num(uTarget) / num(uRaw)) : null;
   const uFactor = num(uCooked) && num(uRaw) ? num(uCooked) / num(uRaw) : null;
   return (
     <div>
       <Card ac={C.ember}>
-        <Eye c={C.ember}>The batch — two pans, weighed once</Eye>
-        <Note s={{ marginTop: 0 }}>The mince and the sweet potato are cooked apart, because they cook at different rates and lose different amounts of water — one pot weighed together tells you nothing about either. Weigh each pan once and the app gives you two numbers per portion. Serve by them for good, until the recipe or the pan changes.</Note>
-        <div style={{ display: "flex", gap: 5, margin: "12px 0 10px" }}>
-          {[["half", "HALF WEEK · 6+1"], ["full", "FULL WEEK · 12+2"], ["custom", "CUSTOM"]].map((o) => <button key={o[0]} onClick={() => setPreset(o[0])} style={Object.assign({}, dsp, { flex: 1, fontSize: 11, fontWeight: 700, letterSpacing: .6, padding: "9px 2px", borderRadius: 4, cursor: "pointer", background: mode === o[0] ? C.ember : "transparent", color: mode === o[0] ? C.ink : C.ash, border: "1px solid " + (mode === o[0] ? C.ember : C.line) })}>{o[1]}</button>)}
-        </div>
-        {mode === "custom" ? <div style={{ display: "flex", gap: 8, marginBottom: 10 }}>
-          <div style={{ flex: 1 }}><Lab>Standard portions</Lab><Fld v={std} on={setStd} /></div>
-          <div style={{ flex: 1 }}><Lab>Big portions</Lab><Fld v={big} on={setBig} /></div>
-        </div> : null}
-
-        <div style={{ background: C.ink, border: "1px solid " + C.line, borderRadius: 5, padding: "11px 12px", marginBottom: 10 }}>
-          <Eye c={C.honey} s={{ marginBottom: 6 }}>1 · Raw, into the two pans — {S} standard + {G} big</Eye>
-          {[["Beef mince 5% → mince pan", mince + "g"], ["Passata → mince pan", pas + "g"], ["Beef stock → mince pan", "to taste"], ["Sweet potato → its own tray", sp + "g"], ["Mushrooms (optional, per portion)", "150g · +33 kcal"]].map((r) => (
-            <div key={r[0]} style={{ display: "flex", justifyContent: "space-between", gap: 10, padding: "5px 0", borderBottom: "1px solid " + C.line }}>
-              <span style={Object.assign({}, bdy, { fontSize: 13.5, color: C.bone })}>{r[0]}</span>
-              <span style={Object.assign({}, mno, { fontSize: 13, fontWeight: 700, color: C.honey, flexShrink: 0 })}>{r[1]}</span></div>))}
-          <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 7 })}>MINCE PAN {rawTot}G RAW · SWEET POTATO {rawTot}G RAW</div>
-        </div>
-
-        <div style={{ background: C.ink, border: "1px solid " + C.line, borderRadius: 5, padding: "11px 12px", marginBottom: 10 }}>
-          <Eye c={C.honey} s={{ marginBottom: 6 }}>2 · Cook them apart</Eye>
-          <Step n="1" t="Brown the mince." />
-          <Step n="2" t="Stock and passata in. Simmer it down — one pan, everything in it." />
-          <Step n="3" t="Sweet potato separately: roasted or boiled, its own tray." />
-          <Step n="4" t="Mushrooms, if using, go in per portion when you eat — not into the pan." />
+        <Eye c={C.ember}>The batch — two pans, weighed separately</Eye>
+        <Note s={{ marginTop: 0 }}>Cook the mince and the sweet potato in separate pans — they cook at different rates and lose different amounts of water, so one pot weighed together tells you nothing about either. Weigh each one cooked, type the raw weight in and the cooked weight out, and serve by the two numbers it gives you.</Note>
+        <div style={{ background: C.ink, border: "1px solid " + C.line, borderRadius: 5, padding: "11px 12px", marginTop: 12 }}>
+          <Eye c={C.honey} s={{ marginBottom: 6 }}>The method</Eye>
+          <Step n="1" t="Brown the mince, stock and passata in, simmer it down — one pan, everything in it." />
+          <Step n="2" t="Sweet potato in its own pan: roasted or boiled, however much you're cooking." />
+          <Step n="3" t="Weigh each one cooked. The mince pot is mince, passata and stock together, minus the pot." />
+          <Step n="4" t="Type raw and cooked below. Serve by the two numbers from then on — until the recipe or the pan changes." />
           <Btn small c={C.ember} s={{ marginTop: 6 }} on={() => K.start("SIMMER", 25 * 60)}>▶ SIMMER TIMER · 25:00</Btn>
         </div>
-
-        <div style={{ background: C.ink, border: "1px solid " + C.ember, borderRadius: 5, padding: "11px 12px" }}>
-          <Eye c={C.ember} s={{ marginBottom: 6 }}>3 · Weigh each pan — once</Eye>
-          <Note s={{ marginTop: 0 }}>Cooked weight of the mince pan (minus the pan), and cooked weight of all the sweet potato.</Note>
-          <div style={{ display: "flex", gap: 8, marginTop: 10, alignItems: "flex-start" }}>
-            <Pan title="Mince pan" colour={C.copper} val={minceIn} on={setMinceIn} ph="cooked (g)" out={mOut} hint="Mince, passata and stock, simmered down." />
-            <Pan title="Sweet potato" colour={C.honey} val={spIn} on={setSpIn} ph="cooked (g)" out={sOut} hint="All of it, roasted or boiled." />
-          </div>
-          {mOut && sOut ? (
-            <Btn c={C.sage} fill s={{ width: "100%", marginTop: 12 }} on={() => { setCook({ mince: { std: mOut.std, big: mOut.big }, potato: { std: sOut.std, big: sOut.big }, date: iso(new Date()) }); buzz([60, 40, 60]); }}>SAVE BOTH — SHOW ON EVERY BATCH FEED</Btn>
-          ) : <Note s={{ fontStyle: "italic" }}>Both pans need a weight before you can save.</Note>}
-          {cook && cook.mince && cook.potato ? <div style={Object.assign({}, mno, { fontSize: 9.5, color: C.sage, marginTop: 10, lineHeight: 1.6 })}>SAVED · MINCE {cook.mince.std}g STD · {cook.mince.big}g BIG<br />SWEET POTATO {cook.potato.std}g STD · {cook.potato.big}g BIG · {cook.date}</div> : null}
-          <Note s={{ fontStyle: "italic" }}>Worked example, a full batch of 12 standard and 2 big: the mince pan starts at 4,300g raw; at 3,500g cooked a standard portion is 3,500 × 300 ÷ 4,300 = 244g and a big one 285g. The sweet potato also starts at 4,300g; roasted to 3,400g, that's 237g and 277g. Your pans will give different numbers. That's why you weigh.</Note>
-        </div>
+        <Note s={{ fontStyle: "italic" }}>Mushrooms go in per portion when you eat — 150g, +33 kcal — not into the pan.</Note>
       </Card>
+
+      <Calc
+        title="Mince pot"
+        colour={C.copper}
+        blurb="Mince, passata and stock together. A standard portion is 150g of raw mince, a big one 200g."
+        rawLab="Raw mince cooked (g)" rawPh="e.g. 2200"
+        ckLab="Cooked pot weight (g)" ckPh="e.g. 3500"
+        raw={mRaw} setRaw={setMRaw} ck={mCooked} setCk={setMCooked}
+        out={mOut} count={mCount} countLab="THIS POT ="
+        saved={cook && cook.mince}
+        onSave={(o) => setCook(Object.assign({}, cook, { mince: { std: o.std, big: o.big, date: iso(new Date()) } }))}
+      />
+
+      <Calc
+        title="Sweet potato"
+        colour={C.honey}
+        blurb="All of it, roasted or boiled. A standard portion is 300g raw, a big one 350g."
+        rawLab="Raw sweet potato cooked (g)" rawPh="e.g. 4300"
+        ckLab="Cooked weight (g)" ckPh="e.g. 3400"
+        raw={sRaw} setRaw={setSRaw} ck={sCooked} setCk={setSCooked}
+        out={sOut} count={sCount} countLab="THIS BATCH ="
+        saved={cook && cook.potato}
+        onSave={(o) => setCook(Object.assign({}, cook, { potato: { std: o.std, big: o.big, date: iso(new Date()) } }))}
+      />
 
       <Card ac={C.honey}>
         <Eye c={C.honey}>Batch anything — the universal converter</Eye>
