@@ -15,17 +15,27 @@ describe("Fuel · Optimal 8 Fighter", () => {
     expect(screen.getByText(/FUEL/)).toBeTruthy();
   });
 
-  it("shows the 03:10 shake as Wednesday's first feed", async () => {
+  it("opens Wednesday on the 03:10 half bottle", async () => {
     await mounted();
     fireEvent.click(screen.getByText("WED"));
     await screen.findByText(/WEDNESDAY/);
 
     const first = within(screen.getAllByTestId("feed")[0]);
     expect(first.getByText("03:10")).toBeTruthy();
-    expect(first.getByText(/PRE-SESSION SHAKE/)).toBeTruthy();
+    expect(first.getByText(/HALF BOTTLE \+ BANANA/)).toBeTruthy();
   });
 
-  it("has no session on Friday and opens on the porridge", async () => {
+  it("splits the 04:50 line into the half bottle then the porridge", async () => {
+    await mounted();
+    for (const day of ["MON", "TUE", "WED", "THU"]) {
+      fireEvent.click(screen.getByText(day));
+      const feeds = screen.getAllByTestId("feed");
+      expect(within(feeds[1]).getByText(/^HALF BOTTLE$/)).toBeTruthy();
+      expect(within(feeds[2]).getByText(/PORRIDGE/)).toBeTruthy();
+    }
+  });
+
+  it("has no session and no bottle on Friday", async () => {
     await mounted();
     fireEvent.click(screen.getByText("FRI"));
     await screen.findByText(/FRIDAY/);
@@ -34,21 +44,26 @@ describe("Fuel · Optimal 8 Fighter", () => {
     expect(first.getByText("WAKE")).toBeTruthy();
     expect(first.getByText(/PORRIDGE/)).toBeTruthy();
     expect(screen.getByText(/SLEEP DAY/)).toBeTruthy();
+    expect(screen.queryByText(/BOTTLE/)).toBeNull();
   });
 
-  it("ends every day with the night shake and feeds the work mornings at 07:00", async () => {
+  it("puts casein on Monday, Wednesday, Thursday, Friday and Sunday only", async () => {
+    await mounted();
+    const withCasein = [];
+    for (const day of ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]) {
+      fireEvent.click(screen.getByText(day));
+      if (screen.queryByText(/CASEIN/)) withCasein.push(day);
+    }
+    expect(withCasein).toEqual(["MON", "WED", "THU", "FRI", "SUN"]);
+  });
+
+  it("no longer carries whey, the old shakes or UFIT snacks", async () => {
     await mounted();
     for (const day of ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]) {
       fireEvent.click(screen.getByText(day));
-      const feeds = screen.getAllByTestId("feed");
-      const last = within(feeds[feeds.length - 1]);
-      expect(last.getByText("21:30")).toBeTruthy();
-      expect(last.getByText(/NIGHT SHAKE/)).toBeTruthy();
-    }
-    for (const day of ["MON", "TUE", "WED", "THU", "FRI"]) {
-      fireEvent.click(screen.getByText(day));
-      expect(screen.getByText("07:00")).toBeTruthy();
-      expect(screen.getAllByText(/EGGS \+ BANANA/).length).toBeGreaterThan(0);
+      for (const gone of [/whey/i, /SHAKE \+ FRUIT/, /NIGHT SHAKE/, /PRE-SESSION SHAKE/, /EGGS \+ BANANA/, /UFIT \+ BANANA/]) {
+        expect(screen.queryByText(gone)).toBeNull();
+      }
     }
   });
 
