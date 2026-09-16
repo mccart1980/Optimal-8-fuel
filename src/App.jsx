@@ -100,11 +100,10 @@ const D = {
    preset tapped today is remembered until midnight.
    ================================================================ */
 const LATE = tMin("15:00");            /* from here on, printed times stand */
-const PRESET_GROUP = (k) => k === "fri" ? "fri" : (k === "sat" || k === "sun") ? "wend" : "week";
-const DEFAULT_PRESETS = () => ({ week: ["03:30", "04:00", "04:30"], fri: ["05:00", "05:30", "06:00"], wend: ["08:15", "", ""] });
+/* What the picker opens on — the plan's printed start, or Friday's wake. */
+const DEFAULT_START = { mon: "03:30", tue: "03:30", wed: "03:30", thu: "03:30", fri: "05:00", sat: "08:15", sun: "08:15" };
 const DEFAULT_BREAKS = () => ["09:00", "12:30"];
 const DEFAULT_LEN = () => ({ mon: 65, tue: 65, wed: 62, thu: 65, sat: 90, sun: 80 });
-const presetsFor = (st, k) => ((st.presets || DEFAULT_PRESETS())[PRESET_GROUP(k)] || []).filter(Boolean);
 
 /* Re-times one day's morning around a chosen start. Feed order is left
    alone so the tick marks stay on the feeds they were put on. */
@@ -223,7 +222,6 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
   const d = D[day], today = todayKey(), isToday = day === today;
   const dl = done || {};
   const feeds = useMemo(() => retime(day, d.feeds, pick, st), [day, d, pick, st]);
-  const presets = presetsFor(st, day);
   const eaten = feeds.reduce((a, f, i) => f.b && dl[i] ? { k: a.k + B[f.b].kcal, p: a.p + B[f.b].p, c: a.c + B[f.b].c, f: a.f + B[f.b].f } : a, { k: 0, p: 0, c: 0, f: 0 });
   const nm = nowMin();
   const nextIdx = isToday ? feeds.findIndex((f, i) => f.b && !dl[i] && tMin(f.t) >= nm - 5) : -1;
@@ -232,19 +230,19 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
   const wake = day === "fri";
   return (
     <div>
-      {presets.length ? (
-        <Card ac={pick ? C.ember : C.line} s={{ padding: "12px 14px" }}>
-          <Eye c={pick ? C.ember : C.ash}>{wake ? "Wake" : "Session start"}</Eye>
-          <div style={{ display: "flex", gap: 6 }}>
-            {presets.map((t) => { const on = pick === t;
-              return <button key={t} onClick={() => { setPick(day, on ? null : t); buzz(20); }}
-                style={Object.assign({}, mno, { flex: 1, fontSize: 15, fontWeight: 700, letterSpacing: .5, padding: "11px 2px", borderRadius: 5, cursor: "pointer", minHeight: 48, background: on ? C.ember : "transparent", color: on ? C.ink : C.bone, border: "1px solid " + (on ? C.ember : C.line) })}>{t}</button>; })}
-          </div>
-          <Note s={{ marginTop: 8 }}>{pick
-            ? <span>Morning re-timed around <span style={{ color: C.honey }}>{pick}</span> — tap it again for the plan's times.</span>
-            : <span>Showing the plan's printed times. Tap {wake ? "when you woke" : "when you start"} and the morning moves with it.</span>}</Note>
-        </Card>
-      ) : null}
+      <Card ac={pick ? C.ember : C.line} s={{ padding: "12px 14px" }}>
+        <Eye c={pick ? C.ember : C.ash}>{wake ? "Wake" : "Session start"}</Eye>
+        <div style={{ display: "flex", gap: 8, alignItems: "stretch" }}>
+          <input type="time" aria-label={wake ? "Wake time" : "Session start time"}
+            value={pick || DEFAULT_START[day] || ""}
+            onChange={(e) => { setPick(day, e.target.value || null); buzz(20); }}
+            style={Object.assign({}, mno, { flex: 1, minWidth: 0, background: C.ink, border: "1px solid " + (pick ? C.ember : C.line), borderRadius: 5, color: pick ? C.bone : C.ash, fontSize: 22, fontWeight: 700, padding: "10px 8px", textAlign: "center", minHeight: 56 })} />
+          {pick ? <Btn small c={C.ash} on={() => { setPick(day, null); buzz(20); }} s={{ minHeight: 56, whiteSpace: "nowrap" }}>PLAN TIMES</Btn> : null}
+        </div>
+        <Note s={{ marginTop: 8 }}>{pick
+          ? <span>Morning re-timed around <span style={{ color: C.honey }}>{pick}</span>.</span>
+          : <span>Showing the plan's printed times. Set {wake ? "when you woke" : "when you start"} and the morning moves with it.</span>}</Note>
+      </Card>
       {dload ? <Card ac={C.sage}><Eye c={C.sage}>Easy week {week}</Eye><Note c={C.bone} s={{ marginTop: 0 }}>Keep eating exactly as written — the training drops, the building doesn't. No fight rounds means no mid-session banana on Sunday.</Note></Card> : null}
       {taper ? <Card ac={C.frost}><Eye c={C.frost}>{week === 16 ? "Test week" : "Taper week " + week}</Eye><Note c={C.bone} s={{ marginTop: 0 }}>Volume drops, food holds. Do not cut carbs — arrive at {week === 16 ? "Saturday" : "test day"} full.{week === 16 ? " Test day eats exactly like a normal Saturday." : ""}</Note></Card> : null}
 
@@ -735,10 +733,8 @@ const TFld = ({ v, on }) => <input type="time" value={v || ""} onChange={(e) => 
   style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: 15, padding: "9px 6px", textAlign: "center", minHeight: 44 })} />;
 
 function Settings({ st, setSt, week, close, onExport, onImport }) {
-  const presets = st.presets || DEFAULT_PRESETS();
   const breaks = st.breaks || DEFAULT_BREAKS();
   const len = st.len || DEFAULT_LEN();
-  const setPreset = (g, i, v) => { const n = Object.assign({}, presets); const row = (n[g] || []).slice(); row[i] = v; n[g] = row; setSt(Object.assign({}, st, { presets: n })); };
   const setBreak = (i, v) => { const n = breaks.slice(); n[i] = v; setSt(Object.assign({}, st, { breaks: n })); };
   const setLen = (k, v) => setSt(Object.assign({}, st, { len: Object.assign({}, len, { [k]: v === "" ? "" : Number(v) }) }));
   return (
@@ -759,16 +755,9 @@ function Settings({ st, setSt, week, close, onExport, onImport }) {
           </div>))}
         <div style={{ borderTop: "1px solid " + C.line, marginTop: 14, paddingTop: 14 }}>
           <Eye c={C.ember}>Session times</Eye>
-          <Note s={{ marginTop: 0 }}>The start times TODAY offers you. Leave a slot blank to drop it.</Note>
-          {[["week", "Monday to Thursday — session start"], ["fri", "Friday — wake"], ["wend", "Saturday and Sunday — session start"]].map((g) => (
-            <div key={g[0]} style={{ marginTop: 10 }}>
-              <Lab>{g[1]}</Lab>
-              <div style={{ display: "flex", gap: 6 }}>
-                {[0, 1, 2].map((i) => <div key={i} style={{ flex: 1, minWidth: 0 }}><TFld v={(presets[g[0]] || [])[i]} on={(v) => setPreset(g[0], i, v)} /></div>)}
-              </div>
-            </div>))}
+          <Note s={{ marginTop: 0 }}>What TODAY works from when you enter a session start.</Note>
 
-          <div style={{ marginTop: 14 }}>
+          <div style={{ marginTop: 12 }}>
             <Lab>Break times at work — where the two BATCH portions land</Lab>
             <div style={{ display: "flex", gap: 6 }}>
               {[0, 1].map((i) => <div key={i} style={{ flex: 1, minWidth: 0 }}><TFld v={breaks[i]} on={(v) => setBreak(i, v)} /></div>)}
@@ -794,7 +783,7 @@ function Settings({ st, setSt, week, close, onExport, onImport }) {
 }
 
 const KEYS = { st: "fu8-settings", done: "fu8-done", cook: "fu8-cook", foods: "fu8-foods", shop: "fu8-shop" };
-const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true, presets: DEFAULT_PRESETS(), breaks: DEFAULT_BREAKS(), len: DEFAULT_LEN(), pick: null });
+const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true, breaks: DEFAULT_BREAKS(), len: DEFAULT_LEN(), pick: null });
 export default function App() {
   const [st, setStRaw] = useState(DEFAULT_ST);
   const [loaded, setLoaded] = useState(false);
