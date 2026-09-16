@@ -18,7 +18,7 @@ html, body { background: ${C.ink}; }
 body { font-family: 'Barlow', system-ui, -apple-system, sans-serif; }
 input, button, textarea { font-family: inherit; }
 input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
-input[type=date] { color-scheme: dark; }
+input[type=date], input[type=time] { color-scheme: dark; }
 button:focus-visible, input:focus-visible { outline: 2px solid ${C.ember}; outline-offset: 2px; }
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: .5 } }
 @keyframes rise { from { opacity: 0; transform: translateY(6px) } to { opacity: 1; transform: none } }
@@ -44,6 +44,7 @@ const DSH = { mon: "MON", tue: "TUE", wed: "WED", thu: "THU", fri: "FRI", sat: "
 const todayKey = () => DAYS[(new Date().getDay() + 6) % 7];
 const nowMin = () => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); };
 const tMin = (t) => { const p = t.split(":").map(Number); return p[0] * 60 + p[1]; };
+const hhmm = (m) => { const x = ((Math.round(m) % 1440) + 1440) % 1440; return String(Math.floor(x / 60)).padStart(2, "0") + ":" + String(x % 60).padStart(2, "0"); };
 
 /* ================================================================
    THE BLOCKS — every meal, weighed once
@@ -92,6 +93,48 @@ const D = {
     call: ["THE ROUNDS DRAIN THE TANK", "Electrolytes throughout, and a banana in the gap between the throws and the Nordics on fight-sim weeks — that one's extra, and it's the only extra. Weeks 1 and 16 the rounds are the 20-minute bike test — same rule."],
     feeds: [F("06:30", "porridgeb"), F("07:45", "halfban"), E("08:15", "★ THROWS · NORDICS · FIGHT ROUNDS · CORE · ~80 MIN", { sub: "Sim weeks: banana in the throws → Nordics gap. That one's extra, and it's the only extra." }), F("10:00", "half2ban", { crit: 1, note: "Within the hour after finishing." }), F("11:30", "batch"), F("14:30", "batch", { note: "If the easy hour is today, it's after this feed." }), F("17:00", "banana"), F("19:30", "pasta"), F("21:00", "casein", { note: "Half an hour before bed." })] },
 };
+
+/* ================================================================
+   SESSION TIME — the shift moves, so the morning moves with it.
+   Presets, break times and session lengths live in Settings; the
+   preset tapped today is remembered until midnight.
+   ================================================================ */
+const LATE = tMin("15:00");            /* from here on, printed times stand */
+const PRESET_GROUP = (k) => k === "fri" ? "fri" : (k === "sat" || k === "sun") ? "wend" : "week";
+const DEFAULT_PRESETS = () => ({ week: ["03:30", "04:00", "04:30"], fri: ["05:00", "05:30", "06:00"], wend: ["08:15", "", ""] });
+const DEFAULT_BREAKS = () => ["09:00", "12:30"];
+const DEFAULT_LEN = () => ({ mon: 65, tue: 65, wed: 62, thu: 65, sat: 90, sun: 80 });
+const presetsFor = (st, k) => ((st.presets || DEFAULT_PRESETS())[PRESET_GROUP(k)] || []).filter(Boolean);
+
+/* Re-times one day's morning around a chosen start. Feed order is left
+   alone so the tick marks stay on the feeds they were put on. */
+function retime(k, feeds, start, st) {
+  if (!start) return feeds;
+  const S = tMin(start);
+  const len = Number((st.len || DEFAULT_LEN())[k]) || 0;
+  const breaks = (st.breaks || DEFAULT_BREAKS()).filter(Boolean);
+  const weekend = k === "sat" || k === "sun";
+  let nth = 0;
+  const at = (f, m) => Object.assign({}, f, { t: hhmm(m), tl: undefined });
+  return feeds.map((f) => {
+    if (f.ev) return f.t ? Object.assign({}, f, { t: hhmm(S) }) : f;
+    if (tMin(f.t) >= LATE) return f;
+    if (!weekend && (f.b === "batch" || f.b === "batchbig")) {       /* the two work breaks */
+      const b = breaks[Math.min(nth++, breaks.length - 1)];
+      return b ? at(f, tMin(b)) : f;
+    }
+    if (k === "fri") return f.b === "porridge" ? at(f, S + 15) : f;  /* no session: wake + 15 */
+    if (weekend) {
+      if (f.b === "porridgeb") return at(f, S - 105);
+      if (f.b === "halfban") return at(f, S - 30);
+      if (f.b === "half2ban") return at(f, S + len + 15);
+      return f;
+    }
+    if (f.b === "halfban") return at(f, S - 20);
+    if (f.b === "half" || f.b === "porridge" || f.b === "porridgeb") return at(f, S + len);
+    return f;
+  });
+}
 
 /* Shopping list */
 const SHOP = [
@@ -176,16 +219,32 @@ function MacroBar({ label, val, max, c }) {
       <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 3 }}><div style={{ width: Math.min(100, val / max * 100) + "%", height: "100%", background: c, borderRadius: 2, transition: "width .3s" }} /></div>
     </div>);
 }
-function Today({ day, setDay, week, cycle, done, tick, cook, sound }) {
+function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, setPick }) {
   const d = D[day], today = todayKey(), isToday = day === today;
   const dl = done || {};
-  const eaten = d.feeds.reduce((a, f, i) => f.b && dl[i] ? { k: a.k + B[f.b].kcal, p: a.p + B[f.b].p, c: a.c + B[f.b].c, f: a.f + B[f.b].f } : a, { k: 0, p: 0, c: 0, f: 0 });
+  const feeds = useMemo(() => retime(day, d.feeds, pick, st), [day, d, pick, st]);
+  const presets = presetsFor(st, day);
+  const eaten = feeds.reduce((a, f, i) => f.b && dl[i] ? { k: a.k + B[f.b].kcal, p: a.p + B[f.b].p, c: a.c + B[f.b].c, f: a.f + B[f.b].f } : a, { k: 0, p: 0, c: 0, f: 0 });
   const nm = nowMin();
-  const nextIdx = isToday ? d.feeds.findIndex((f, i) => f.b && !dl[i] && tMin(f.t) >= nm - 5) : -1;
+  const nextIdx = isToday ? feeds.findIndex((f, i) => f.b && !dl[i] && tMin(f.t) >= nm - 5) : -1;
   const [open, setOpen] = useState(null);
   const dload = week === 5 || week === 10 || (week === 18 && cycle === 18), taper = week === 15 || week === 16;
+  const wake = day === "fri";
   return (
     <div>
+      {presets.length ? (
+        <Card ac={pick ? C.ember : C.line} s={{ padding: "12px 14px" }}>
+          <Eye c={pick ? C.ember : C.ash}>{wake ? "Wake" : "Session start"}</Eye>
+          <div style={{ display: "flex", gap: 6 }}>
+            {presets.map((t) => { const on = pick === t;
+              return <button key={t} onClick={() => { setPick(day, on ? null : t); buzz(20); }}
+                style={Object.assign({}, mno, { flex: 1, fontSize: 15, fontWeight: 700, letterSpacing: .5, padding: "11px 2px", borderRadius: 5, cursor: "pointer", minHeight: 48, background: on ? C.ember : "transparent", color: on ? C.ink : C.bone, border: "1px solid " + (on ? C.ember : C.line) })}>{t}</button>; })}
+          </div>
+          <Note s={{ marginTop: 8 }}>{pick
+            ? <span>Morning re-timed around <span style={{ color: C.honey }}>{pick}</span> — tap it again for the plan's times.</span>
+            : <span>Showing the plan's printed times. Tap {wake ? "when you woke" : "when you start"} and the morning moves with it.</span>}</Note>
+        </Card>
+      ) : null}
       {dload ? <Card ac={C.sage}><Eye c={C.sage}>Easy week {week}</Eye><Note c={C.bone} s={{ marginTop: 0 }}>Keep eating exactly as written — the training drops, the building doesn't. No fight rounds means no mid-session banana on Sunday.</Note></Card> : null}
       {taper ? <Card ac={C.frost}><Eye c={C.frost}>{week === 16 ? "Test week" : "Taper week " + week}</Eye><Note c={C.bone} s={{ marginTop: 0 }}>Volume drops, food holds. Do not cut carbs — arrive at {week === 16 ? "Saturday" : "test day"} full.{week === 16 ? " Test day eats exactly like a normal Saturday." : ""}</Note></Card> : null}
 
@@ -209,7 +268,7 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound }) {
         </div>
       </Card>
 
-      {isToday && nextIdx >= 0 ? (() => { const f = d.feeds[nextIdx]; const mins = tMin(f.t) - nm;
+      {isToday && nextIdx >= 0 ? (() => { const f = feeds[nextIdx]; const mins = tMin(f.t) - nm;
         return (
           <Card ac={C.ember} s={{ background: "#2A1F13" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -224,7 +283,7 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound }) {
             </div>
           </Card>); })() : null}
 
-      {d.feeds.map((f, i) => {
+      {feeds.map((f, i) => {
         if (f.ev) return (
           <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", padding: "9px 2px", opacity: .95 }}>
             <span style={Object.assign({}, mno, { fontSize: 10, color: C.ash, width: 40, flexShrink: 0 })}>{f.t}</span>
@@ -608,7 +667,80 @@ function PlanView() {
     </div>
   );
 }
+/* ================================================================
+   BACKUP — everything lives on this phone, so it must be exportable
+   ================================================================ */
+const backupName = () => "fuel-backup-" + iso(new Date()) + ".json";
+
+async function shareOrDownload(text) {
+  const name = backupName();
+  try {
+    if (typeof File !== "undefined" && navigator.canShare && navigator.share) {
+      const file = new File([text], name, { type: "application/json" });
+      if (navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], title: "Fuel backup" }); return "Sent to the share sheet."; }
+    }
+  } catch (e) { if (e && e.name === "AbortError") return ""; }
+  try {
+    const url = URL.createObjectURL(new Blob([text], { type: "application/json" }));
+    const a = document.createElement("a"); a.href = url; a.download = name;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    return "Saved as " + name + ".";
+  } catch (e) { return "Couldn't save the file — use COPY BACKUP instead."; }
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return "Backup copied. Paste it somewhere safe."; } catch (e) {}
+  try {
+    const ta = document.createElement("textarea"); ta.value = text;
+    ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select(); const ok = document.execCommand("copy"); ta.remove();
+    if (ok) return "Backup copied. Paste it somewhere safe.";
+  } catch (e) {}
+  return "Couldn't reach the clipboard — use EXPORT TO FILE instead.";
+}
+
+function Backup({ onExport, onImport }) {
+  const [txt, setTxt] = useState("");
+  const [msg, setMsg] = useState(null);
+  const fileRef = useRef(null);
+  const say = (m) => { if (m) { setMsg(m); buzz(30); } };
+  const doImport = async (text) => { const r = await onImport(text); say(r.msg); if (r.ok) setTxt(""); };
+  return (
+    <div style={{ borderTop: "1px solid " + C.line, marginTop: 14, paddingTop: 14 }}>
+      <Eye c={C.frost}>Backup — your data lives only on this phone</Eye>
+      <Note s={{ marginTop: 0 }}>Nothing is stored on a server and there is no sign-in. Export before you change phone, clear Safari's data, or delete the app.</Note>
+      <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+        <Btn small c={C.frost} s={{ flex: 1 }} on={async () => say(await copyText(await onExport()))}>COPY BACKUP</Btn>
+        <Btn small c={C.frost} s={{ flex: 1 }} on={async () => say(await shareOrDownload(await onExport()))}>EXPORT TO FILE</Btn>
+      </div>
+      <div style={{ marginTop: 14 }}>
+        <Lab>Restore — paste a backup here</Lab>
+        <textarea value={txt} onChange={(e) => setTxt(e.target.value)} placeholder='{"app":"optimal-8-fuel",…}' rows={3}
+          style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: 12, padding: 8, resize: "vertical" })} />
+        <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+          <Btn small c={C.sage} s={{ flex: 1 }} dis={!txt.trim()} on={() => doImport(txt)}>IMPORT PASTED TEXT</Btn>
+          <Btn small c={C.sage} s={{ flex: 1 }} on={() => fileRef.current && fileRef.current.click()}>IMPORT FROM FILE</Btn>
+        </div>
+        <input ref={fileRef} type="file" accept="application/json,.json,text/plain" style={{ display: "none" }}
+          onChange={async (e) => { const f = e.target.files && e.target.files[0]; e.target.value = ""; if (!f) return;
+            try { await doImport(await f.text()); } catch (err) { say("Couldn't read that file."); } }} />
+      </div>
+      {msg ? <Note c={C.honey}>{msg}</Note> : null}
+      <Note s={{ fontStyle: "italic" }}>Importing replaces what's in the app with what's in the backup.</Note>
+    </div>);
+}
+
+const TFld = ({ v, on }) => <input type="time" value={v || ""} onChange={(e) => on(e.target.value)}
+  style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: 15, padding: "9px 6px", textAlign: "center", minHeight: 44 })} />;
+
 function Settings({ st, setSt, week, close, onExport, onImport }) {
+  const presets = st.presets || DEFAULT_PRESETS();
+  const breaks = st.breaks || DEFAULT_BREAKS();
+  const len = st.len || DEFAULT_LEN();
+  const setPreset = (g, i, v) => { const n = Object.assign({}, presets); const row = (n[g] || []).slice(); row[i] = v; n[g] = row; setSt(Object.assign({}, st, { presets: n })); };
+  const setBreak = (i, v) => { const n = breaks.slice(); n[i] = v; setSt(Object.assign({}, st, { breaks: n })); };
+  const setLen = (k, v) => setSt(Object.assign({}, st, { len: Object.assign({}, len, { [k]: v === "" ? "" : Number(v) }) }));
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(20,17,13,.94)", zIndex: 95, overflowY: "auto" }} onClick={close}>
       <div className="rise" onClick={(e) => e.stopPropagation()} style={{ background: C.card, maxWidth: 640, margin: "24px auto", marginTop: "calc(24px + env(safe-area-inset-top))", marginBottom: "calc(24px + env(safe-area-inset-bottom))", borderRadius: 8, border: "1px solid " + C.line, padding: 16 }}>
@@ -625,13 +757,44 @@ function Settings({ st, setSt, week, close, onExport, onImport }) {
               <span style={{ position: "absolute", top: 2, left: st[x[0]] ? 18 : 2, width: 18, height: 18, borderRadius: 9, background: C.bone, transition: "left .15s" }} /></span>
             <span style={{ flex: 1 }}><div style={Object.assign({}, bdy, { fontSize: 13.5, fontWeight: 600, color: C.bone })}>{x[1]}</div><div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash })}>{x[2]}</div></span>
           </div>))}
+        <div style={{ borderTop: "1px solid " + C.line, marginTop: 14, paddingTop: 14 }}>
+          <Eye c={C.ember}>Session times</Eye>
+          <Note s={{ marginTop: 0 }}>The start times TODAY offers you. Leave a slot blank to drop it.</Note>
+          {[["week", "Monday to Thursday — session start"], ["fri", "Friday — wake"], ["wend", "Saturday and Sunday — session start"]].map((g) => (
+            <div key={g[0]} style={{ marginTop: 10 }}>
+              <Lab>{g[1]}</Lab>
+              <div style={{ display: "flex", gap: 6 }}>
+                {[0, 1, 2].map((i) => <div key={i} style={{ flex: 1, minWidth: 0 }}><TFld v={(presets[g[0]] || [])[i]} on={(v) => setPreset(g[0], i, v)} /></div>)}
+              </div>
+            </div>))}
+
+          <div style={{ marginTop: 14 }}>
+            <Lab>Break times at work — where the two BATCH portions land</Lab>
+            <div style={{ display: "flex", gap: 6 }}>
+              {[0, 1].map((i) => <div key={i} style={{ flex: 1, minWidth: 0 }}><TFld v={breaks[i]} on={(v) => setBreak(i, v)} /></div>)}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 14 }}>
+            <Lab>Session length in minutes — taken from the plan</Lab>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+              {[["mon", "MON"], ["tue", "TUE"], ["wed", "WED"], ["thu", "THU"], ["sat", "SAT"], ["sun", "SUN"]].map((x) => (
+                <div key={x[0]} style={{ flex: "1 1 30%", minWidth: 0 }}>
+                  <div style={Object.assign({}, mno, { fontSize: 8, color: C.ash, letterSpacing: 1, textAlign: "center", marginBottom: 3 })}>{x[1]}</div>
+                  <Fld v={len[x[0]]} on={(v) => setLen(x[0], v)} />
+                </div>))}
+            </div>
+            <Note>The porridge lands a session-length after you start; the weekend bottle a quarter of an hour after that.</Note>
+          </div>
+        </div>
+
         <Backup onExport={onExport} onImport={onImport} />
       </div>
     </div>);
 }
 
 const KEYS = { st: "fu8-settings", done: "fu8-done", cook: "fu8-cook", foods: "fu8-foods", shop: "fu8-shop" };
-const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true });
+const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true, presets: DEFAULT_PRESETS(), breaks: DEFAULT_BREAKS(), len: DEFAULT_LEN(), pick: null });
 export default function App() {
   const [st, setStRaw] = useState(DEFAULT_ST);
   const [loaded, setLoaded] = useState(false);
@@ -680,11 +843,19 @@ export default function App() {
   const L = st.iron ? 18 : 16;
   const week = useMemo(() => { const wk = Math.floor((mondayOf(new Date()) - mondayOf(parseISO(st.start))) / 604800000); return wk < 0 ? 1 : (wk % L) + 1; }, [st.start, L]);
   const dateK = iso(new Date());
+  /* The pick is stamped with the day it was made, so it lapses at midnight. */
+  const picks = st.pick && st.pick.date === dateK ? (st.pick.sel || {}) : {};
+  const setPick = (k, v) => {
+    const sel = Object.assign({}, picks);
+    if (v) sel[k] = v; else delete sel[k];
+    setSt(Object.assign({}, st, { pick: { date: dateK, sel } }));
+  };
   const dayDone = (doneAll[dateK + "-" + day]) || {};
   const tick = (i) => { const k = dateK + "-" + day; const cur = Object.assign({}, doneAll[k]); cur[i] = !cur[i]; const n = Object.assign({}, doneAll); n[k] = cur; setDoneAll(n); buzz(25); };
   useEffect(() => { const id = setInterval(() => { if (!st.sound) return; const t = todayKey(); const nm = nowMin();
-    D[t].feeds.forEach((f, i) => { if (f.b && tMin(f.t) === nm && !chimed.current[dateK + i] && !((doneAll[dateK + "-" + t] || {})[i])) { chimed.current[dateK + i] = 1; beep(660, 200); setTimeout(() => beep(880, 350), 220); buzz([120, 60, 120]); } });
-  }, 20000); return () => clearInterval(id); }, [st.sound, doneAll, beep]);
+    const sel = st.pick && st.pick.date === iso(new Date()) ? (st.pick.sel || {}) : {};
+    retime(t, D[t].feeds, sel[t], st).forEach((f, i) => { if (f.b && tMin(f.t) === nm && !chimed.current[dateK + i] && !((doneAll[dateK + "-" + t] || {})[i])) { chimed.current[dateK + i] = 1; beep(660, 200); setTimeout(() => beep(880, 350), 220); buzz([120, 60, 120]); } });
+  }, 20000); return () => clearInterval(id); }, [st, doneAll, beep]);
   const TABS = [["today", "TODAY"], ["cook", "COOK"], ["shop", "SHOP"], ["plan", "PLAN"]];
   return (
     <div style={Object.assign({}, bdy, { background: C.ink, minHeight: "100vh", color: C.bone })}>
@@ -708,7 +879,7 @@ export default function App() {
       <div style={{ padding: "13px 13px 150px", maxWidth: 640, margin: "0 auto" }}>
         {!loaded ? <div style={Object.assign({}, mno, { fontSize: 11, color: C.ash, padding: "40px 0", textAlign: "center" })}>LOADING…</div> : (
           <div>
-            {tab === "today" ? <Today day={day} setDay={setDay} week={week} cycle={L} done={dayDone} tick={tick} cook={cook} sound={st.sound} /> : null}
+            {tab === "today" ? <Today day={day} setDay={setDay} week={week} cycle={L} done={dayDone} tick={tick} cook={cook} sound={st.sound} st={st} pick={picks[day]} setPick={setPick} /> : null}
             {tab === "cook" ? <Cook cook={cook} setCook={setCook} foods={foods} setFoods={setFoods} K={K} /> : null}
             {tab === "shop" ? <Shop shop={shop} setShop={setShop} /> : null}
             {tab === "plan" ? <PlanView /> : null}

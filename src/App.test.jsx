@@ -67,6 +67,54 @@ describe("Fuel · Optimal 8 Fighter", () => {
     }
   });
 
+  it("opens Settings with its session-time controls", async () => {
+    await mounted();
+    fireEvent.click(screen.getByLabelText("Settings"));
+    expect(await screen.findByText("SETTINGS")).toBeTruthy();
+    expect(screen.getByText(/Monday to Thursday — session start/)).toBeTruthy();
+    expect(screen.getByText(/Break times at work/)).toBeTruthy();
+    expect(screen.getByText(/Session length in minutes/)).toBeTruthy();
+    expect(screen.getByText(/Backup/)).toBeTruthy();
+  });
+
+  it("re-times the morning around a tapped start and leaves the afternoon alone", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+
+    const at = (label) => {
+      const card = screen.getAllByTestId("feed").find((el) => new RegExp(label).test(el.textContent));
+      return card.textContent.slice(0, 5);
+    };
+    expect(at("HALF BOTTLE \\+ BANANA")).toBe("03:10");
+
+    fireEvent.click(screen.getByRole("button", { name: "04:30" }));
+    expect(at("HALF BOTTLE \\+ BANANA")).toBe("04:10");   // start − 20
+    expect(at("PORRIDGE")).toBe("05:35");                 // start + 65 min
+    expect(at("BATCH")).toBe("09:00");                    // first break
+    expect(at("TWO BANANAS")).toBe("15:00");              // 15:00 onward is fixed
+    expect(at("STEAK & EGGS")).toBe("18:30");
+    expect(at("CASEIN")).toBe("21:00");
+
+    fireEvent.click(screen.getByRole("button", { name: "04:30" }));
+    expect(at("HALF BOTTLE \\+ BANANA")).toBe("03:10");   // back to the plan's times
+    expect(at("PORRIDGE")).toBe("04:50");
+  });
+
+  it("offers a wake row on Friday and weekend starts at the weekend", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("FRI"));
+    expect(screen.getByText("Wake")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "05:30" }));
+    const porridge = screen.getAllByTestId("feed").find((el) => /PORRIDGE/.test(el.textContent));
+    expect(porridge.textContent.slice(0, 5)).toBe("05:45");   // wake + 15
+
+    fireEvent.click(screen.getByText("SAT"));
+    expect(screen.getByText("Session start")).toBeTruthy();
+    fireEvent.click(screen.getByRole("button", { name: "08:15" }));
+    const post = screen.getAllByTestId("feed").find((el) => /HALF BOTTLE \+ 2 BANANAS/.test(el.textContent));
+    expect(post.textContent.slice(0, 5)).toBe("10:00");       // start + 90 + 15
+  });
+
   it("renders every section of the plan document", async () => {
     await mounted();
     fireEvent.click(screen.getByText("PLAN"));
