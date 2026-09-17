@@ -37,6 +37,7 @@ const num = (v) => { if (v === "" || v === null || v === undefined) return null;
 const mmss = (s) => { const a = Math.max(0, Math.round(s)), m = Math.floor(a / 60), x = a % 60; return m + ":" + (x < 10 ? "0" : "") + x; };
 const r5 = (n) => Math.round(n / 5) * 5;
 const iso = (d) => { const z = new Date(d); z.setMinutes(z.getMinutes() - z.getTimezoneOffset()); return z.toISOString().slice(0, 10); };
+const sundayOf = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - (x.getDay() === 0 ? 0 : x.getDay())); return x; };
 const mondayOf = (d) => { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; };
 const parseISO = (s) => { const p = String(s).split("-").map(Number); return new Date(p[0], p[1] - 1, p[2]); };
 const DAYS = ["mon", "tue", "wed", "thu", "fri", "sat", "sun"];
@@ -509,6 +510,221 @@ function Shop({ shop, setShop }) {
    PLAN + SETTINGS + SHELL
    ================================================================ */
 /* ================================================================
+   THE REFEREE — the tape and the scale. No calorie burn anywhere:
+   what the numbers do over weeks is the only verdict that counts.
+   ================================================================ */
+/* Small multiples, one measure per chart. Arm sits near 39cm and shoulder
+   near 121cm, so a shared axis would flatten both into straight lines —
+   each gets its own scale instead. Colours are the app's own, and every
+   chart's title names its single series, so identity is never colour-alone. */
+const MEASURES = [
+  { k: "kg", n: "BODYWEIGHT", unit: "kg", c: C.sage },
+  { k: "waist", n: "WAIST", unit: "cm", c: C.ember },
+  { k: "arm", n: "ARM", unit: "cm", c: C.honey, every4: true },
+  { k: "shoulder", n: "SHOULDER", unit: "cm", c: C.frost, every4: true },
+];
+const UPPER = MEASURES.filter((m) => m.every4);
+const WEEKLY = MEASURES.filter((m) => !m.every4);
+const DAY_MS = 86400000;
+const weeksBetween = (a, b) => (parseISO(b) - parseISO(a)) / (DAY_MS * 7);
+
+/* Least-squares slope in units per week. Null under two points. */
+function slope(pts) {
+  if (!pts || pts.length < 2) return null;
+  const t0 = parseISO(pts[0].d);
+  const xs = pts.map((p) => (parseISO(p.d) - t0) / (DAY_MS * 7)), ys = pts.map((p) => p.v);
+  const n = xs.length, mx = xs.reduce((a, b) => a + b, 0) / n, my = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) { num += (xs[i] - mx) * (ys[i] - my); den += (xs[i] - mx) ** 2; }
+  return den === 0 ? null : num / den;
+}
+const series = (rows, k) => rows.filter((r) => r[k] != null && r[k] !== "").map((r) => ({ d: r.d, v: Number(r[k]) }));
+const within = (pts, days) => { if (!pts.length) return []; const last = parseISO(pts[pts.length - 1].d); return pts.filter((p) => (last - parseISO(p.d)) <= days * DAY_MS); };
+const fmt = (v, dp) => (v > 0 ? "+" : "") + v.toFixed(dp == null ? 1 : dp);
+
+/* The three rules from THE FEEDBACK LOOP, read off the logged numbers. */
+function verdicts(rows) {
+  const kg = series(rows, "kg"), waist = series(rows, "waist");
+  const arm = series(rows, "arm"), sh = series(rows, "shoulder");
+  const out = [];
+
+  /* 1 — waist climbing faster than arms and shoulders, over the tape window */
+  const taped = rows.filter((r) => r.waist != null && r.waist !== "" && ((r.arm != null && r.arm !== "") || (r.shoulder != null && r.shoulder !== "")));
+  if (taped.length >= 2) {
+    const a = taped[taped.length - 2], b = taped[taped.length - 1];
+    const wk = weeksBetween(a.d, b.d);
+    const dW = Number(b.waist) - Number(a.waist);
+    const ups = [];
+    if (a.arm != null && a.arm !== "" && b.arm != null && b.arm !== "") ups.push(Number(b.arm) - Number(a.arm));
+    if (a.shoulder != null && a.shoulder !== "" && b.shoulder != null && b.shoulder !== "") ups.push(Number(b.shoulder) - Number(a.shoulder));
+    const dU = ups.length ? ups.reduce((x, y) => x + y, 0) / ups.length : 0;
+    out.push({ id: "waist", lit: dW > 0 && dW > dU,
+      head: "Waist climbing faster than arms and shoulders",
+      act: "Cut 100–150 kcal — one of the 3pm bananas on Monday and Thursday.",
+      read: "Waist " + fmt(dW) + " cm against " + fmt(dU) + " cm up top, over " + wk.toFixed(0) + " week" + (Math.round(wk) === 1 ? "" : "s") + "." });
+  } else {
+    out.push({ id: "waist", lit: false, head: "Waist climbing faster than arms and shoulders",
+      act: "Cut 100–150 kcal — one of the 3pm bananas on Monday and Thursday.",
+      read: "Needs two tape sessions with waist and arm or shoulder." });
+  }
+
+  /* 2 — nothing moving in six weeks, waist flat */
+  const six = within(kg, 45), sixW = within(waist, 45);
+  if (six.length >= 3 && sixW.length >= 2 && weeksBetween(six[0].d, six[six.length - 1].d) >= 5.5) {
+    const kgWk = slope(six), wWk = slope(sixW);
+    const upWk = [slope(within(arm, 45)), slope(within(sh, 45))].filter((x) => x != null);
+    const upFlat = !upWk.length || upWk.every((x) => x <= 0.02);
+    out.push({ id: "stuck", lit: Math.abs(wWk) <= 0.08 && Math.abs(kgWk) <= 0.06 && upFlat,
+      head: "Nothing moving in six weeks, waist flat",
+      act: "Add 200 kcal — one extra CARB TOP-UP.",
+      read: "Weight " + fmt(kgWk * 6, 1) + " kg and waist " + fmt(wWk * 6, 1) + " cm over the last six weeks." });
+  } else {
+    out.push({ id: "stuck", lit: false, head: "Nothing moving in six weeks, waist flat",
+      act: "Add 200 kcal — one extra CARB TOP-UP.",
+      read: "Needs six weeks of weekly weigh-ins." });
+  }
+
+  /* 3 — bodyweight falling more than half a kilo a week */
+  const four = within(kg, 28);
+  if (four.length >= 3) {
+    const kgWk = slope(four);
+    out.push({ id: "falling", lit: kgWk < -0.5,
+      head: "Bodyweight falling more than 0.5 kg a week",
+      act: "Add the CARB TOP-UP and a rice pouch on the light days. You're under-eating — the answer is food, not a program change.",
+      read: "Trending " + fmt(kgWk, 2) + " kg a week over the last four." });
+  } else {
+    out.push({ id: "falling", lit: false, head: "Bodyweight falling more than 0.5 kg a week",
+      act: "Add the CARB TOP-UP and a rice pouch on the light days.",
+      read: "Needs three weekly weigh-ins." });
+  }
+  return out;
+}
+
+/* A thin trend line. One axis per chart — weight and waist never share one. */
+function Trend({ lines, unit }) {
+  const W = 300, H = 92, P = { l: 4, r: 4, t: 10, b: 16 };
+  const all = lines.flatMap((l) => l.pts);
+  if (all.length < 2) return <div style={Object.assign({}, bdy, { fontSize: 12, color: C.ash, fontStyle: "italic", padding: "14px 0" })}>Two entries and the line starts.</div>;
+  const xs = all.map((p) => parseISO(p.d).getTime());
+  const x0 = Math.min(...xs), x1 = Math.max(...xs);
+  const vs = all.map((p) => p.v);
+  let lo = Math.min(...vs), hi = Math.max(...vs);
+  if (hi - lo < 1e-6) { lo -= 1; hi += 1; }
+  const pad = (hi - lo) * 0.18; lo -= pad; hi += pad;
+  const X = (d) => P.l + (x1 === x0 ? (W - P.l - P.r) / 2 : (parseISO(d).getTime() - x0) / (x1 - x0) * (W - P.l - P.r));
+  const Y = (v) => P.t + (1 - (v - lo) / (hi - lo)) * (H - P.t - P.b);
+  return (
+    <svg viewBox={"0 0 " + W + " " + H} width="100%" height={H} role="img" style={{ display: "block", overflow: "visible" }}>
+      {[0, 0.5, 1].map((f) => <line key={f} x1={P.l} x2={W - P.r} y1={P.t + f * (H - P.t - P.b)} y2={P.t + f * (H - P.t - P.b)} stroke={C.line} strokeWidth="1" />)}
+      {lines.map((l) => <polyline key={l.k} fill="none" stroke={l.c} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
+        points={l.pts.map((p) => X(p.d) + "," + Y(p.v)).join(" ")} />)}
+      {lines.map((l) => l.pts.map((p, i) => <circle key={l.k + i} cx={X(p.d)} cy={Y(p.v)} r="4" fill={l.c} stroke={C.card} strokeWidth="2" />))}
+      {lines.map((l) => { const p = l.pts[l.pts.length - 1];
+        return <text key={l.k + "lab"} x={Math.min(X(p.d) + 7, W - 2)} y={Y(p.v) - 7} textAnchor={X(p.d) > W - 60 ? "end" : "start"}
+          style={Object.assign({}, mno, { fontSize: 10, fontWeight: 700 })} fill={C.bone}>{p.v}{unit}</text>; })}
+    </svg>);
+}
+
+function Referee({ tape, setTape }) {
+  const rows = (tape || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
+  const [d, setD] = useState(iso(sundayOf(new Date())));
+  const [f, setF] = useState({ kg: "", waist: "", arm: "", shoulder: "" });
+  const [msg, setMsg] = useState(null);
+  const set = (k) => (v) => setF(Object.assign({}, f, { [k]: v }));
+
+  const existing = rows.find((r) => r.d === d);
+  const save = () => {
+    const row = { d };
+    for (const k of ["kg", "waist", "arm", "shoulder"]) { const n = num(f[k]); if (n != null) row[k] = n; }
+    if (Object.keys(row).length < 2) { setMsg("Put a number in first."); return; }
+    const merged = existing ? Object.assign({}, existing, row) : row;
+    setTape(rows.filter((r) => r.d !== d).concat([merged]).sort((a, b) => a.d < b.d ? -1 : 1));
+    setF({ kg: "", waist: "", arm: "", shoulder: "" });
+    setMsg(existing ? "Updated " + d + "." : "Logged " + d + ".");
+    buzz([60, 40, 60]);
+  };
+  const drop = (date) => { setTape(rows.filter((r) => r.d !== date)); buzz(30); };
+
+  const V = verdicts(rows);
+  const lit = V.filter((v) => v.lit);
+  const latest = (k) => { const p = series(rows, k); return p.length ? p[p.length - 1].v : null; };
+
+  return (
+    <div>
+      <Card ac={C.ember}>
+        <Eye c={C.ember}>The referee</Eye>
+        <Note s={{ marginTop: 0 }}>Bodyweight and waist every Sunday; arm and shoulder every four weeks. Nothing here counts calories burned — what the tape and the scale do over weeks is the only verdict that counts.</Note>
+        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+          {MEASURES.map((m) => { const v = latest(m.k);
+            return (
+              <div key={m.k} style={{ flex: 1, minWidth: 0 }}>
+                <div style={Object.assign({}, mno, { fontSize: 7.5, letterSpacing: 1, color: C.ash })}>{m.n}</div>
+                <div style={Object.assign({}, mno, { fontSize: 17, fontWeight: 700, color: v == null ? C.line : m.c, lineHeight: 1.2 })}>{v == null ? "—" : v}</div>
+              </div>); })}
+        </div>
+      </Card>
+
+      <Card>
+        <Eye c={C.honey}>Log a reading</Eye>
+        <Lab>Date — Sunday</Lab>
+        <Fld type="date" v={d} on={(v) => { if (v) setD(v); }} s={{ textAlign: "left" }} />
+        {[["Every Sunday", WEEKLY, { "kg": "80.4", "waist": "84" }], ["Every four weeks", UPPER, { "arm": "39.5", "shoulder": "121" }]].map((g) => (
+          <div key={g[0]} style={{ marginTop: 10 }}>
+            <Lab>{g[0]}</Lab>
+            <div style={{ display: "flex", gap: 6 }}>
+              {g[1].map((m) => (
+                <div key={m.k} style={{ flex: 1, minWidth: 0 }}>
+                  <Lab>{m.n.toLowerCase()} {m.unit}</Lab>
+                  <Fld v={f[m.k]} on={set(m.k)} ph={existing && existing[m.k] != null ? String(existing[m.k]) : g[2][m.k]} />
+                </div>))}
+            </div>
+          </div>))}
+        <Btn c={C.sage} fill s={{ width: "100%", marginTop: 12 }} on={save}>{existing ? "UPDATE THIS SUNDAY" : "LOG IT"}</Btn>
+        {msg ? <Note c={C.honey}>{msg}</Note> : null}
+      </Card>
+
+      {MEASURES.map((m) => (
+        <Card key={m.k} ac={m.c}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+            <Eye c={m.c} s={{ marginBottom: 0 }}>{m.n} · {m.unit}</Eye>
+            <span style={Object.assign({}, mno, { fontSize: 9, color: C.ash, whiteSpace: "nowrap" })}>{series(rows, m.k).length} ENTRIES{m.every4 ? " · EVERY 4 WEEKS" : ""}</span>
+          </div>
+          <Trend lines={[{ k: m.k, c: m.c, pts: series(rows, m.k) }]} unit={m.unit} />
+        </Card>))}
+
+      <Card ac={lit.length ? C.copper : C.sage}>
+        <Eye c={lit.length ? C.copper : C.sage}>The feedback loop — read off your numbers</Eye>
+        {V.map((v) => (
+          <div key={v.id} style={{ borderTop: "1px solid " + C.line, padding: "10px 0 2px" }}>
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
+              <span style={Object.assign({}, mno, { fontSize: 9, fontWeight: 700, color: v.lit ? C.copper : C.line, flexShrink: 0, marginTop: 2 })}>{v.lit ? "●" : "○"}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <div style={Object.assign({}, bdy, { fontSize: 13, fontWeight: 600, color: v.lit ? C.bone : C.ash })}>{v.head}</div>
+                <div style={Object.assign({}, mno, { fontSize: 10, color: v.lit ? C.honey : C.ash, marginTop: 3 })}>{v.read}</div>
+                {v.lit ? <div style={Object.assign({}, bdy, { fontSize: 12.5, color: C.bone, marginTop: 5, lineHeight: 1.5 })}>{v.act}</div> : null}
+              </span>
+            </div>
+          </div>))}
+        {!lit.length ? <Note c={C.sage} bold>Arms and shoulders up, waist flat — correct. Change nothing.</Note> : null}
+      </Card>
+
+      <Card>
+        <Eye>Every reading</Eye>
+        {rows.length ? rows.slice().reverse().map((r) => (
+          <div key={r.d} style={{ display: "flex", gap: 8, alignItems: "center", padding: "8px 0", borderTop: "1px solid " + C.line }}>
+            <span style={Object.assign({}, mno, { fontSize: 10, color: C.ash, width: 74, flexShrink: 0 })}>{r.d}</span>
+            <span style={{ flex: 1, minWidth: 0, display: "flex", flexWrap: "wrap", gap: "2px 10px" }}>
+              {MEASURES.map((m) => r[m.k] == null ? null : (
+                <span key={m.k} style={Object.assign({}, mno, { fontSize: 11, color: m.c, whiteSpace: "nowrap" })}>
+                  <span style={{ fontSize: 8, color: C.ash, letterSpacing: 1, marginRight: 3 }}>{m.n.slice(0, 2)}</span>{r[m.k]}</span>))}
+            </span>
+            <button onClick={() => drop(r.d)} aria-label={"Delete " + r.d} style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: 32, height: 32, cursor: "pointer", fontSize: 13, flexShrink: 0 })}>×</button>
+          </div>)) : <Note s={{ fontStyle: "italic" }}>Nothing logged yet. Tape every four to six weeks; waist is the number that decides.</Note>}
+      </Card>
+    </div>);
+}
+
+/* ================================================================
    PLAN — the fuel document itself, bundled so it reads with no signal.
    The document uses headings, rules, tables and bold. Nothing else,
    so the parser only has to cover those four.
@@ -782,7 +998,7 @@ function Settings({ st, setSt, week, close, onExport, onImport }) {
     </div>);
 }
 
-const KEYS = { st: "fu8-settings", done: "fu8-done", cook: "fu8-cook", foods: "fu8-foods", shop: "fu8-shop" };
+const KEYS = { st: "fu8-settings", done: "fu8-done", cook: "fu8-cook", foods: "fu8-foods", shop: "fu8-shop", tape: "fu8-tape" };
 const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true, breaks: DEFAULT_BREAKS(), len: DEFAULT_LEN(), pick: null });
 export default function App() {
   const [st, setStRaw] = useState(DEFAULT_ST);
@@ -793,12 +1009,13 @@ export default function App() {
   const [cook, setCookRaw] = useState(null);
   const [foods, setFoodsRaw] = useState([]);
   const [shop, setShopRaw] = useState({});
+  const [tape, setTapeRaw] = useState([]);
   const [showSet, setShowSet] = useState(false);
   const beep = useBeep(st.sound);
   const K = useKTimer(beep);
   const chimed = useRef({});
   const mk = (setter, key) => (v) => { setter(v); save(key, v); };
-  const setSt = mk(setStRaw, KEYS.st), setDoneAll = mk(setDoneRaw, KEYS.done), setCook = mk(setCookRaw, KEYS.cook), setFoods = mk(setFoodsRaw, KEYS.foods), setShop = mk(setShopRaw, KEYS.shop);
+  const setSt = mk(setStRaw, KEYS.st), setDoneAll = mk(setDoneRaw, KEYS.done), setCook = mk(setCookRaw, KEYS.cook), setFoods = mk(setFoodsRaw, KEYS.foods), setShop = mk(setShopRaw, KEYS.shop), setTape = mk(setTapeRaw, KEYS.tape);
 
   /* --- backup: all five fu8 keys, out and back in --------------------- */
   const buildBackup = useCallback(async () => {
@@ -811,22 +1028,22 @@ export default function App() {
     try { obj = JSON.parse(String(text).trim()); } catch (e) { return { ok: 0, msg: "That isn't a Fuel backup — check you pasted the whole thing." }; }
     const data = obj && typeof obj === "object" && obj.data && typeof obj.data === "object" ? obj.data : obj;
     if (!data || typeof data !== "object") return { ok: 0, msg: "That isn't a Fuel backup." };
-    const setters = { st: setStRaw, done: setDoneRaw, cook: setCookRaw, foods: setFoodsRaw, shop: setShopRaw };
+    const setters = { st: setStRaw, done: setDoneRaw, cook: setCookRaw, foods: setFoodsRaw, shop: setShopRaw, tape: setTapeRaw };
     const found = Object.keys(KEYS).filter((short) => Object.prototype.hasOwnProperty.call(data, KEYS[short]));
     if (!found.length) return { ok: 0, msg: "No Fuel data found in that backup." };
     for (const short of found) {
       let v = data[KEYS[short]];
       if (short === "st") v = Object.assign(DEFAULT_ST(), v || {});
       if (short === "done" || short === "shop") v = v || {};
-      if (short === "foods") v = Array.isArray(v) ? v : [];
+      if (short === "foods" || short === "tape") v = Array.isArray(v) ? v : [];
       await save(KEYS[short], v);
       setters[short](v);
     }
-    return { ok: 1, msg: "Restored " + found.length + " of 5 sections. You're back." };
+    return { ok: 1, msg: "Restored " + found.length + " of " + Object.keys(KEYS).length + " sections. You're back." };
   }, []);
   useEffect(() => { (async () => {
     const s = await load(KEYS.st, null); if (s) setStRaw(s); else save(KEYS.st, st);
-    setDoneRaw(await load(KEYS.done, {})); setCookRaw(await load(KEYS.cook, null)); setFoodsRaw(await load(KEYS.foods, [])); setShopRaw(await load(KEYS.shop, {}));
+    setDoneRaw(await load(KEYS.done, {})); setCookRaw(await load(KEYS.cook, null)); setFoodsRaw(await load(KEYS.foods, [])); setShopRaw(await load(KEYS.shop, {})); setTapeRaw(await load(KEYS.tape, []));
     setLoaded(true);
   })(); }, []);
   const L = st.iron ? 18 : 16;
@@ -845,7 +1062,7 @@ export default function App() {
     const sel = st.pick && st.pick.date === iso(new Date()) ? (st.pick.sel || {}) : {};
     retime(t, D[t].feeds, sel[t], st).forEach((f, i) => { if (f.b && tMin(f.t) === nm && !chimed.current[dateK + i] && !((doneAll[dateK + "-" + t] || {})[i])) { chimed.current[dateK + i] = 1; beep(660, 200); setTimeout(() => beep(880, 350), 220); buzz([120, 60, 120]); } });
   }, 20000); return () => clearInterval(id); }, [st, doneAll, beep]);
-  const TABS = [["today", "TODAY"], ["cook", "COOK"], ["shop", "SHOP"], ["plan", "PLAN"]];
+  const TABS = [["today", "TODAY"], ["cook", "COOK"], ["shop", "SHOP"], ["plan", "PLAN"], ["ref", "REFEREE"]];
   return (
     <div style={Object.assign({}, bdy, { background: C.ink, minHeight: "100vh", color: C.bone })}>
       <style>{FONTS}</style>
@@ -872,6 +1089,7 @@ export default function App() {
             {tab === "cook" ? <Cook cook={cook} setCook={setCook} foods={foods} setFoods={setFoods} K={K} /> : null}
             {tab === "shop" ? <Shop shop={shop} setShop={setShop} /> : null}
             {tab === "plan" ? <PlanView /> : null}
+            {tab === "ref" ? <Referee tape={tape} setTape={setTape} /> : null}
             <div style={Object.assign({}, bdy, { fontSize: 10.5, color: C.ash, textAlign: "center", padding: "24px 0 6px", lineHeight: 1.6 })}>Eat for it. The training only writes the cheque.</div>
           </div>)}
       </div>

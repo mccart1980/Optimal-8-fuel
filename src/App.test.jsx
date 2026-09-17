@@ -123,6 +123,87 @@ describe("Fuel · Optimal 8 Fighter", () => {
     expect(times("HALF BOTTLE \\+ 2 BANANAS")).toBe("10:00"); // start + 90 + 15
   });
 
+  const seedTape = (rows) => window.localStorage.setItem("fu8-tape", JSON.stringify(rows));
+  const sundays = (n) => Array.from({ length: n }, (_, i) => {
+    const d = new Date(2026, 5, 7); d.setDate(d.getDate() + i * 7);
+    return d.toISOString().slice(0, 10);
+  });
+
+  it("logs a reading on THE REFEREE and keeps it", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("REFEREE"));
+    expect(await screen.findByText("The referee")).toBeTruthy();
+    expect(screen.getByText(/Nothing logged yet/)).toBeTruthy();
+
+    const byLabel = (t) => screen.getByText(t).parentElement.querySelector("input");
+    fireEvent.change(byLabel("bodyweight kg"), { target: { value: "80.4" } });
+    fireEvent.change(byLabel("waist cm"), { target: { value: "84" } });
+    fireEvent.click(screen.getByText("LOG IT"));
+
+    expect(screen.getByText(/^Logged /)).toBeTruthy();
+    const saved = JSON.parse(window.localStorage.getItem("fu8-tape"));
+    expect(saved).toHaveLength(1);
+    expect(saved[0].kg).toBe(80.4);
+    expect(saved[0].waist).toBe(84);
+    expect(screen.getByText("UPDATE THIS SUNDAY")).toBeTruthy();
+  });
+
+  it("lights the waist rule when the waist outruns the tape", async () => {
+    const d = sundays(5);
+    seedTape([
+      { d: d[0], kg: 80.0, waist: 84.0, arm: 39.5, shoulder: 121.0 },
+      { d: d[4], kg: 80.6, waist: 85.5, arm: 39.6, shoulder: 121.2 },
+    ]);
+    await mounted();
+    fireEvent.click(screen.getByText("REFEREE"));
+    expect(await screen.findByText(/Waist \+1.5 cm against \+0.2 cm up top/)).toBeTruthy();
+    expect(screen.getByText(/one of the 3pm bananas on Monday and Thursday/)).toBeTruthy();
+    expect(screen.queryByText(/Arms and shoulders up, waist flat/)).toBeNull();
+  });
+
+  it("lights the falling-weight rule below half a kilo a week", async () => {
+    const d = sundays(4);
+    seedTape(d.map((x, i) => ({ d: x, kg: +(81.0 - 0.7 * i).toFixed(1), waist: 84 })));
+    await mounted();
+    fireEvent.click(screen.getByText("REFEREE"));
+    expect(await screen.findByText(/Trending -0.70 kg a week/)).toBeTruthy();
+    expect(screen.getByText(/rice pouch on the light days/)).toBeTruthy();
+  });
+
+  it("holds when arms are up and the waist is flat", async () => {
+    const d = sundays(5);
+    seedTape([
+      { d: d[0], kg: 80.0, waist: 84.0, arm: 39.5, shoulder: 121.0 },
+      { d: d[1], kg: 80.2, waist: 84.0 }, { d: d[2], kg: 80.3, waist: 84.0 },
+      { d: d[3], kg: 80.5, waist: 84.0 },
+      { d: d[4], kg: 80.7, waist: 84.0, arm: 40.1, shoulder: 122.0 },
+    ]);
+    await mounted();
+    fireEvent.click(screen.getByText("REFEREE"));
+    expect(await screen.findByText(/Arms and shoulders up, waist flat/)).toBeTruthy();
+  });
+
+  it("restores the tape numbers from a backup", async () => {
+    await mounted();
+    fireEvent.click(screen.getByLabelText("Settings"));
+    await screen.findByText("SETTINGS");
+
+    const backup = JSON.stringify({
+      app: "optimal-8-fuel", version: 1,
+      data: { "fu8-tape": [{ d: "2026-06-07", kg: 80.4, waist: 84, arm: 39.5, shoulder: 121 }] },
+    });
+    fireEvent.change(screen.getByPlaceholderText(/optimal-8-fuel/), { target: { value: backup } });
+    fireEvent.click(screen.getByText("IMPORT PASTED TEXT"));
+
+    expect(await screen.findByText(/Restored 1 of 6 sections/)).toBeTruthy();
+    expect(JSON.parse(window.localStorage.getItem("fu8-tape"))[0].arm).toBe(39.5);
+
+    fireEvent.click(screen.getByText("CLOSE"));
+    fireEvent.click(screen.getByText("REFEREE"));
+    expect(await screen.findByText("2026-06-07")).toBeTruthy();
+    expect(screen.getAllByText("39.5").length).toBeGreaterThan(0);   // headline and the readings list
+  });
+
   it("renders every section of the plan document", async () => {
     await mounted();
     fireEvent.click(screen.getByText("PLAN"));
