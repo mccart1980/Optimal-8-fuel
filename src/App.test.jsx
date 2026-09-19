@@ -195,13 +195,107 @@ describe("Fuel · Optimal 8 Fighter", () => {
     fireEvent.change(screen.getByPlaceholderText(/optimal-8-fuel/), { target: { value: backup } });
     fireEvent.click(screen.getByText("IMPORT PASTED TEXT"));
 
-    expect(await screen.findByText(/Restored 1 of 6 sections/)).toBeTruthy();
+    expect(await screen.findByText(/Restored 1 of 8 sections/)).toBeTruthy();
     expect(JSON.parse(window.localStorage.getItem("fu8-tape"))[0].arm).toBe(39.5);
 
     fireEvent.click(screen.getByText("CLOSE"));
     fireEvent.click(screen.getByText("REFEREE"));
     expect(await screen.findByText("2026-06-07")).toBeTruthy();
     expect(screen.getAllByText("39.5").length).toBeGreaterThan(0);   // headline and the readings list
+  });
+
+  const dayKcal = () => Number(screen.getByText(/^MONDAY$|^SATURDAY$/).parentElement.textContent
+    .replace(/[^\d]/g, "").slice(0, 4));
+  const feedCard = (re) => screen.getAllByTestId("feed").find((el) => re.test(el.textContent));
+
+  it("swaps a feed to Menu B and recomputes the day", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+    const before = dayKcal();
+    expect(before).toBe(3332);
+
+    fireEvent.click(within(feedCard(/09:00[\s\S]*BATCH/)).getByText("BATCH"));
+    const card = feedCard(/09:00/);
+    fireEvent.click(within(card).getByText("MINCE WRAPS + BANANA"));
+
+    expect(dayKcal()).toBe(3369);                       // 3332 + 37
+    expect(screen.getByText("MENU B IN PLAY")).toBeTruthy();
+    expect(within(feedCard(/09:00/)).getByText("MENU B")).toBeTruthy();
+
+    fireEvent.click(within(feedCard(/09:00/)).getAllByText("BATCH")[0]);
+    expect(dayKcal()).toBe(3332);                       // back to Menu A
+  });
+
+  it("offers Menu B only where the document does", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+    // the A/B chip appears only on the slots the document swaps
+    const chip = (re) => within(feedCard(re)).queryByText(/^MENU [AB]$/);
+    for (const re of [/03:10/, /04:50[\s\S]*PORRIDGE/, /18:30/, /21:00/]) expect(chip(re)).toBeNull();
+    for (const re of [/09:00/, /12:30/, /15:00/]) expect(chip(re)).toBeTruthy();
+    // the 17:00 top-up lives on Tuesday and Friday
+    fireEvent.click(screen.getByText("TUE"));
+    expect(chip(/17:00/)).toBeTruthy();
+  });
+
+  it("runs the drink schedule against the day's target", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+    expect(screen.getByText(/^\/ 4\.50 L$/)).toBeTruthy();
+
+    fireEvent.click(screen.getByLabelText("Mark On waking"));            // 500
+    fireEvent.click(screen.getByLabelText(/Mark Work start/));           // 1000
+    expect(screen.getByText("1.50")).toBeTruthy();
+
+    // the sachet the document pins to the 5:15 litre
+    expect(screen.getByText(/SACHET 1/)).toBeTruthy();
+  });
+
+  it("turns a dark urine check into 500 ml and flags sachet 2", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+    expect(screen.queryByText(/Urine check · 500 ml/)).toBeNull();
+
+    fireEvent.click(screen.getAllByText("DARK")[0]);
+    expect(screen.getByText(/Urine check · 500 ml/)).toBeTruthy();
+    fireEvent.click(screen.getAllByLabelText("Mark Urine check")[0]);
+    expect(screen.getByText("0.50")).toBeTruthy();
+  });
+
+  it("moves the anchored drink rows with the session start", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+    const row = (label) => screen.getByText(label).closest("div").parentElement.parentElement.textContent;
+    expect(row(/In the session · 500 ml/)).toMatch(/03:30/);
+
+    fireEvent.change(screen.getByLabelText("Session start time"), { target: { value: "04:30" } });
+    expect(row(/In the session · 500 ml/)).toMatch(/04:30/);
+    expect(row(/With the porridge · 300 ml/)).toMatch(/05:35/);          // start + 65
+  });
+
+  it("uses the weekend schedule and the sauna toggle", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("SAT"));
+    expect(screen.getByText(/^\/ 4\.0 L$/)).toBeTruthy();
+    expect(screen.queryByText(/Before the sauna/)).toBeNull();
+
+    fireEvent.click(screen.getByText("SAUNA DAY"));
+    expect(screen.getByText(/^\/ 4\.50 L$/)).toBeTruthy();
+    expect(screen.getByText(/Before the sauna/)).toBeTruthy();
+    expect(screen.getByText(/After the sauna/)).toBeTruthy();
+  });
+
+  it("carries Menu B onto the shop list and the cook page", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("SHOP"));
+    expect(screen.getByText(/MENU B — ADDED TO MENU A/)).toBeTruthy();
+    expect(screen.getByText("Wholemeal tortilla wraps, standard (about 40 g)")).toBeTruthy();
+    expect(screen.getByText("10–12")).toBeTruthy();
+
+    fireEvent.click(screen.getByText("COOK"));
+    expect(screen.getByText(/Menu B prep/)).toBeTruthy();
+    expect(screen.getByText("Portion the mince separately.")).toBeTruthy();
+    expect(screen.getByText("Boil the eggs.")).toBeTruthy();
   });
 
   it("renders every section of the plan document", async () => {

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import PLAN_MD from "../fuel-optimal-8-fighter.md?raw";
+import MENUB_MD from "../fuel-menu-b.md?raw";
 
 /* ================================================================
    FUEL — OPTIMAL 8 · companion app
@@ -66,7 +67,18 @@ const B = {
   pasta:     { n: "CHICKEN PASTA", kcal: 916, p: 84, c: 100, f: 20, i: [["Chicken breast", "250g"], ["Pasta", "125g dry"], ["Passata", ""], ["Mushrooms", "150g"]] },
   casein:    { n: "CASEIN", kcal: 130, p: 30, c: 3, f: 1, bn: "Slow protein through the night, on the five nights dinner is early. Three eggs do the same job if you'd rather eat.", i: [["Casein in water", "35g"]] },
   banana:    { n: "BANANA", kcal: 105, p: 1, c: 27, f: 0, i: [["Banana", "1"]] },
+  /* Menu B — the same plan eaten standing up. Every one of these matches the
+     Menu A feed it replaces to within fifty calories. */
+  wraps:     { n: "MINCE WRAPS + BANANA", kcal: 580, p: 42, c: 73, f: 11, menu: "B", cook: "std", bn: "Same mince, same pot — the wraps stand in for the sweet potato. Rolled tight, foiled, made the night before. Cold mince travels in a cool bag with an ice block.", i: [["Wholemeal tortilla wraps", "2 × ~40g"], ["Pot mince, cooked", "1 standard portion"], ["Banana", "1"]] },
+  tunabagel: { n: "TUNA & EGG BAGEL + BANANA", kcal: 590, p: 47, c: 72, f: 12, menu: "B", bn: "Assembled the night before and foiled, or carried as parts and put together at the break. Salt and pepper, nothing else needed.", i: [["Plain bagel", "1"], ["Tuna in spring water", "1 tin, drained"], ["Boiled eggs", "2, sliced"], ["Banana", "1"]] },
+  eggbagel:  { n: "EGG BAGEL + BANANA", kcal: 568, p: 30, c: 72, f: 17, menu: "B", bn: "The lightest on protein of the three and the easiest to carry — nothing to open.", i: [["Plain bagel", "1"], ["Boiled eggs", "3"], ["Banana", "1"]] },
+  onebagel:  { n: "ONE BAGEL", kcal: 230, p: 9, c: 45, f: 1, menu: "B", bn: "The 3pm feed, when two bananas are two things too many to carry. Honey on it if you want; it's 60 calories you'll use.", i: [["Plain bagel", "1"], ["Honey (optional)", "+60 kcal"]] },
+  bageltop:  { n: "BAGEL TOP-UP", kcal: 521, p: 18, c: 106, f: 2, menu: "B", bn: "The 5pm feed on a night you're not home by five — same carbohydrate as the pouch, no fridge, no microwave. It loads tomorrow's session exactly as the pouch does.", i: [["Plain bagels", "2"], ["Honey", "20g"]] },
 };
+
+/* Which Menu A feeds have a Menu B alternative, and what it is. */
+const SWAPS = { batch: ["wraps", "tunabagel", "eggbagel"], batchbig: ["wraps", "tunabagel", "eggbagel"], twoban: ["onebagel"], topup: ["bageltop"] };
+const BIG_NOTE = "Weekend BIG: three wraps instead of two, or a second egg on the tuna bagel — about fifty calories either way.";
 
 /* Day plans — Optimal 8's actual clock */
 const F = (t, b, o) => Object.assign({ t, b }, o);
@@ -136,11 +148,82 @@ function retime(k, feeds, start, st) {
   });
 }
 
+/* ================================================================
+   HYDRATION — the schedule replaces thirst. Fixed times, fixed
+   amounts, ticked off. Rows anchored to a feed follow the session
+   start entered on TODAY; the rest sit on the clock.
+   ================================================================ */
+const FEEDY = ["batch", "batchbig", "wraps", "tunabagel", "eggbagel"];
+const DINNERY = ["steak", "steakbig", "chicken", "pasta"];
+const SACHET = "⚡";
+const HYDRA = {
+  work: [
+    { id: "wake", lab: "On waking", ml: 500, tl: "WAKING", ord: -1, note: "Before the strap reading if you can wait, straight after if not. You lose about half a litre overnight." },
+    { id: "sess", lab: "In the session", ml: 500, at: "event", note: "The gym bottle, sipped between blocks. Not electrolytes — an hour indoors doesn't need them." },
+    { id: "porr", lab: "With the porridge", ml: 300, at: ["porridge", "porridgeb"], note: "The second half of the UFIT counts as another 250." },
+    { id: "start", lab: "Work start — the 1-litre bottle", ml: 1000, t: "05:15", sachet: "SACHET 1", note: "Sip it from now to the first break. It should be empty by 09:00." },
+    { id: "check7", lab: "Check the bottle", ml: 0, t: "07:00", note: "If it's still full, drink 300 ml now." },
+    { id: "feed1", lab: "First feed", ml: 500, at: FEEDY, nth: 0, note: "Refill the litre bottle, plain water." },
+    { id: "u1", lab: "Urine check", check: 1, t: "10:00", note: "Pale straw = carry on. Dark = 500 ml now and sachet 2 at 15:00 today." },
+    { id: "t1045", lab: "Top up", ml: 300, t: "10:45" },
+    { id: "feed2", lab: "Lunch", ml: 500, at: FEEDY, nth: 1 },
+    { id: "t1400", lab: "Top up", ml: 300, t: "14:00", note: "On a hot day or a heavy-sweat day, 500." },
+    { id: "feed3", lab: "The 3pm feed", ml: 500, t: "15:00", sachet: "SACHET 2", sachetIf: 1, note: "With sachet 2 on hot days, heavy-sweat days, or after a dark 10am check. Otherwise plain." },
+    { id: "u2", lab: "Urine check", check: 2, t: "16:00", note: "Dark = 500 ml before 17:00 and salt on dinner." },
+    { id: "top", lab: "Top-up feed", ml: 300, t: "17:00" },
+    { id: "din", lab: "Dinner", ml: 300, at: DINNERY },
+    { id: "last", lab: "Last big drink", ml: 250, t: "20:00", note: "Nothing large after this. Water at 9pm is a 2am toilet trip, and the sleep is worth more than the fluid." },
+  ],
+  wend: [
+    { id: "wake", lab: "On waking", ml: 500, tl: "WAKING", ord: -1 },
+    { id: "porr", lab: "With the porridge", ml: 300, at: ["porridgeb"] },
+    { id: "half", lab: "Half the bottle", ml: 250, at: ["halfban"], note: "Counts as 250." },
+    { id: "sess", lab: "In the session", ml: 750, at: "event", sachet: "A SACHET", note: "Saturday's sprints and Sunday's rounds are the two sessions that drain you. Sunday, on the seven-round weeks, keep sipping through the rounds." },
+    { id: "after", lab: "Straight after", ml: 500, at: ["half2ban"], note: "With the half-bottle and bananas." },
+    { id: "f1", lab: "With the feed", ml: 500, at: FEEDY, nth: 0 },
+    { id: "f2", lab: "With the feed", ml: 500, at: FEEDY, nth: 1 },
+    { id: "t1700", lab: "With the feed", ml: 500, t: "17:00" },
+    { id: "easy", lab: "The easy hour", ml: 500, tl: "EASY HR", ord: 1050, note: "Nasal, easy, and still a litre of sweat in warm weather." },
+    { id: "sauna1", lab: "Before the sauna", ml: 500, tl: "SAUNA", ord: 1065, sauna: 1 },
+    { id: "sauna2", lab: "After the sauna", ml: 500, tl: "SAUNA", ord: 1080, sauna: 1, sachet: "A SECOND SACHET", note: "Twenty minutes in a sauna is half a litre gone. Never sauna dry." },
+    { id: "din", lab: "Dinner", ml: 300, at: DINNERY },
+    { id: "last", lab: "Last big drink", ml: 250, t: "20:00", note: "Same last-drink rule." },
+  ],
+};
+const HYDRA_RULES = [
+  ["The 5:15 litre with the sachet is the one that never moves.", "You start every shift already sweating from a session; this is what stops the day going dark at ten."],
+  ["Pale straw at 10 and 4.", "The check outranks the schedule — dark means more, however much you've drunk."],
+  ["Cramps at night, a headache in the afternoon, a resting heart rate up with no other reason:", "under-replaced yesterday. Sachet 2 today, salt on dinner, and the 14:00 goes to 500."],
+  ["Nothing big after eight.", "The camp runs on sleep."],
+];
+
+/* Friday drops the session bottle and the porridge drink and runs the
+   work-day schedule from the work-start alarm. */
+function hydraFor(day, feeds, bkey, sauna) {
+  const wend = day === "sat" || day === "sun";
+  let rows = (wend ? HYDRA.wend : HYDRA.work).filter((r) => !(day === "fri" && (r.id === "sess" || r.id === "porr")));
+  if (!sauna) rows = rows.filter((r) => !r.sauna);
+  const seen = {};
+  return rows.map((r) => {
+    let mins = r.ord != null ? r.ord : null, tl = r.tl || null;
+    if (r.t) mins = tMin(r.t);
+    if (r.at === "event") { const e = feeds.find((f) => f.ev && f.t); if (e) mins = tMin(e.t); }
+    else if (Array.isArray(r.at)) {
+      const hits = feeds.filter((f, i) => f.b && r.at.indexOf(bkey(f, i)) >= 0);
+      const hit = hits[r.nth || 0];
+      if (hit) mins = tMin(hit.t);
+    }
+    seen[r.id] = 1;
+    return Object.assign({}, r, { mins: mins == null ? 0 : mins, tl });
+  }).sort((a, b) => a.mins - b.mins);
+}
+
 /* Shopping list */
 const SHOP = [
   ["MEAT & EGGS", [["Beef mince 5%", "2.2 kg raw — the batch only"], ["Steak", "3 — one 200 g, two 250 g"], ["Chicken breast", "4 × 250 g"], ["Eggs", "15"]]],
   ["CARBS", [["Sweet potato", "4.3 kg raw"], ["Ben's Original rice pouches", "8"], ["Pasta, dry", "250 g"], ["Quaker Oat So Simple Golden Syrup sachets", "17 — two boxes of 15 last under a fortnight"], ["Honey", "~200 g"], ["Bananas", "~35"]]],
   ["THE REST", [["Passata", "2.5 L — the batch, plus the two chicken dinners"], ["Beef stock", "as needed"], ["UFIT 50 g", "6 bottles"], ["Casein", "a 1 kg tub lasts about six weeks"], ["Milk", "2 L — the porridge only"], ["Mushrooms", "1.3 kg"], ["Electrolytes", "as needed"]]],
+  ["MENU B — ADDED TO MENU A", [["Wholemeal tortilla wraps, standard (about 40 g)", "10–12"], ["Plain bagels", "10"], ["Tuna in spring water", "4 tins"], ["Eggs", "+21 on top of Menu A's 15"], ["Bananas", "+5 — the third banana on full Menu B days"], ["Honey", "as before"], ["A cool bag and a freezer block", "once"], ["A 1-litre bottle and a 500 ml bottle", "once"], ["Electrolyte sachets", "8–12 a week"]]],
   ["SUPPLEMENTS", [["Creatine monohydrate", "5 g every day, any time, in the bottle"], ["Omega-3 (fish oil)", "1–2 g EPA+DHA daily — there is no oily fish anywhere in your diet"], ["Vitamin D", "1,000–2,000 IU daily, October to April"], ["Multivitamin", "as before — cheap insurance"], ["Beta-alanine (optional)", "3.2 g/day split in two; needs four-plus weeks to work, so start week 1 or don't bother. Helps exactly where it hurts: the 40-second repeats, the repeat bursts and the fight sim. The tingling is harmless."]]],
 ];
 
@@ -209,6 +292,66 @@ function KDock({ K }) {
     </div>);
 }
 
+/* The DRINK strip — the day's schedule, ticked off, against its target. */
+function Drink({ day, rows, st8, set }) {
+  const [info, setInfo] = useState(false);
+  const ticks = st8.t || {}, checks = st8.c || {};
+  const wend = day === "sat" || day === "sun";
+  const target = (wend ? 4000 : 4500) + (st8.sauna ? 500 : 0);
+  /* A dark check is 500 ml of its own, per the document. */
+  const mlOf = (r) => r.check ? (checks[r.check] === "dark" ? 500 : 0) : r.ml;
+  const drunk = rows.reduce((a, r) => a + (ticks[r.id] ? mlOf(r) : 0), 0);
+  const pct = Math.min(100, drunk / target * 100);
+  const L = (ml) => (ml / 1000).toFixed(ml % 1000 === 0 ? 1 : 2).replace(/\.00$/, "");
+  return (
+    <Card ac={C.frost} s={{ padding: 0, overflow: "hidden" }}>
+      <div style={{ padding: "12px 14px" }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+          <Eye c={C.frost} s={{ marginBottom: 0 }}>Drink</Eye>
+          <span style={Object.assign({}, mno, { fontSize: 13, fontWeight: 700, color: drunk >= target ? C.sage : C.bone })}>{L(drunk)}<span style={{ fontSize: 9, color: C.ash }}> / {L(target)} L</span></span>
+        </div>
+        <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 8 }}>
+          <div style={{ width: pct + "%", height: "100%", background: drunk >= target ? C.sage : C.frost, borderRadius: 2, transition: "width .3s" }} /></div>
+        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+          {wend ? <button onClick={() => { set({ sauna: !st8.sauna }); buzz(20); }}
+            style={Object.assign({}, mno, { flex: 1, fontSize: 9.5, letterSpacing: 1, padding: "8px 4px", borderRadius: 4, cursor: "pointer", minHeight: 36, background: st8.sauna ? C.copper : "transparent", color: st8.sauna ? C.ink : C.ash, border: "1px solid " + (st8.sauna ? C.copper : C.line) })}>SAUNA DAY</button> : null}
+          <button onClick={() => setInfo(!info)} style={Object.assign({}, mno, { flex: 1, fontSize: 9.5, letterSpacing: 1, padding: "8px 4px", borderRadius: 4, cursor: "pointer", minHeight: 36, background: "transparent", color: C.ash, border: "1px solid " + C.line })}>{info ? "HIDE THE RULES" : "THE FOUR RULES"}</button>
+        </div>
+        {info ? (
+          <div className="rise" style={{ marginTop: 10 }}>
+            {HYDRA_RULES.map((r, i) => (
+              <div key={i} style={{ display: "flex", gap: 8, padding: "6px 0", borderTop: i ? "1px solid " + C.line : "none" }}>
+                <span style={Object.assign({}, mno, { fontSize: 10, color: C.frost, flexShrink: 0 })}>{i + 1}</span>
+                <span style={Object.assign({}, bdy, { fontSize: 12.5, color: C.ash, lineHeight: 1.5 })}><span style={{ color: C.bone, fontWeight: 600 }}>{r[0]}</span> {r[1]}</span>
+              </div>))}
+            <Note s={{ fontStyle: "italic" }}>One 1-litre bottle for work, one 500 ml for the gym, sachets in the bag. Two sachets a day is the ceiling — three only on a sauna day — and salt your food.</Note>
+          </div>) : null}
+      </div>
+
+      <div style={{ borderTop: "1px solid " + C.line }}>
+        {rows.map((r) => { const on = !!ticks[r.id], ml = mlOf(r), dark = checks[r.check] === "dark";
+          const litSachet = r.sachet && (!r.sachetIf || checks[r.sachetIf] === "dark");
+          return (
+            <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 14px", borderTop: "1px solid " + C.line, opacity: on ? .6 : 1 }}>
+              <span style={Object.assign({}, mno, { fontSize: 10, color: C.ash, width: 46, flexShrink: 0 })}>{r.tl || hhmm(r.mins)}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <div style={Object.assign({}, bdy, { fontSize: 13, color: dark ? C.copper : C.bone })}>{r.lab}{ml ? " · " + ml + " ml" : ""}</div>
+                {r.sachet ? <span style={Object.assign({}, mno, { fontSize: 8, letterSpacing: 1, display: "inline-block", marginTop: 3, padding: "1px 5px", borderRadius: 3, color: litSachet ? C.ink : C.ash, background: litSachet ? C.honey : "transparent", border: "1px solid " + (litSachet ? C.honey : C.line) })}>{SACHET} {r.sachet}</span> : null}
+                {r.note ? <div style={Object.assign({}, bdy, { fontSize: 11, color: C.ash, marginTop: 3, lineHeight: 1.45 })}>{r.note}</div> : null}
+                {r.check ? (
+                  <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+                    {["pale", "dark"].map((v) => { const sel = checks[r.check] === v;
+                      return <button key={v} onClick={() => { set({ c: Object.assign({}, checks, { [r.check]: sel ? null : v }) }); buzz(20); }}
+                        style={Object.assign({}, mno, { fontSize: 9.5, letterSpacing: 1, padding: "7px 12px", borderRadius: 4, cursor: "pointer", minHeight: 36, background: sel ? (v === "dark" ? C.copper : C.sage) : "transparent", color: sel ? C.ink : C.ash, border: "1px solid " + (sel ? (v === "dark" ? C.copper : C.sage) : C.line) })}>{v.toUpperCase()}</button>; })}
+                  </div>) : null}
+              </span>
+              <button onClick={() => { set({ t: Object.assign({}, ticks, { [r.id]: !on }) }); buzz(25); }} aria-label={"Mark " + r.lab}
+                style={Object.assign({}, mno, { width: 38, height: 38, borderRadius: 6, cursor: "pointer", fontSize: 15, fontWeight: 700, flexShrink: 0, background: on ? C.frost : "transparent", color: on ? C.ink : C.ash, border: "1px solid " + (on ? C.frost : C.line) })}>{on ? "✓" : "○"}</button>
+            </div>); })}
+      </div>
+    </Card>);
+}
+
 /* ================================================================
    TODAY — the day spine
    ================================================================ */
@@ -219,11 +362,18 @@ function MacroBar({ label, val, max, c }) {
       <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 3 }}><div style={{ width: Math.min(100, val / max * 100) + "%", height: "100%", background: c, borderRadius: 2, transition: "width .3s" }} /></div>
     </div>);
 }
-function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, setPick }) {
+function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, setPick, menu, setMenu, drink, setDrink }) {
   const d = D[day], today = todayKey(), isToday = day === today;
   const dl = done || {};
   const feeds = useMemo(() => retime(day, d.feeds, pick, st), [day, d, pick, st]);
-  const eaten = feeds.reduce((a, f, i) => f.b && dl[i] ? { k: a.k + B[f.b].kcal, p: a.p + B[f.b].p, c: a.c + B[f.b].c, f: a.f + B[f.b].f } : a, { k: 0, p: 0, c: 0, f: 0 });
+  const mn = menu || {};
+  /* A feed shows Menu B only where the document offers one for that slot. */
+  const bkey = (f, i) => (f.b && mn[i] && (SWAPS[f.b] || []).indexOf(mn[i]) >= 0) ? mn[i] : f.b;
+  const tot = feeds.reduce((a, f, i) => { if (!f.b) return a; const b = B[bkey(f, i)];
+    return { k: a.k + b.kcal, p: a.p + b.p, c: a.c + b.c, f: a.f + b.f }; }, { k: 0, p: 0, c: 0, f: 0 });
+  const onB = feeds.some((f, i) => f.b && bkey(f, i) !== f.b);
+  const eaten = feeds.reduce((a, f, i) => { if (!f.b || !dl[i]) return a; const b = B[bkey(f, i)];
+    return { k: a.k + b.kcal, p: a.p + b.p, c: a.c + b.c, f: a.f + b.f }; }, { k: 0, p: 0, c: 0, f: 0 });
   const nm = nowMin();
   const nextIdx = isToday ? feeds.findIndex((f, i) => f.b && !dl[i] && tMin(f.t) >= nm - 5) : -1;
   const [open, setOpen] = useState(null);
@@ -244,6 +394,7 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
           ? <span>Morning re-timed around <span style={{ color: C.honey }}>{pick}</span>.</span>
           : <span>Showing the plan's printed times. Set {wake ? "when you woke" : "when you start"} and the morning moves with it.</span>}</Note>
       </Card>
+      <Drink day={day} rows={hydraFor(day, feeds, bkey, !!(drink || {}).sauna)} st8={drink || {}} set={setDrink} />
       {dload ? <Card ac={C.sage}><Eye c={C.sage}>Easy week {week}</Eye><Note c={C.bone} s={{ marginTop: 0 }}>Keep eating exactly as written — the training drops, the building doesn't. No fight rounds means no mid-session banana on Sunday.</Note></Card> : null}
       {taper ? <Card ac={C.frost}><Eye c={C.frost}>{week === 16 ? "Test week" : "Taper week " + week}</Eye><Note c={C.bone} s={{ marginTop: 0 }}>Volume drops, food holds. Do not cut carbs — arrive at {week === 16 ? "Saturday" : "test day"} full.{week === 16 ? " Test day eats exactly like a normal Saturday." : ""}</Note></Card> : null}
 
@@ -251,14 +402,17 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
         <div style={{ padding: 14 }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
             <span style={Object.assign({}, dsp, { fontSize: 28, fontWeight: 800, letterSpacing: 1.6, color: C.bone, lineHeight: 1 })}>{d.star ? "★ " : ""}{d.n}</span>
-            <span style={Object.assign({}, mno, { fontSize: 18, fontWeight: 700, color: C.honey })}>{d.kcal.toLocaleString()}<span style={{ fontSize: 9, color: C.ash }}> KCAL</span></span>
+            <span style={{ textAlign: "right" }}>
+              <span style={Object.assign({}, mno, { fontSize: 18, fontWeight: 700, color: C.honey })}>{tot.k.toLocaleString()}<span style={{ fontSize: 9, color: C.ash }}> KCAL</span></span>
+              {onB ? <div style={Object.assign({}, mno, { fontSize: 8, letterSpacing: 1.2, color: C.ember, marginTop: 2 })}>MENU B IN PLAY</div> : null}
+            </span>
           </div>
           <div style={Object.assign({}, bdy, { fontSize: 12.5, color: C.ash, marginTop: 4 })}>{d.tag}</div>
           <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
-            <MacroBar label="KCAL" val={eaten.k} max={d.kcal} c={C.honey} />
-            <MacroBar label="P" val={eaten.p} max={d.p} c={C.sage} />
-            <MacroBar label="C" val={eaten.c} max={d.c} c={C.ember} />
-            <MacroBar label="F" val={eaten.f} max={d.f} c={C.frost} />
+            <MacroBar label="KCAL" val={eaten.k} max={tot.k} c={C.honey} />
+            <MacroBar label="P" val={eaten.p} max={tot.p} c={C.sage} />
+            <MacroBar label="C" val={eaten.c} max={tot.c} c={C.ember} />
+            <MacroBar label="F" val={eaten.f} max={tot.f} c={C.frost} />
           </div>
         </div>
         <div style={{ background: C.ink, borderTop: "1px solid " + C.line, padding: "10px 14px" }}>
@@ -291,7 +445,8 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
               <span style={Object.assign({}, dsp, { position: "relative", display: "inline-block", background: C.ink, padding: "0 8px", fontSize: 13, fontWeight: 700, letterSpacing: 1, lineHeight: 1.25, color: f.ev.indexOf("★") >= 0 ? C.ember : C.ash })}>{f.ev}</span>
             </span>
           </div>);
-        const bl = B[f.b], on = !!dl[i], isNext = i === nextIdx, isOpen = open === i;
+        const key = bkey(f, i), bl = B[key], on = !!dl[i], isNext = i === nextIdx, isOpen = open === i;
+        const alts = SWAPS[f.b] || [];
         return (
           <Card key={i} tid="feed" ac={on ? C.sage : f.crit ? C.ember : C.line} s={{ padding: 0, opacity: on ? .68 : 1, borderColor: isNext ? C.ember : C.line }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px" }}>
@@ -299,7 +454,10 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
                 <span style={Object.assign({}, mno, { fontSize: 11, color: isNext ? C.ember : C.ash, width: 40, flexShrink: 0, fontWeight: isNext ? 700 : 400 })}>{f.tl || f.t}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
                   <div style={Object.assign({}, bdy, { fontSize: 14.5, fontWeight: 600, color: f.crit && !on ? C.ember : C.bone })}>{f.crit ? "★ " : ""}{bl.n}</div>
-                  <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 2 })}>{bl.kcal} KCAL · P{bl.p} C{bl.c} F{bl.f}</div>
+                  <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" })}>
+                    <span>{bl.kcal} KCAL · P{bl.p} C{bl.c} F{bl.f}</span>
+                    {alts.length ? <span style={{ fontSize: 8, letterSpacing: 1, color: bl.menu === "B" ? C.ink : C.ash, background: bl.menu === "B" ? C.ember : "transparent", border: "1px solid " + (bl.menu === "B" ? C.ember : C.line), borderRadius: 3, padding: "1px 4px" }}>{bl.menu === "B" ? "MENU B" : "MENU A"}</span> : null}
+                  </div>
                 </span>
               </span>
               <button onClick={() => tick(i)} aria-label={"Mark " + bl.n} style={Object.assign({}, mno, { width: 44, height: 44, borderRadius: 6, cursor: "pointer", fontSize: 17, fontWeight: 700, flexShrink: 0, background: on ? C.sage : "transparent", color: on ? C.ink : C.ash, border: "1px solid " + (on ? C.sage : C.line) })}>{on ? "✓" : "○"}</button>
@@ -319,6 +477,21 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
                 })() : null}
                 {bl.bn ? <Note s={{ fontStyle: "italic" }}>{bl.bn}</Note> : null}
                 {f.note ? <Note s={{ fontStyle: "italic" }}>{f.note}</Note> : null}
+                {alts.length ? (
+                  <div style={{ marginTop: 10, borderTop: "1px solid " + C.line, paddingTop: 8 }}>
+                    <Eye c={C.ember} s={{ marginBottom: 6 }}>Menu A or B</Eye>
+                    {[f.b].concat(alts).map((k) => { const b = B[k], sel = k === key;
+                      return (
+                        <button key={k} onClick={() => { setMenu(i, k === f.b ? null : k); buzz(20); }}
+                          style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, textAlign: "left", background: "transparent", border: "none", borderTop: k === f.b ? "none" : "1px solid " + C.line, padding: "8px 0", cursor: "pointer", minHeight: 44 }}>
+                          <span style={Object.assign({}, mno, { fontSize: 11, color: sel ? C.ember : C.line, flexShrink: 0 })}>{sel ? "●" : "○"}</span>
+                          <span style={{ flex: 1, minWidth: 0 }}>
+                            <span style={Object.assign({}, bdy, { fontSize: 13, fontWeight: sel ? 600 : 400, color: sel ? C.bone : C.ash, display: "block" })}>{b.n}</span>
+                            <span style={Object.assign({}, mno, { fontSize: 9, color: C.ash })}>{b.menu === "B" ? "B · " : "A · "}{b.kcal} KCAL · P{b.p} C{b.c} F{b.f}</span>
+                          </span>
+                        </button>); })}
+                    {f.b === "batchbig" ? <Note s={{ fontStyle: "italic" }}>{BIG_NOTE}</Note> : null}
+                  </div>) : null}
               </div>) : null}
             {f.sub && isOpen ? <div style={{ padding: "0 12px 10px 62px" }}><Note s={{ marginTop: 0 }}>{f.sub}</Note></div> : null}
           </Card>);
@@ -372,7 +545,7 @@ const Calc = ({ title, colour, blurb, rawLab, rawPh, ckLab, ckPh, raw, setRaw, c
   </Card>
 );
 
-function Cook({ cook, setCook, foods, setFoods, K }) {
+function Cook({ cook, setCook, foods, setFoods, K, prep, setPrep }) {
   /* Two independent calculators. Each takes the raw weight that went in and the
      cooked weight that came out, and scales one portion's raw share by the loss.
      Mince pot: 150g raw mince standard, 200g big. Sweet potato: 300g and 350g. */
@@ -466,6 +639,29 @@ function Cook({ cook, setCook, foods, setFoods, K }) {
         </div>
       </Card>
 
+      <Card ac={C.ember}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+          <Eye c={C.ember} s={{ marginBottom: 0 }}>Menu B prep — once, twice a week</Eye>
+          <Btn small c={C.ash} on={() => { setPrep({}); buzz(30); }}>NEW COOK DAY</Btn>
+        </div>
+        <Note s={{ marginTop: 8 }}>On the batch days — Sunday and Wednesday — three extra jobs, fifteen minutes.</Note>
+        {[["Portion the mince separately.", "The pot calculator already gives you the cooked grams per portion. Put four standard portions of mince alone into tubs for the wraps; the rest goes into the batch tubs with the sweet potato as now."],
+          ["Boil the eggs.", "Twelve on Sunday, nine on Wednesday, ten minutes from boiling, straight into cold water. In the shell they keep a week in the fridge; peel them the night before, not the week before."],
+          ["Bagels and tins in the bag.", "Bagels keep a week; tuna keeps forever. Two bagels and a tin live in the work bag permanently, so a day that goes wrong still has a Menu B in it."],
+          ["The night before.", "Wraps rolled and foiled, eggs peeled into a tub, bananas counted."],
+          ["Cold mince is cold mince.", "In a cool bag with an ice block from the fridge to the break, and eaten by lunchtime. Wraps made at 9pm and eaten at 12:30 with no cooling in between is the one way Menu B goes wrong."]].map((x, i) => {
+          const on = !!prep[i];
+          return (
+            <div key={i} onClick={() => { setPrep(Object.assign({}, prep, { [i]: !on })); buzz(25); }}
+              style={{ display: "flex", gap: 11, alignItems: "flex-start", padding: "10px 0", borderTop: "1px solid " + C.line, cursor: "pointer" }}>
+              <span style={Object.assign({}, mno, { width: 26, height: 26, borderRadius: 4, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, background: on ? C.sage : "transparent", color: C.ink, border: "1px solid " + (on ? C.sage : C.line) })}>{on ? "✓" : ""}</span>
+              <span style={{ flex: 1, minWidth: 0 }}>
+                <div style={Object.assign({}, bdy, { fontSize: 13.5, fontWeight: 600, color: on ? C.ash : C.bone, textDecoration: on ? "line-through" : "none" })}>{x[0]}</div>
+                <div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash, marginTop: 2, lineHeight: 1.45 })}>{x[1]}</div>
+              </span>
+            </div>); })}
+      </Card>
+
       <Card>
         <Eye>Cook days</Eye>
         <Note s={{ marginTop: 0 }}><span style={{ color: C.bone, fontWeight: 600 }}>Cook Sunday, cook Wednesday — half a batch each time.</span> Fourteen portions a week: thirteen standard, one big. Two half-week cooks beat one giant pot — fresher, and the pans fit.</Note>
@@ -489,8 +685,8 @@ function Shop({ shop, setShop }) {
         <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 10 }}><div style={{ width: got / total * 100 + "%", height: "100%", background: C.honey, borderRadius: 2, transition: "width .3s" }} /></div>
       </Card>
       {SHOP.map((g, gi) => (
-        <Card key={g[0]} ac={[C.copper, C.honey, C.frost, C.sage][gi]}>
-          <Eye c={[C.copper, C.honey, C.frost, C.sage][gi]}>{g[0]}</Eye>
+        <Card key={g[0]} ac={[C.copper, C.honey, C.frost, C.ember, C.sage][gi]}>
+          <Eye c={[C.copper, C.honey, C.frost, C.ember, C.sage][gi]}>{g[0]}</Eye>
           {g[1].map((it, i) => { const k = gi + "-" + i, on = !!shop[k];
             return (
               <div key={k} onClick={() => setShop(Object.assign({}, shop, { [k]: !on }))} style={{ display: "flex", gap: 11, alignItems: "center", padding: "9px 0", borderTop: i ? "1px solid " + C.line : "none", cursor: "pointer" }}>
@@ -839,7 +1035,7 @@ function MdBody({ blocks }) {
 
 /* Split the document into its ## sections, keeping whatever sits above the first. */
 const PLAN_DOC = (() => {
-  const lines = PLAN_MD.replace(/\r/g, "").split("\n");
+  const lines = (PLAN_MD + "\n\n---\n\n" + MENUB_MD.replace(/^#\s+/, "## ")).replace(/\r/g, "").split("\n");
   const title = (lines.find((l) => /^#\s/.test(l)) || "# FUEL").replace(/^#\s*/, "");
   const secs = [];
   let cur = null, pre = [];
@@ -998,7 +1194,7 @@ function Settings({ st, setSt, week, close, onExport, onImport }) {
     </div>);
 }
 
-const KEYS = { st: "fu8-settings", done: "fu8-done", cook: "fu8-cook", foods: "fu8-foods", shop: "fu8-shop", tape: "fu8-tape" };
+const KEYS = { st: "fu8-settings", done: "fu8-done", cook: "fu8-cook", foods: "fu8-foods", shop: "fu8-shop", tape: "fu8-tape", menu: "fu8-menu", drink: "fu8-drink" };
 const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true, breaks: DEFAULT_BREAKS(), len: DEFAULT_LEN(), pick: null });
 export default function App() {
   const [st, setStRaw] = useState(DEFAULT_ST);
@@ -1010,12 +1206,14 @@ export default function App() {
   const [foods, setFoodsRaw] = useState([]);
   const [shop, setShopRaw] = useState({});
   const [tape, setTapeRaw] = useState([]);
+  const [menuAll, setMenuRaw] = useState({});
+  const [drinkAll, setDrinkRaw] = useState({});
   const [showSet, setShowSet] = useState(false);
   const beep = useBeep(st.sound);
   const K = useKTimer(beep);
   const chimed = useRef({});
   const mk = (setter, key) => (v) => { setter(v); save(key, v); };
-  const setSt = mk(setStRaw, KEYS.st), setDoneAll = mk(setDoneRaw, KEYS.done), setCook = mk(setCookRaw, KEYS.cook), setFoods = mk(setFoodsRaw, KEYS.foods), setShop = mk(setShopRaw, KEYS.shop), setTape = mk(setTapeRaw, KEYS.tape);
+  const setSt = mk(setStRaw, KEYS.st), setDoneAll = mk(setDoneRaw, KEYS.done), setCook = mk(setCookRaw, KEYS.cook), setFoods = mk(setFoodsRaw, KEYS.foods), setShop = mk(setShopRaw, KEYS.shop), setTape = mk(setTapeRaw, KEYS.tape), setMenuAll = mk(setMenuRaw, KEYS.menu), setDrinkAll = mk(setDrinkRaw, KEYS.drink);
 
   /* --- backup: all five fu8 keys, out and back in --------------------- */
   const buildBackup = useCallback(async () => {
@@ -1028,13 +1226,13 @@ export default function App() {
     try { obj = JSON.parse(String(text).trim()); } catch (e) { return { ok: 0, msg: "That isn't a Fuel backup — check you pasted the whole thing." }; }
     const data = obj && typeof obj === "object" && obj.data && typeof obj.data === "object" ? obj.data : obj;
     if (!data || typeof data !== "object") return { ok: 0, msg: "That isn't a Fuel backup." };
-    const setters = { st: setStRaw, done: setDoneRaw, cook: setCookRaw, foods: setFoodsRaw, shop: setShopRaw, tape: setTapeRaw };
+    const setters = { st: setStRaw, done: setDoneRaw, cook: setCookRaw, foods: setFoodsRaw, shop: setShopRaw, tape: setTapeRaw, menu: setMenuRaw, drink: setDrinkRaw };
     const found = Object.keys(KEYS).filter((short) => Object.prototype.hasOwnProperty.call(data, KEYS[short]));
     if (!found.length) return { ok: 0, msg: "No Fuel data found in that backup." };
     for (const short of found) {
       let v = data[KEYS[short]];
       if (short === "st") v = Object.assign(DEFAULT_ST(), v || {});
-      if (short === "done" || short === "shop") v = v || {};
+      if (short === "done" || short === "shop" || short === "menu" || short === "drink") v = v || {};
       if (short === "foods" || short === "tape") v = Array.isArray(v) ? v : [];
       await save(KEYS[short], v);
       setters[short](v);
@@ -1043,7 +1241,7 @@ export default function App() {
   }, []);
   useEffect(() => { (async () => {
     const s = await load(KEYS.st, null); if (s) setStRaw(s); else save(KEYS.st, st);
-    setDoneRaw(await load(KEYS.done, {})); setCookRaw(await load(KEYS.cook, null)); setFoodsRaw(await load(KEYS.foods, [])); setShopRaw(await load(KEYS.shop, {})); setTapeRaw(await load(KEYS.tape, []));
+    setDoneRaw(await load(KEYS.done, {})); setCookRaw(await load(KEYS.cook, null)); setFoodsRaw(await load(KEYS.foods, [])); setShopRaw(await load(KEYS.shop, {})); setTapeRaw(await load(KEYS.tape, [])); setMenuRaw(await load(KEYS.menu, {})); setDrinkRaw(await load(KEYS.drink, {}));
     setLoaded(true);
   })(); }, []);
   const L = st.iron ? 18 : 16;
@@ -1056,7 +1254,17 @@ export default function App() {
     if (v) sel[k] = v; else delete sel[k];
     setSt(Object.assign({}, st, { pick: { date: dateK, sel } }));
   };
-  const dayDone = (doneAll[dateK + "-" + day]) || {};
+  const dayKey = dateK + "-" + day;
+  const dayDone = (doneAll[dayKey]) || {};
+  const dayMenu = ((menuAll.picks || {})[dayKey]) || {};
+  const setMenu = (i, k) => {
+    const sel = Object.assign({}, dayMenu);
+    if (k) sel[i] = k; else delete sel[i];
+    setMenuAll(Object.assign({}, menuAll, { picks: Object.assign({}, menuAll.picks, { [dayKey]: sel }) }));
+  };
+  const setPrep = (v) => setMenuAll(Object.assign({}, menuAll, { prep: v }));
+  const dayDrink = drinkAll[dayKey] || {};
+  const setDrink = (patch) => setDrinkAll(Object.assign({}, drinkAll, { [dayKey]: Object.assign({}, dayDrink, patch) }));
   const tick = (i) => { const k = dateK + "-" + day; const cur = Object.assign({}, doneAll[k]); cur[i] = !cur[i]; const n = Object.assign({}, doneAll); n[k] = cur; setDoneAll(n); buzz(25); };
   useEffect(() => { const id = setInterval(() => { if (!st.sound) return; const t = todayKey(); const nm = nowMin();
     const sel = st.pick && st.pick.date === iso(new Date()) ? (st.pick.sel || {}) : {};
@@ -1085,8 +1293,8 @@ export default function App() {
       <div style={{ padding: "13px 13px 150px", maxWidth: 640, margin: "0 auto" }}>
         {!loaded ? <div style={Object.assign({}, mno, { fontSize: 11, color: C.ash, padding: "40px 0", textAlign: "center" })}>LOADING…</div> : (
           <div>
-            {tab === "today" ? <Today day={day} setDay={setDay} week={week} cycle={L} done={dayDone} tick={tick} cook={cook} sound={st.sound} st={st} pick={picks[day]} setPick={setPick} /> : null}
-            {tab === "cook" ? <Cook cook={cook} setCook={setCook} foods={foods} setFoods={setFoods} K={K} /> : null}
+            {tab === "today" ? <Today day={day} setDay={setDay} week={week} cycle={L} done={dayDone} tick={tick} cook={cook} sound={st.sound} st={st} pick={picks[day]} setPick={setPick} menu={dayMenu} setMenu={setMenu} drink={dayDrink} setDrink={setDrink} /> : null}
+            {tab === "cook" ? <Cook cook={cook} setCook={setCook} foods={foods} setFoods={setFoods} K={K} prep={menuAll.prep || {}} setPrep={setPrep} /> : null}
             {tab === "shop" ? <Shop shop={shop} setShop={setShop} /> : null}
             {tab === "plan" ? <PlanView /> : null}
             {tab === "ref" ? <Referee tape={tape} setTape={setTape} /> : null}
