@@ -4,6 +4,9 @@ import { render, screen, fireEvent, waitFor, within } from "@testing-library/rea
 import App from "./App.jsx";
 import PLAN_MD from "../fuel-optimal-8-fighter.md?raw";
 
+const GUIDE_FILES = import.meta.glob("../guide-fuel.md", { query: "?raw", import: "default", eager: true });
+const GUIDE_MD = GUIDE_FILES["../guide-fuel.md"] || null;
+
 const mounted = async () => {
   render(<App />);
   await waitFor(() => expect(screen.queryByText("LOADING…")).toBeNull());
@@ -341,5 +344,43 @@ describe("Fuel · Optimal 8 Fighter", () => {
     const heads = PLAN_MD.split("\n").filter((l) => l.startsWith("## ")).map((l) => l.slice(3));
     expect(heads.length).toBeGreaterThan(15);
     for (const h of heads) expect(screen.getAllByText(h).length).toBeGreaterThan(0);
+  });
+
+  it("gives the GUIDE tab the guide document and today's live panel", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("GUIDE"));
+
+    /* The live panel is there whether or not the document has been added. */
+    expect(screen.getByText(/Today's phase:/)).toBeTruthy();
+    expect(screen.getByText(/Next feed:/)).toBeTruthy();
+
+    if (GUIDE_MD) {
+      /* Every heading of guide-fuel.md, and a contents list to reach them. */
+      const heads = GUIDE_MD.split("\n").filter((l) => l.startsWith("## ")).map((l) => l.slice(3));
+      expect(heads.length).toBeGreaterThan(0);
+      expect(screen.getByText("Contents")).toBeTruthy();
+      for (const h of heads) expect(screen.getAllByText(h).length).toBeGreaterThan(0);
+    } else {
+      /* Not uploaded yet: the tab says so plainly instead of sitting empty. */
+      expect(screen.getByText(/guide-fuel\.md/)).toBeTruthy();
+    }
+  });
+
+  it("scales the whole app from the text-size setting", async () => {
+    await mounted();
+    const root = document.documentElement;
+
+    fireEvent.click(screen.getByLabelText("Settings"));
+    fireEvent.click(screen.getByText("Normal"));
+    const normal = parseFloat(root.style.fontSize);
+    expect(normal).toBeGreaterThanOrEqual(18);
+
+    fireEvent.click(screen.getByText("Large"));
+    const large = parseFloat(root.style.fontSize);
+    expect(large).toBeGreaterThan(normal);
+
+    fireEvent.click(screen.getByText("Largest"));
+    const largest = parseFloat(root.style.fontSize);
+    expect(largest).toBeGreaterThan(large);
   });
 });

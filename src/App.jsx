@@ -2,6 +2,10 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from "react"
 import PLAN_MD from "../fuel-optimal-8-fighter.md?raw";
 import MENUB_MD from "../fuel-menu-b.md?raw";
 import SEASON_MD from "../fuel-season.md?raw";
+/* The guide is optional: a glob doesn't fail the build when the file
+   isn't there yet, and picks it up the moment it is added. */
+const GUIDE_FILES = import.meta.glob("../guide-fuel.md", { query: "?raw", import: "default", eager: true });
+const GUIDE_MD = GUIDE_FILES["../guide-fuel.md"] || null;
 
 /* ================================================================
    FUEL — OPTIMAL 8 · companion app
@@ -10,13 +14,14 @@ import SEASON_MD from "../fuel-season.md?raw";
    ================================================================ */
 const C = {
   ink: "#14110D", slab: "#1C1712", card: "#241D14", line: "#3B3226", ash: "#A0937F", bone: "#F0E8D8",
-  ember: "#D97742", honey: "#D8A24A", sage: "#8C9C64", copper: "#C24E33", frost: "#8CA6B5",
+  ember: "#D97742", honey: "#D8A24A", sage: "#8C9C64", copper: "#DC6A48", frost: "#8CA6B5",
 };
 const FONTS = `
 /* Barlow / Barlow Condensed / IBM Plex Mono are loaded by a <link> in index.html.
    With no signal they simply never arrive and the fallback stacks below take over. */
 * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
-html, body { background: ${C.ink}; }
+html { font-size: 18px; -webkit-text-size-adjust: 100%; }
+html, body { background: ${C.ink}; overflow-wrap: anywhere; }
 body { font-family: 'Barlow', system-ui, -apple-system, sans-serif; }
 input, button, textarea { font-family: inherit; }
 input[type=number]::-webkit-inner-spin-button { -webkit-appearance: none; }
@@ -28,6 +33,33 @@ button:focus-visible, input:focus-visible { outline: 2px solid ${C.ember}; outli
 @media (prefers-reduced-motion: reduce) { .rise { animation: none } * { transition: none !important; animation: none !important } }
 ::-webkit-scrollbar { width: 0; height: 0; }
 `;
+/* ================================================================
+   TYPE SCALE — every size is rem, so the whole app follows one root
+   size, which follows the phone's text setting and the app's own
+   three steps. Small print is lifted hardest: the floor is 15px at
+   the normal step, body text 18, the feed rows 24.
+   ================================================================ */
+const FS = (px) => ((px >= 20 ? px * 1.2 : Math.max(px * 1.45, 15)) / 18).toFixed(3) + "rem";
+const SZ = { row: "1.334rem", amount: "1.112rem" };   /* 24px and 20px at the normal step */
+const TAP = 48;
+const TEXT_STEPS = [["normal", "Normal", 1], ["large", "Large", 1.15], ["largest", "Largest", 1.32]];
+const stepOf = (k) => (TEXT_STEPS.find((x) => x[0] === k) || TEXT_STEPS[0])[2];
+/* iOS reports the reader's preferred body size through -apple-system-body,
+   so the app starts from that and never goes below 18px, then applies the
+   step chosen in Settings. */
+function applyTextSize(key) {
+  if (typeof document === "undefined") return;
+  let phone = 0;
+  try {
+    const probe = document.createElement("div");
+    probe.style.cssText = "position:absolute;visibility:hidden;font:-apple-system-body";
+    document.body.appendChild(probe);
+    phone = parseFloat(getComputedStyle(probe).fontSize) || 0;
+    probe.remove();
+  } catch (e) {}
+  document.documentElement.style.fontSize = (Math.max(18, phone) * stepOf(key)).toFixed(2) + "px";
+}
+
 const dsp = { fontFamily: "'Barlow Condensed', 'Arial Narrow', sans-serif" };
 const bdy = { fontFamily: "'Barlow', system-ui, sans-serif" };
 const mno = { fontFamily: "'IBM Plex Mono', 'Roboto Mono', monospace" };
@@ -96,6 +128,31 @@ const B = {
 };
 
 /* Which Menu A feeds have a Menu B alternative, and what it is. */
+/* The next feed due today — the same rule TODAY uses. */
+function nextFeedToday(st, phase, pickStart, menu, done) {
+  const day = todayKey();
+  const d = D[day];
+  if (!d) return null;
+  const feeds = retime(day, phaseFeeds(phase, day, d.feeds), pickStart, st);
+  const nm = nowMin(), seen = {};
+  for (let i = 0; i < feeds.length; i++) {
+    const f = feeds[i];
+    if (!f.b || (done || {})[i]) continue;
+    const base = BASE_OF[f.b] || f.b, slot = slotOf(f.b);
+    let key = base;
+    if (slot) {
+      const nth = seen[slot] || 0; seen[slot] = nth + 1;
+      const chosen = (menu || {})[day + "-" + slot + (nth ? "-" + nth : "")];
+      if (chosen && SLOTS[slot].opts.indexOf(chosen) >= 0) key = chosen;
+    }
+    if (tMin(f.t) >= nm - 5) {
+      const b = slot ? blockOf(key, slot, !!BIGKEY[f.b]) : B[key];
+      return { n: b.n, t: f.tl || f.t };
+    }
+  }
+  return null;
+}
+
 /* ================================================================
    THE SLOTS — every feed of the day and the options that match it.
    Each option holds the slot's timing and its carbohydrate, so any
@@ -207,19 +264,19 @@ const PROGRAMS = [["prep14", "Prep 14-week"], ["prep16", "Prep 16-week"], ["camp
 const BASE_TARGET = { kcal: 3600, p: 245, c: 487, f: 78 };
 /* The document's phase table. `rules` are applied to the day automatically. */
 const PHASES = {
-  build:   { n: "BUILD", sub: "Prep accumulation", t: { kcal: 3900, p: 245, c: 560, f: 80 }, c: C.honey,
+  build:   { n: "BUILD", sub: "Prep accumulation", t: { kcal: 3900, p: 245, c: 560, f: 80 }, c: C.honey, chg: "Add a CARB TOP-UP at 17:00 on Monday and Thursday.",
              r: ["Add a CARB TOP-UP at 17:00 on Monday and Thursday — the two days without one.", "Surplus about 300. Tissue is being built; feed it. The tape at the block's end decides whether it stays."] },
   heavy:   { n: "HEAVY", sub: "Intensify", t: BASE_TARGET, c: C.ember, r: ["Menu A as written. The extra top-ups come off."] },
-  fast:    { n: "FAST", sub: "Convert", t: BASE_TARGET, c: C.ember, r: ["Menu A as written.", "On the scored round weeks, the mid-session banana."] },
-  test:    { n: "TEST WEEK", sub: "Prep's last week", t: BASE_TARGET, c: C.frost, r: ["Do not cut. Training drops, carbs hold; the tank fills.", "Test day eats like a Saturday."] },
+  fast:    { n: "FAST", sub: "Convert", t: BASE_TARGET, c: C.ember, chg: "On the scored round weeks, the mid-session banana.", r: ["Menu A as written.", "On the scored round weeks, the mid-session banana."] },
+  test:    { n: "TEST WEEK", sub: "Prep's last week", t: BASE_TARGET, c: C.frost, chg: "Do not cut. Training drops, carbs hold; the tank fills.", r: ["Do not cut. Training drops, carbs hold; the tank fills.", "Test day eats like a Saturday."] },
   camp:    { n: "CAMP", sub: "Foundation, build, peak", t: BASE_TARGET, c: C.ember,
              r: ["Menu A.", "Seven-round weeks keep the mid-session banana.", "Sauna weeks: the hydration schedule's sauna line."] },
-  easy:    { n: "EASY WEEK", sub: "Camp", t: BASE_TARGET, c: C.sage, r: ["Do not cut. The commonest way to lose a fight is eating less because you're training less."] },
-  sharpen: { n: "SHARPEN", sub: "Camp", t: BASE_TARGET, c: C.sage, r: ["Do not cut. The commonest way to lose a fight is eating less because you're training less."] },
+  easy:    { n: "EASY WEEK", sub: "Camp", t: BASE_TARGET, c: C.sage, chg: "Do not cut. Eating less because you are training less is how fights are lost.", r: ["Do not cut. The commonest way to lose a fight is eating less because you're training less."] },
+  sharpen: { n: "SHARPEN", sub: "Camp", t: BASE_TARGET, c: C.sage, chg: "Do not cut. Eating less because you are training less is how fights are lost.", r: ["Do not cut. The commonest way to lose a fight is eating less because you're training less."] },
   fight:   { n: "FIGHT WEEK", sub: "", t: BASE_TARGET, c: C.copper, r: ["Menu A exactly.", "Weigh-in day per the weight section."] },
-  trans:   { n: "TRANSITION", sub: "The two weeks after a fight", t: { kcal: 3300, p: 235, c: 420, f: 78 }, c: C.frost,
+  trans:   { n: "TRANSITION", sub: "The two weeks after a fight", t: { kcal: 3300, p: 235, c: 420, f: 78 }, c: C.frost, chg: "Drop the 3pm feed on Monday, Wednesday and Thursday, and Saturday's BIG portion back to standard.",
              r: ["Drop the 3pm feed on Monday, Wednesday and Thursday, and Saturday's BIG portion back to standard.", "Maintenance. Protein holds so the muscle does."] },
-  cut:     { n: "MAKING WEIGHT", sub: "Only when the limit demands it", t: { kcal: 3100, p: 200, c: 400, f: 70 }, c: C.copper,
+  cut:     { n: "MAKING WEIGHT", sub: "Only when the limit demands it", t: { kcal: 3100, p: 200, c: 400, f: 70 }, c: C.copper, chg: "Carbs off the light days, never protein, never the bottle, never the 5pm loads.",
              r: ["Carbs off the light days, never protein, never the bottle, never the 5pm loads.", "Cut in order: the casein, then Saturday's BIG back to standard, then one of the 3pm bananas on Monday and Thursday.", "Half a percent of bodyweight a week, no faster."] },
 };
 /* Week 1 is the week containing the program start. Prep's shape follows the
@@ -386,13 +443,13 @@ const YIELDS = [["White rice", "×2.6 from dry"], ["Pasta", "×2.2 from dry"], [
    ATOMS + a small timer
    ================================================================ */
 const Card = ({ children, s, ac, tid }) => <div data-testid={tid} style={Object.assign({ background: C.card, border: "1px solid " + C.line, borderLeft: ac ? "3px solid " + ac : "1px solid " + C.line, borderRadius: 6, marginBottom: 10, padding: 14 }, s)}>{children}</div>;
-const Eye = ({ children, c, s }) => <div style={Object.assign({}, mno, { fontSize: 9.5, letterSpacing: 1.6, color: c || C.ash, marginBottom: 8, textTransform: "uppercase" }, s)}>{children}</div>;
-const Lab = ({ children }) => <div style={Object.assign({}, mno, { fontSize: 8, color: C.ash, marginBottom: 3, letterSpacing: 1, textTransform: "uppercase" })}>{children}</div>;
+const Eye = ({ children, c, s }) => <div style={Object.assign({}, mno, { fontSize: FS(9.5), letterSpacing: 1.6, color: c || C.ash, marginBottom: 8, textTransform: "uppercase" }, s)}>{children}</div>;
+const Lab = ({ children }) => <div style={Object.assign({}, mno, { fontSize: FS(8), color: C.ash, marginBottom: 3, letterSpacing: 1, textTransform: "uppercase" })}>{children}</div>;
 const Fld = ({ v, on, ph, type, s }) => <input value={v == null ? "" : v} onChange={(e) => on(e.target.value)} placeholder={ph} inputMode={type === "date" ? undefined : "decimal"} type={type || "text"}
-  style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: 16, padding: "10px 8px", textAlign: "center", minHeight: 44 }, s)} />;
-const Btn = ({ children, on, c, fill, s, dis, small }) => <button onClick={on} disabled={dis} style={Object.assign({}, dsp, { fontSize: small ? 12 : 14, fontWeight: 700, letterSpacing: 1.2, background: fill ? (c || C.ember) : "transparent", color: fill ? C.ink : (c || C.ember), border: "1px solid " + (c || C.ember), borderRadius: 5, padding: small ? "8px 10px" : "12px 14px", cursor: dis ? "default" : "pointer", opacity: dis ? .4 : 1, minHeight: small ? 34 : 44 }, s)}>{children}</button>;
-const Chip = ({ children, c, s }) => <span style={Object.assign({}, mno, { fontSize: 8.5, letterSpacing: 1.2, color: c || C.ash, border: "1px solid " + (c || C.line), borderRadius: 3, padding: "2px 6px", textTransform: "uppercase", whiteSpace: "nowrap" }, s)}>{children}</span>;
-const Note = ({ children, c, bold, s }) => <div style={Object.assign({}, bdy, { fontSize: 12.5, color: c || C.ash, lineHeight: 1.5, marginTop: 8, fontWeight: bold ? 600 : 400 }, s)}>{children}</div>;
+  style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: FS(16), padding: "10px 8px", textAlign: "center", minHeight: TAP }, s)} />;
+const Btn = ({ children, on, c, fill, s, dis, small }) => <button onClick={on} disabled={dis} style={Object.assign({}, dsp, { fontSize: small ? FS(12) : FS(14), fontWeight: 700, letterSpacing: 1.2, background: fill ? (c || C.ember) : "transparent", color: fill ? C.ink : (c || C.ember), border: "1px solid " + (c || C.ember), borderRadius: 5, padding: small ? "8px 10px" : "12px 14px", cursor: dis ? "default" : "pointer", opacity: dis ? .4 : 1, minHeight: TAP }, s)}>{children}</button>;
+const Chip = ({ children, c, s }) => <span style={Object.assign({}, mno, { fontSize: FS(8.5), letterSpacing: 1.2, color: c || C.ash, border: "1px solid " + (c || C.line), borderRadius: 3, padding: "2px 6px", textTransform: "uppercase", maxWidth: "100%" }, s)}>{children}</span>;
+const Note = ({ children, c, bold, s }) => <div style={Object.assign({}, bdy, { fontSize: FS(12.5), color: c || C.ash, lineHeight: 1.5, marginTop: 8, fontWeight: bold ? 600 : 400 }, s)}>{children}</div>;
 
 function useBeep(sound) {
   const ctxRef = useRef(null);
@@ -430,15 +487,15 @@ function KDock({ K }) {
   const t = K.t; if (!t) return null;
   const frac = t.done ? 1 : 1 - t.left / (t.total || 1);
   return (
-    <div style={{ position: "fixed", left: 0, right: 0, bottom: "calc(58px + env(safe-area-inset-bottom))", zIndex: 70, background: C.slab, borderTop: "1px solid " + C.line }}>
+    <div style={{ zIndex: 70, background: C.slab, borderTop: "1px solid " + C.line }}>
       <div style={{ height: 4, background: C.ink }}><div style={{ width: frac * 100 + "%", height: "100%", background: t.done ? C.sage : C.ember, transition: "width .2s linear" }} /></div>
       <div style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", maxWidth: 640, margin: "0 auto" }}>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={Object.assign({}, mno, { fontSize: 9, letterSpacing: 1.2, color: t.done ? C.sage : C.ember })}>{t.label}{t.done ? " · DONE" : ""}</div>
-          <div style={Object.assign({}, mno, { fontSize: 22, fontWeight: 700, color: C.bone, lineHeight: 1.1 })}>{t.done ? "✓" : mmss(t.left)}</div>
+          <div style={Object.assign({}, mno, { fontSize: FS(9), letterSpacing: 1.2, color: t.done ? C.sage : C.ember })}>{t.label}{t.done ? " · DONE" : ""}</div>
+          <div style={Object.assign({}, mno, { fontSize: FS(22), fontWeight: 700, color: C.bone, lineHeight: 1.1 })}>{t.done ? "✓" : mmss(t.left)}</div>
         </div>
         <Btn on={K.toggle} c={C.ember} small dis={t.done} s={{ minWidth: 64 }}>{t.run ? "PAUSE" : "START"}</Btn>
-        <button onClick={K.close} aria-label="Close timer" style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: 34, height: 34, cursor: "pointer", fontSize: 14 })}>×</button>
+        <button onClick={K.close} aria-label="Close timer" style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: TAP, height: TAP, cursor: "pointer", fontSize: FS(14) })}>×</button>
       </div>
     </div>);
 }
@@ -459,21 +516,21 @@ function Drink({ day, rows, st8, set }) {
       <div style={{ padding: "12px 14px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
           <Eye c={C.frost} s={{ marginBottom: 0 }}>Drink</Eye>
-          <span style={Object.assign({}, mno, { fontSize: 13, fontWeight: 700, color: drunk >= target ? C.sage : C.bone })}>{L(drunk)}<span style={{ fontSize: 9, color: C.ash }}> / {L(target)} L</span></span>
+          <span style={Object.assign({}, mno, { fontSize: FS(13), fontWeight: 700, color: drunk >= target ? C.sage : C.bone })}>{L(drunk)}<span style={{ fontSize: FS(9), color: C.ash }}> / {L(target)} L</span></span>
         </div>
         <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 8 }}>
           <div style={{ width: pct + "%", height: "100%", background: drunk >= target ? C.sage : C.frost, borderRadius: 2, transition: "width .3s" }} /></div>
         <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
           {wend ? <button onClick={() => { set({ sauna: !st8.sauna }); buzz(20); }}
-            style={Object.assign({}, mno, { flex: 1, fontSize: 9.5, letterSpacing: 1, padding: "8px 4px", borderRadius: 4, cursor: "pointer", minHeight: 36, background: st8.sauna ? C.copper : "transparent", color: st8.sauna ? C.ink : C.ash, border: "1px solid " + (st8.sauna ? C.copper : C.line) })}>SAUNA DAY</button> : null}
-          <button onClick={() => setInfo(!info)} style={Object.assign({}, mno, { flex: 1, fontSize: 9.5, letterSpacing: 1, padding: "8px 4px", borderRadius: 4, cursor: "pointer", minHeight: 36, background: "transparent", color: C.ash, border: "1px solid " + C.line })}>{info ? "HIDE THE RULES" : "THE FOUR RULES"}</button>
+            style={Object.assign({}, mno, { flex: 1, fontSize: FS(9.5), letterSpacing: 1, padding: "8px 4px", borderRadius: 4, cursor: "pointer", minHeight: TAP, background: st8.sauna ? C.copper : "transparent", color: st8.sauna ? C.ink : C.ash, border: "1px solid " + (st8.sauna ? C.copper : C.line) })}>SAUNA DAY</button> : null}
+          <button onClick={() => setInfo(!info)} style={Object.assign({}, mno, { flex: 1, fontSize: FS(9.5), letterSpacing: 1, padding: "8px 4px", borderRadius: 4, cursor: "pointer", minHeight: TAP, background: "transparent", color: C.ash, border: "1px solid " + C.line })}>{info ? "HIDE THE RULES" : "THE FOUR RULES"}</button>
         </div>
         {info ? (
           <div className="rise" style={{ marginTop: 10 }}>
             {HYDRA_RULES.map((r, i) => (
               <div key={i} style={{ display: "flex", gap: 8, padding: "6px 0", borderTop: i ? "1px solid " + C.line : "none" }}>
-                <span style={Object.assign({}, mno, { fontSize: 10, color: C.frost, flexShrink: 0 })}>{i + 1}</span>
-                <span style={Object.assign({}, bdy, { fontSize: 12.5, color: C.ash, lineHeight: 1.5 })}><span style={{ color: C.bone, fontWeight: 600 }}>{r[0]}</span> {r[1]}</span>
+                <span style={Object.assign({}, mno, { fontSize: FS(10), color: C.frost, flexShrink: 0 })}>{i + 1}</span>
+                <span style={Object.assign({}, bdy, { fontSize: FS(12.5), color: C.ash, lineHeight: 1.5 })}><span style={{ color: C.bone, fontWeight: 600 }}>{r[0]}</span> {r[1]}</span>
               </div>))}
             <Note s={{ fontStyle: "italic" }}>One 1-litre bottle for work, one 500 ml for the gym, sachets in the bag. Two sachets a day is the ceiling — three only on a sauna day — and salt your food.</Note>
           </div>) : null}
@@ -484,20 +541,20 @@ function Drink({ day, rows, st8, set }) {
           const litSachet = r.sachet && (!r.sachetIf || checks[r.sachetIf] === "dark");
           return (
             <div key={r.id} style={{ display: "flex", alignItems: "center", gap: 9, padding: "8px 14px", borderTop: "1px solid " + C.line, opacity: on ? .6 : 1 }}>
-              <span style={Object.assign({}, mno, { fontSize: 10, color: C.ash, width: 46, flexShrink: 0 })}>{r.tl || hhmm(r.mins)}</span>
+              <span style={Object.assign({}, mno, { fontSize: SZ.amount, color: C.ash, width: "4.2rem", flexShrink: 0 })}>{r.tl || hhmm(r.mins)}</span>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <div style={Object.assign({}, bdy, { fontSize: 13, color: dark ? C.copper : C.bone })}>{r.lab}{ml ? " · " + ml + " ml" : ""}</div>
-                {r.sachet ? <span style={Object.assign({}, mno, { fontSize: 8, letterSpacing: 1, display: "inline-block", marginTop: 3, padding: "1px 5px", borderRadius: 3, color: litSachet ? C.ink : C.ash, background: litSachet ? C.honey : "transparent", border: "1px solid " + (litSachet ? C.honey : C.line) })}>{SACHET} {r.sachet}</span> : null}
-                {r.note ? <div style={Object.assign({}, bdy, { fontSize: 11, color: C.ash, marginTop: 3, lineHeight: 1.45 })}>{r.note}</div> : null}
+                <div style={Object.assign({}, bdy, { fontSize: SZ.amount, color: dark ? C.copper : C.bone })}>{r.lab}{ml ? " · " + ml + " ml" : ""}</div>
+                {r.sachet ? <span style={Object.assign({}, mno, { fontSize: FS(8), letterSpacing: 1, display: "inline-block", marginTop: 3, padding: "1px 5px", borderRadius: 3, color: litSachet ? C.ink : C.ash, background: litSachet ? C.honey : "transparent", border: "1px solid " + (litSachet ? C.honey : C.line) })}>{SACHET} {r.sachet}</span> : null}
+                {r.note ? <div style={Object.assign({}, bdy, { fontSize: FS(11), color: C.ash, marginTop: 3, lineHeight: 1.45 })}>{r.note}</div> : null}
                 {r.check ? (
                   <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
                     {["pale", "dark"].map((v) => { const sel = checks[r.check] === v;
                       return <button key={v} onClick={() => { set({ c: Object.assign({}, checks, { [r.check]: sel ? null : v }) }); buzz(20); }}
-                        style={Object.assign({}, mno, { fontSize: 9.5, letterSpacing: 1, padding: "7px 12px", borderRadius: 4, cursor: "pointer", minHeight: 36, background: sel ? (v === "dark" ? C.copper : C.sage) : "transparent", color: sel ? C.ink : C.ash, border: "1px solid " + (sel ? (v === "dark" ? C.copper : C.sage) : C.line) })}>{v.toUpperCase()}</button>; })}
+                        style={Object.assign({}, mno, { fontSize: FS(9.5), letterSpacing: 1, padding: "7px 12px", borderRadius: 4, cursor: "pointer", minHeight: TAP, background: sel ? (v === "dark" ? C.copper : C.sage) : "transparent", color: sel ? C.ink : C.ash, border: "1px solid " + (sel ? (v === "dark" ? C.copper : C.sage) : C.line) })}>{v.toUpperCase()}</button>; })}
                   </div>) : null}
               </span>
               <button onClick={() => { set({ t: Object.assign({}, ticks, { [r.id]: !on }) }); buzz(25); }} aria-label={"Mark " + r.lab}
-                style={Object.assign({}, mno, { width: 38, height: 38, borderRadius: 6, cursor: "pointer", fontSize: 15, fontWeight: 700, flexShrink: 0, background: on ? C.frost : "transparent", color: on ? C.ink : C.ash, border: "1px solid " + (on ? C.frost : C.line) })}>{on ? "✓" : "○"}</button>
+                style={Object.assign({}, mno, { width: TAP, height: TAP, borderRadius: 6, cursor: "pointer", fontSize: FS(15), fontWeight: 700, flexShrink: 0, background: on ? C.frost : "transparent", color: on ? C.ink : C.ash, border: "1px solid " + (on ? C.frost : C.line) })}>{on ? "✓" : "○"}</button>
             </div>); })}
       </div>
     </Card>);
@@ -508,8 +565,8 @@ function Drink({ day, rows, st8, set }) {
    ================================================================ */
 function MacroBar({ label, val, max, c }) {
   return (
-    <div style={{ flex: 1 }}>
-      <div style={{ display: "flex", justifyContent: "space-between" }}><span style={Object.assign({}, mno, { fontSize: 7.5, color: C.ash, letterSpacing: 1 })}>{label}</span><span style={Object.assign({}, mno, { fontSize: 8.5, color: C.bone })}>{val}<span style={{ color: C.ash }}>/{max}</span></span></div>
+    <div style={{ flex: "1 1 130px", minWidth: 0 }}>
+      <div style={{ display: "flex", justifyContent: "space-between" }}><span style={Object.assign({}, mno, { fontSize: FS(7.5), color: C.ash, letterSpacing: 1 })}>{label}</span><span style={Object.assign({}, mno, { fontSize: SZ.amount, color: C.bone, textAlign: "right" })}>{val}<span style={{ color: C.ash }}>/{max}</span></span></div>
       <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 3 }}><div style={{ width: Math.min(100, val / max * 100) + "%", height: "100%", background: c, borderRadius: 2, transition: "width .3s" }} /></div>
     </div>);
 }
@@ -550,7 +607,7 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
           <input type="time" aria-label={wake ? "Wake time" : "Session start time"}
             value={pick || DEFAULT_START[day] || ""}
             onChange={(e) => { setPick(day, e.target.value || null); buzz(20); }}
-            style={Object.assign({}, mno, { flex: 1, minWidth: 0, background: C.ink, border: "1px solid " + (pick ? C.ember : C.line), borderRadius: 5, color: pick ? C.bone : C.ash, fontSize: 22, fontWeight: 700, padding: "10px 8px", textAlign: "center", minHeight: 56 })} />
+            style={Object.assign({}, mno, { flex: 1, minWidth: 0, background: C.ink, border: "1px solid " + (pick ? C.ember : C.line), borderRadius: 5, color: pick ? C.bone : C.ash, fontSize: FS(22), fontWeight: 700, padding: "10px 8px", textAlign: "center", minHeight: 56 })} />
           {pick ? <Btn small c={C.ash} on={() => { setPick(day, null); buzz(20); }} s={{ minHeight: 56, whiteSpace: "nowrap" }}>PLAN TIMES</Btn> : null}
         </div>
         <Note s={{ marginTop: 8 }}>{pick
@@ -562,12 +619,12 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
           <Card ac={P.c} s={{ padding: "12px 14px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
               <span>
-                <span style={Object.assign({}, dsp, { fontSize: 17, fontWeight: 800, letterSpacing: 1.3, color: P.c })}>{P.n}</span>
-                {P.sub ? <span style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash, marginLeft: 7 })}>{P.sub}</span> : null}
+                <span style={Object.assign({}, dsp, { fontSize: FS(17), fontWeight: 800, letterSpacing: 1.3, color: P.c })}>{P.n}</span>
+                {P.sub ? <span style={Object.assign({}, bdy, { fontSize: FS(11.5), color: C.ash, marginLeft: 7 })}>{P.sub}</span> : null}
               </span>
-              <span style={Object.assign({}, mno, { fontSize: 12, fontWeight: 700, color: C.honey, whiteSpace: "nowrap" })}>~{P.t.kcal.toLocaleString()}</span>
+              <span style={Object.assign({}, mno, { fontSize: FS(12), fontWeight: 700, color: C.honey, whiteSpace: "nowrap" })}>~{P.t.kcal.toLocaleString()}</span>
             </div>
-            <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 3 })}>P{P.t.p} · C{P.t.c} · F{P.t.f} · DAILY AVERAGE</div>
+            <div style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash, marginTop: 3 })}>P{P.t.p} · C{P.t.c} · F{P.t.f} · DAILY AVERAGE</div>
             {P.r.map((x, i) => <Note key={i} s={{ marginTop: 6 }}>{x}</Note>)}
             {MIDBANANA[phase] && day === "sun" ? <Note c={C.honey} bold>Scored and seven-round weeks: the mid-session banana, in the gap before the Nordics.</Note> : null}
           </Card>); })() : null}
@@ -577,15 +634,15 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
 
       <Card ac={d.star ? C.ember : C.line} s={{ padding: 0, overflow: "hidden" }}>
         <div style={{ padding: 14 }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-            <span style={Object.assign({}, dsp, { fontSize: 28, fontWeight: 800, letterSpacing: 1.6, color: C.bone, lineHeight: 1 })}>{d.star ? "★ " : ""}{d.n}</span>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "4px 10px" }}>
+            <span style={Object.assign({}, dsp, { fontSize: FS(28), fontWeight: 800, letterSpacing: 1.6, color: C.bone, lineHeight: 1 })}>{d.star ? "★ " : ""}{d.n}</span>
             <span style={{ textAlign: "right" }}>
-              <span style={Object.assign({}, mno, { fontSize: 18, fontWeight: 700, color: C.honey })}>{tot.k.toLocaleString()}<span style={{ fontSize: 9, color: C.ash }}> KCAL</span></span>
-              {swapped ? <div style={Object.assign({}, mno, { fontSize: 8, letterSpacing: 1.2, color: C.ember, marginTop: 2 })}>SWAPS IN PLAY</div> : null}
+              <span style={Object.assign({}, mno, { fontSize: FS(18), fontWeight: 700, color: C.honey })}>{tot.k.toLocaleString()}<span style={{ fontSize: FS(9), color: C.ash }}> KCAL</span></span>
+              {swapped ? <div style={Object.assign({}, mno, { fontSize: FS(8), letterSpacing: 1.2, color: C.ember, marginTop: 2 })}>SWAPS IN PLAY</div> : null}
             </span>
           </div>
-          <div style={Object.assign({}, bdy, { fontSize: 12.5, color: C.ash, marginTop: 4 })}>{d.tag}</div>
-          <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+          <div style={Object.assign({}, bdy, { fontSize: FS(12.5), color: C.ash, marginTop: 4 })}>{d.tag}</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
             <MacroBar label="KCAL" val={eaten.k} max={tot.k} c={C.honey} />
             <MacroBar label="P" val={eaten.p} max={tot.p} c={C.sage} />
             <MacroBar label="C" val={eaten.c} max={tot.c} c={C.ember} />
@@ -593,8 +650,8 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
           </div>
         </div>
         <div style={{ background: C.ink, borderTop: "1px solid " + C.line, padding: "10px 14px" }}>
-          <div style={Object.assign({}, mno, { fontSize: 8.5, letterSpacing: 1.4, color: C.ember })}>{d.call[0]}</div>
-          <div style={Object.assign({}, bdy, { fontSize: 12, color: C.bone, marginTop: 4, lineHeight: 1.45 })}>{d.call[1]}</div>
+          <div style={Object.assign({}, mno, { fontSize: FS(8.5), letterSpacing: 1.4, color: C.ember })}>{d.call[0]}</div>
+          <div style={Object.assign({}, bdy, { fontSize: FS(12), color: C.bone, marginTop: 4, lineHeight: 1.45 })}>{d.call[1]}</div>
         </div>
       </Card>
 
@@ -604,11 +661,11 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>
                 <Eye c={C.ember} s={{ marginBottom: 3 }}>Next feed{sound ? " · chimes when due" : ""}</Eye>
-                <div style={Object.assign({}, dsp, { fontSize: 21, fontWeight: 800, letterSpacing: 1, color: C.bone })}>{B[f.b].n}</div>
+                <div style={Object.assign({}, dsp, { fontSize: FS(21), fontWeight: 800, letterSpacing: 1, color: C.bone })}>{B[f.b].n}</div>
               </span>
               <span style={{ textAlign: "right" }}>
-                <div style={Object.assign({}, mno, { fontSize: 26, fontWeight: 700, color: C.ember, lineHeight: 1 })}>{f.tl || f.t}</div>
-                <div style={Object.assign({}, mno, { fontSize: 9.5, color: mins <= 0 ? C.sage : C.ash, marginTop: 3, animation: mins <= 0 ? "pulse 1.4s infinite" : "none" })}>{mins <= 0 ? "NOW" : "IN " + (mins >= 60 ? Math.floor(mins / 60) + "H " + (mins % 60) + "M" : mins + " MIN")}</div>
+                <div style={Object.assign({}, mno, { fontSize: FS(26), fontWeight: 700, color: C.ember, lineHeight: 1 })}>{f.tl || f.t}</div>
+                <div style={Object.assign({}, mno, { fontSize: FS(9.5), color: mins <= 0 ? C.sage : C.ash, marginTop: 3, animation: mins <= 0 ? "pulse 1.4s infinite" : "none" })}>{mins <= 0 ? "NOW" : "IN " + (mins >= 60 ? Math.floor(mins / 60) + "H " + (mins % 60) + "M" : mins + " MIN")}</div>
               </span>
             </div>
           </Card>); })() : null}
@@ -616,10 +673,10 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
       {feeds.map((f, i) => {
         if (f.ev) return (
           <div key={i} style={{ display: "flex", gap: 10, alignItems: "center", padding: "9px 2px", opacity: .95 }}>
-            <span style={Object.assign({}, mno, { fontSize: 10, color: C.ash, width: 40, flexShrink: 0 })}>{f.t}</span>
+            <span style={Object.assign({}, mno, { fontSize: SZ.amount, color: C.ash, width: "3.6rem", flexShrink: 0 })}>{f.t}</span>
             <span style={{ flex: 1, minWidth: 0, position: "relative" }}>
               <span style={{ position: "absolute", top: "50%", left: 0, right: 0, borderTop: "1px dashed " + C.line }} />
-              <span style={Object.assign({}, dsp, { position: "relative", display: "inline-block", background: C.ink, padding: "0 8px", fontSize: 13, fontWeight: 700, letterSpacing: 1, lineHeight: 1.25, color: f.ev.indexOf("★") >= 0 ? C.ember : C.ash })}>{f.ev}</span>
+              <span style={Object.assign({}, dsp, { position: "relative", display: "inline-block", background: C.ink, padding: "0 8px", fontSize: FS(13), fontWeight: 700, letterSpacing: 1, lineHeight: 1.25, color: f.ev.indexOf("★") >= 0 ? C.ember : C.ash })}>{f.ev}</span>
             </span>
           </div>);
         const m = meta[i], bl = blk(i), on = !!dl[i], isNext = i === nextIdx, isOpen = open === i;
@@ -628,29 +685,29 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
           <Card key={i} tid="feed" ac={on ? C.sage : f.crit ? C.ember : C.line} s={{ padding: 0, opacity: on ? .68 : 1, borderColor: isNext ? C.ember : C.line }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px" }}>
               <span onClick={() => setOpen(isOpen ? null : i)} style={{ flex: 1, minWidth: 0, cursor: "pointer", display: "flex", alignItems: "center", gap: 10 }}>
-                <span style={Object.assign({}, mno, { fontSize: 11, color: isNext ? C.ember : C.ash, width: 40, flexShrink: 0, fontWeight: isNext ? 700 : 400 })}>{f.tl || f.t}</span>
+                <span style={Object.assign({}, mno, { fontSize: SZ.row, color: isNext ? C.ember : C.ash, minWidth: "3.6rem", flexShrink: 0, fontWeight: isNext ? 700 : 400 })}>{f.tl || f.t}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <div style={Object.assign({}, bdy, { fontSize: 14.5, fontWeight: 600, color: f.crit && !on ? C.ember : C.bone })}>{f.crit ? "★ " : ""}{bl.n}</div>
-                  <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" })}>
+                  <div style={Object.assign({}, bdy, { fontSize: SZ.row, fontWeight: 600, color: f.crit && !on ? C.ember : C.bone })}>{f.crit ? "★ " : ""}{bl.n}</div>
+                  <div style={Object.assign({}, mno, { fontSize: SZ.amount, color: C.ash, marginTop: 4, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" })}>
                     <span>{bl.kcal} KCAL · P{bl.p} C{bl.c} F{bl.f}</span>
-                    {S ? <span style={{ fontSize: 8, letterSpacing: 1, color: m.key !== m.base ? C.ink : C.ash, background: m.key !== m.base ? C.ember : "transparent", border: "1px solid " + (m.key !== m.base ? C.ember : C.line), borderRadius: 3, padding: "1px 4px" }}>{m.key !== m.base ? "SWAP" : "AS WRITTEN"}</span> : null}
+                    {S ? <span style={{ fontSize: FS(8), letterSpacing: 1, color: m.key !== m.base ? C.ink : C.ash, background: m.key !== m.base ? C.ember : "transparent", border: "1px solid " + (m.key !== m.base ? C.ember : C.line), borderRadius: 3, padding: "1px 4px" }}>{m.key !== m.base ? "SWAP" : "AS WRITTEN"}</span> : null}
                   </div>
                 </span>
               </span>
-              <button onClick={() => tick(i)} aria-label={"Mark " + bl.n} style={Object.assign({}, mno, { width: 44, height: 44, borderRadius: 6, cursor: "pointer", fontSize: 17, fontWeight: 700, flexShrink: 0, background: on ? C.sage : "transparent", color: on ? C.ink : C.ash, border: "1px solid " + (on ? C.sage : C.line) })}>{on ? "✓" : "○"}</button>
+              <button onClick={() => tick(i)} aria-label={"Mark " + bl.n} style={Object.assign({}, mno, { width: TAP, height: TAP, borderRadius: 6, cursor: "pointer", fontSize: FS(17), fontWeight: 700, flexShrink: 0, background: on ? C.sage : "transparent", color: on ? C.ink : C.ash, border: "1px solid " + (on ? C.sage : C.line) })}>{on ? "✓" : "○"}</button>
             </div>
             {isOpen ? (
               <div className="rise" style={{ padding: "0 12px 12px 62px" }}>
                 {bl.i.map((it, j) => <div key={j} style={{ display: "flex", justifyContent: "space-between", padding: "5px 0", borderTop: j ? "1px solid " + C.line : "none" }}>
-                  <span style={Object.assign({}, bdy, { fontSize: 13, color: C.bone })}>{it[0]}</span>
-                  <span style={Object.assign({}, mno, { fontSize: 11, color: C.honey })}>{it[1]}</span></div>)}
+                  <span style={Object.assign({}, bdy, { fontSize: SZ.amount, color: C.bone })}>{it[0]}</span>
+                  <span style={Object.assign({}, mno, { fontSize: SZ.amount, color: C.honey })}>{it[1]}</span></div>)}
 {bl.cook ? (() => {
                   const parts = [];
                   if (cook && cook.mince) parts.push("cooked mince ≈ " + cook.mince[bl.cook] + " g");
                   if (cook && cook.potato) parts.push("cooked sweet potato ≈ " + cook.potato[bl.cook] + " g");
                   return parts.length
-                    ? <div style={Object.assign({}, mno, { fontSize: 10.5, color: C.sage, marginTop: 8, lineHeight: 1.5 })}>{parts.join(" · ")}</div>
-                    : <div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash, marginTop: 8, fontStyle: "italic" })}>Weigh each pan once in COOK and this card shows what one portion of each looks like cooked.</div>;
+                    ? <div style={Object.assign({}, mno, { fontSize: FS(10.5), color: C.sage, marginTop: 8, lineHeight: 1.5 })}>{parts.join(" · ")}</div>
+                    : <div style={Object.assign({}, bdy, { fontSize: FS(11.5), color: C.ash, marginTop: 8, fontStyle: "italic" })}>Weigh each pan once in COOK and this card shows what one portion of each looks like cooked.</div>;
                 })() : null}
                 {bl.bn ? <Note s={{ fontStyle: "italic" }}>{bl.bn}</Note> : null}
                 {f.note ? <Note s={{ fontStyle: "italic" }}>{f.note}</Note> : null}
@@ -660,11 +717,11 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
                     {S.opts.map((k, oi) => { const b = blockOf(k, m.slot, m.big), sel = k === m.key;
                       return (
                         <button key={k} onClick={() => { setMenu(m.id, k === m.base ? null : k, k); buzz(20); }}
-                          style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, textAlign: "left", background: "transparent", border: "none", borderTop: oi ? "1px solid " + C.line : "none", padding: "8px 0", cursor: "pointer", minHeight: 44 }}>
-                          <span style={Object.assign({}, mno, { fontSize: 11, color: sel ? C.ember : C.line, flexShrink: 0 })}>{sel ? "●" : "○"}</span>
+                          style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, textAlign: "left", background: "transparent", border: "none", borderTop: oi ? "1px solid " + C.line : "none", padding: "8px 0", cursor: "pointer", minHeight: TAP }}>
+                          <span style={Object.assign({}, mno, { fontSize: FS(11), color: sel ? C.ember : C.ash, flexShrink: 0 })}>{sel ? "●" : "○"}</span>
                           <span style={{ flex: 1, minWidth: 0 }}>
-                            <span style={Object.assign({}, bdy, { fontSize: 13, fontWeight: sel ? 600 : 400, color: sel ? C.bone : C.ash, display: "block" })}>{b.n}</span>
-                            <span style={Object.assign({}, mno, { fontSize: 9, color: C.ash })}>{b.kcal} KCAL · P{b.p} C{b.c} F{b.f}</span>
+                            <span style={Object.assign({}, bdy, { fontSize: FS(13), fontWeight: sel ? 600 : 400, color: sel ? C.bone : C.ash, display: "block" })}>{b.n}</span>
+                            <span style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash })}>{b.kcal} KCAL · P{b.p} C{b.c} F{b.f}</span>
                           </span>
                         </button>); })}
                   </div>) : null}
@@ -674,8 +731,8 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
       })}
       <Card s={{ padding: "10px 14px" }}>
         <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <span style={Object.assign({}, mno, { fontSize: 9, color: C.frost, letterSpacing: 1 })}>HYDRATION</span>
-          <span style={Object.assign({}, bdy, { fontSize: 12, color: C.ash, flex: 1 })}>Electrolytes on site · urine pale straw — dark at 10am means the morning session ran under-watered. Drink before bed, not just at 3am.</span>
+          <span style={Object.assign({}, mno, { fontSize: FS(9), color: C.frost, letterSpacing: 1 })}>HYDRATION</span>
+          <span style={Object.assign({}, bdy, { fontSize: FS(12), color: C.ash, flex: 1 })}>Electrolytes on site · urine pale straw — dark at 10am means the morning session ran under-watered. Drink before bed, not just at 3am.</span>
         </div>
       </Card>
     </div>);
@@ -684,18 +741,18 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
 /* ================================================================
    COOK — the raw→cooked problem, solved
    ================================================================ */
-const Step = ({ n, t }) => <div style={{ display: "flex", gap: 10, alignItems: "baseline", marginBottom: 6 }}><span style={Object.assign({}, mno, { fontSize: 11, fontWeight: 700, color: C.ember, width: 16, flexShrink: 0 })}>{n}</span><span style={Object.assign({}, bdy, { fontSize: 13, color: C.bone, lineHeight: 1.45 })}>{t}</span></div>;
+const Step = ({ n, t }) => <div style={{ display: "flex", gap: 10, alignItems: "baseline", marginBottom: 6 }}><span style={Object.assign({}, mno, { fontSize: FS(11), fontWeight: 700, color: C.ember, width: 16, flexShrink: 0 })}>{n}</span><span style={Object.assign({}, bdy, { fontSize: FS(13), color: C.bone, lineHeight: 1.45 })}>{t}</span></div>;
 const Big = ({ v, on, ph, lab }) => (
-  <div style={{ flex: 1, minWidth: 0 }}>
+  <div style={{ flex: "1 1 130px", minWidth: 0 }}>
     <Lab>{lab}</Lab>
     <input value={v} onChange={(e) => on(e.target.value)} placeholder={ph} inputMode="decimal" type="text"
-      style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 5, color: C.bone, fontSize: 20, fontWeight: 700, padding: "12px 8px", textAlign: "center", minHeight: 56 })} />
+      style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 5, color: C.bone, fontSize: FS(20), fontWeight: 700, padding: "12px 8px", textAlign: "center", minHeight: 56 })} />
   </div>
 );
 const Out = ({ lab, v, colour }) => (
-  <div style={{ flex: 1, background: C.card, border: "1px solid " + colour, borderRadius: 6, padding: "14px 6px", textAlign: "center" }}>
-    <div style={Object.assign({}, mno, { fontSize: 8.5, color: C.ash, letterSpacing: 1.2 })}>{lab}</div>
-    <div style={Object.assign({}, mno, { fontSize: 40, fontWeight: 700, color: colour, lineHeight: 1.05 })}>{v}<span style={{ fontSize: 15, color: C.ash }}>g</span></div>
+  <div style={{ flex: "1 1 130px", background: C.card, border: "1px solid " + colour, borderRadius: 6, padding: "14px 6px", textAlign: "center" }}>
+    <div style={Object.assign({}, mno, { fontSize: FS(8.5), color: C.ash, letterSpacing: 1.2 })}>{lab}</div>
+    <div style={Object.assign({}, mno, { fontSize: FS(40), fontWeight: 700, color: colour, lineHeight: 1.05 })}>{v}<span style={{ fontSize: FS(15), color: C.ash }}>g</span></div>
   </div>
 );
 /* One calculator: two inputs, two live outputs, a portion count and a save. */
@@ -703,21 +760,21 @@ const Calc = ({ title, colour, blurb, rawLab, rawPh, ckLab, ckPh, raw, setRaw, c
   <Card ac={colour}>
     <Eye c={colour}>{title}</Eye>
     <Note s={{ marginTop: 0 }}>{blurb}</Note>
-    <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+    <div style={{ display: "flex", flexWrap: "wrap", gap: 8, marginTop: 12 }}>
       <Big lab={rawLab} ph={rawPh} v={raw} on={setRaw} />
       <Big lab={ckLab} ph={ckPh} v={ck} on={setCk} />
     </div>
     {out ? (
       <div className="rise" style={{ marginTop: 12 }}>
-        <div style={{ display: "flex", gap: 8 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
           <Out lab="ONE STANDARD" v={out.std} colour={colour} />
           <Out lab="ONE BIG" v={out.big} colour={C.bone} />
         </div>
         <Btn c={C.sage} fill s={{ width: "100%", marginTop: 10 }} on={() => { onSave(out); buzz([60, 40, 60]); }}>SAVE — SHOW ON EVERY BATCH FEED</Btn>
       </div>
     ) : <Note s={{ fontStyle: "italic" }}>Type both weights and the two numbers appear here.</Note>}
-    {count ? <div style={Object.assign({}, mno, { fontSize: 10, color: C.ash, marginTop: 10, letterSpacing: .6 })}>{countLab} {count} STANDARD PORTIONS</div> : null}
-    {saved ? <div style={Object.assign({}, mno, { fontSize: 9.5, color: C.sage, marginTop: 6 })}>SAVED · {saved.std}g STANDARD · {saved.big}g BIG{saved.date ? " · " + saved.date : ""}</div> : null}
+    {count ? <div style={Object.assign({}, mno, { fontSize: FS(10), color: C.ash, marginTop: 10, letterSpacing: .6 })}>{countLab} {count} STANDARD PORTIONS</div> : null}
+    {saved ? <div style={Object.assign({}, mno, { fontSize: FS(9.5), color: C.sage, marginTop: 6 })}>SAVED · {saved.std}g STANDARD · {saved.big}g BIG{saved.date ? " · " + saved.date : ""}</div> : null}
   </Card>
 );
 
@@ -764,8 +821,8 @@ function Cook({ cook, setCook, foods, setFoods, K, prep, setPrep }) {
         title="Mince pot"
         colour={C.copper}
         blurb="Mince, passata and stock together. A standard portion is 150g of raw mince, a big one 200g."
-        rawLab="Raw mince cooked (g)" rawPh="e.g. 2200"
-        ckLab="Cooked pot weight (g)" ckPh="e.g. 3500"
+        rawLab="Raw mince cooked (g)" rawPh="2200"
+        ckLab="Cooked pot weight (g)" ckPh="3500"
         raw={mRaw} setRaw={setMRaw} ck={mCooked} setCk={setMCooked}
         out={mOut} count={mCount} countLab="THIS POT ="
         saved={cook && cook.mince}
@@ -776,8 +833,8 @@ function Cook({ cook, setCook, foods, setFoods, K, prep, setPrep }) {
         title="Sweet potato"
         colour={C.honey}
         blurb="All of it, roasted or boiled. A standard portion is 300g raw, a big one 350g."
-        rawLab="Raw sweet potato cooked (g)" rawPh="e.g. 4300"
-        ckLab="Cooked weight (g)" ckPh="e.g. 3400"
+        rawLab="Raw sweet potato cooked (g)" rawPh="4300"
+        ckLab="Cooked weight (g)" ckPh="3400"
         raw={sRaw} setRaw={setSRaw} ck={sCooked} setCk={setSCooked}
         out={sOut} count={sCount} countLab="THIS BATCH ="
         saved={cook && cook.potato}
@@ -787,31 +844,31 @@ function Cook({ cook, setCook, foods, setFoods, K, prep, setPrep }) {
       <Card ac={C.honey}>
         <Eye c={C.honey}>Batch anything — the universal converter</Eye>
         <Note s={{ marginTop: 0 }}>Rice, pasta, chicken — cook a batch, weigh it once, and serve by cooked weight from then on.</Note>
-        <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-          <div style={{ flex: 1 }}><Lab>Raw in (g)</Lab><Fld v={uRaw} on={setURaw} ph="e.g. 500" /></div>
-          <div style={{ flex: 1 }}><Lab>Cooked out (g)</Lab><Fld v={uCooked} on={setUCooked} ph="e.g. 1300" /></div>
-          <div style={{ flex: 1 }}><Lab>Plan asks (g raw)</Lab><Fld v={uTarget} on={setUTarget} ph="e.g. 100" /></div>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+          <div style={{ flex: "1 1 110px", minWidth: 0 }}><Lab>Raw in (g)</Lab><Fld v={uRaw} on={setURaw} ph="500" /></div>
+          <div style={{ flex: "1 1 110px", minWidth: 0 }}><Lab>Cooked out (g)</Lab><Fld v={uCooked} on={setUCooked} ph="1300" /></div>
+          <div style={{ flex: "1 1 110px", minWidth: 0 }}><Lab>Plan asks (g raw)</Lab><Fld v={uTarget} on={setUTarget} ph="100" /></div>
         </div>
         {uOut ? <div className="rise" style={{ textAlign: "center", marginTop: 12 }}>
-          <div style={Object.assign({}, mno, { fontSize: 34, fontWeight: 700, color: C.honey })}>{uOut}<span style={{ fontSize: 14, color: C.ash }}>g cooked</span></div>
-          <div style={Object.assign({}, mno, { fontSize: 9.5, color: C.ash, marginTop: 3 })}>YOUR RATIO ×{uFactor.toFixed(2)}</div>
-          <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-            <div style={{ flex: 2 }}><Fld v={uName} on={setUName} ph="save as… e.g. RICE 100g dry" s={{ textAlign: "left", fontSize: 12 }} /></div>
+          <div style={Object.assign({}, mno, { fontSize: FS(34), fontWeight: 700, color: C.honey })}>{uOut}<span style={{ fontSize: FS(14), color: C.ash }}>g cooked</span></div>
+          <div style={Object.assign({}, mno, { fontSize: FS(9.5), color: C.ash, marginTop: 3 })}>YOUR RATIO ×{uFactor.toFixed(2)}</div>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>
+            <div style={{ flex: "2 1 160px", minWidth: 0 }}><Fld v={uName} on={setUName} ph="save as… e.g. RICE 100g dry" s={{ textAlign: "left", fontSize: FS(12) }} /></div>
             <Btn small c={C.honey} dis={!uName.trim()} on={() => { setFoods([{ n: uName.trim().toUpperCase(), out: uOut, factor: +uFactor.toFixed(2) }].concat(foods.filter((x) => x.n !== uName.trim().toUpperCase()))); setUName(""); buzz(40); }}>SAVE</Btn>
           </div>
         </div> : null}
         {foods.length ? <div style={{ marginTop: 12 }}>
           <Eye s={{ marginBottom: 4 }}>Your saved ratios — one tap in the kitchen</Eye>
           {foods.map((x, i) => <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "7px 0", borderTop: "1px solid " + C.line }}>
-            <span style={Object.assign({}, bdy, { fontSize: 13, fontWeight: 600, color: C.bone })}>{x.n}</span>
+            <span style={Object.assign({}, bdy, { fontSize: FS(13), fontWeight: 600, color: C.bone })}>{x.n}</span>
             <span style={{ display: "flex", gap: 10, alignItems: "center" }}>
-              <span style={Object.assign({}, mno, { fontSize: 14, fontWeight: 700, color: C.honey })}>{x.out}g cooked</span>
-              <button onClick={() => setFoods(foods.filter((_, j) => j !== i))} style={Object.assign({}, mno, { background: "transparent", border: "none", color: C.ash, cursor: "pointer", fontSize: 13 })}>×</button>
+              <span style={Object.assign({}, mno, { fontSize: FS(14), fontWeight: 700, color: C.honey })}>{x.out}g cooked</span>
+              <button onClick={() => setFoods(foods.filter((_, j) => j !== i))} style={Object.assign({}, mno, { background: "transparent", border: "none", color: C.ash, cursor: "pointer", fontSize: FS(13) })}>×</button>
             </span></div>)}
         </div> : null}
         <div style={{ marginTop: 12 }}>
           <Eye s={{ marginBottom: 4 }}>Typical yields — guides until you've weighed your own</Eye>
-          {YIELDS.map((y) => <div key={y[0]} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span style={Object.assign({}, bdy, { fontSize: 12, color: C.ash })}>{y[0]}</span><span style={Object.assign({}, mno, { fontSize: 10.5, color: C.ash })}>{y[1]}</span></div>)}
+          {YIELDS.map((y) => <div key={y[0]} style={{ display: "flex", justifyContent: "space-between", padding: "4px 0" }}><span style={Object.assign({}, bdy, { fontSize: FS(12), color: C.ash })}>{y[0]}</span><span style={Object.assign({}, mno, { fontSize: FS(10.5), color: C.ash })}>{y[1]}</span></div>)}
         </div>
       </Card>
 
@@ -830,10 +887,10 @@ function Cook({ cook, setCook, foods, setFoods, K, prep, setPrep }) {
           return (
             <div key={i} onClick={() => { setPrep(Object.assign({}, prep, { [i]: !on })); buzz(25); }}
               style={{ display: "flex", gap: 11, alignItems: "flex-start", padding: "10px 0", borderTop: "1px solid " + C.line, cursor: "pointer" }}>
-              <span style={Object.assign({}, mno, { width: 26, height: 26, borderRadius: 4, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, background: on ? C.sage : "transparent", color: C.ink, border: "1px solid " + (on ? C.sage : C.line) })}>{on ? "✓" : ""}</span>
+              <span style={Object.assign({}, mno, { width: 26, height: 26, borderRadius: 4, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: FS(13), fontWeight: 700, background: on ? C.sage : "transparent", color: C.ink, border: "1px solid " + (on ? C.sage : C.line) })}>{on ? "✓" : ""}</span>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <div style={Object.assign({}, bdy, { fontSize: 13.5, fontWeight: 600, color: on ? C.ash : C.bone, textDecoration: on ? "line-through" : "none" })}>{x[0]}</div>
-                <div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash, marginTop: 2, lineHeight: 1.45 })}>{x[1]}</div>
+                <div style={Object.assign({}, bdy, { fontSize: FS(13.5), fontWeight: 600, color: on ? C.ash : C.bone, textDecoration: on ? "line-through" : "none" })}>{x[0]}</div>
+                <div style={Object.assign({}, bdy, { fontSize: FS(11.5), color: C.ash, marginTop: 2, lineHeight: 1.45 })}>{x[1]}</div>
               </span>
             </div>); })}
       </Card>
@@ -866,7 +923,7 @@ function Shop({ shop, setShop, used, today }) {
     <div>
       <Card ac={C.honey} s={{ padding: "12px 14px" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-          <span><Eye c={C.honey} s={{ marginBottom: 2 }}>The weekly shop</Eye><span style={Object.assign({}, mno, { fontSize: 13, color: C.bone })}>{got}/{total} in the trolley</span></span>
+          <span><Eye c={C.honey} s={{ marginBottom: 2 }}>The weekly shop</Eye><span style={Object.assign({}, mno, { fontSize: FS(13), color: C.bone })}>{got}/{total} in the trolley</span></span>
           <Btn small c={C.ash} on={() => setShop({})}>NEW WEEK</Btn>
         </div>
         <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 10 }}><div style={{ width: got / total * 100 + "%", height: "100%", background: C.honey, borderRadius: 2, transition: "width .3s" }} /></div>
@@ -877,10 +934,10 @@ function Shop({ shop, setShop, used, today }) {
           {g[1].map((it, i) => { const k = gi + "-" + i, on = !!shop[k];
             return (
               <div key={k} onClick={() => setShop(Object.assign({}, shop, { [k]: !on }))} style={{ display: "flex", gap: 11, alignItems: "center", padding: "9px 0", borderTop: i ? "1px solid " + C.line : "none", cursor: "pointer" }}>
-                <span style={Object.assign({}, mno, { width: 26, height: 26, borderRadius: 4, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700, background: on ? C.sage : "transparent", color: C.ink, border: "1px solid " + (on ? C.sage : C.line) })}>{on ? "✓" : ""}</span>
+                <span style={Object.assign({}, mno, { width: 26, height: 26, borderRadius: 4, flexShrink: 0, display: "flex", alignItems: "center", justifyContent: "center", fontSize: FS(13), fontWeight: 700, background: on ? C.sage : "transparent", color: C.ink, border: "1px solid " + (on ? C.sage : C.line) })}>{on ? "✓" : ""}</span>
                 <span style={{ flex: 1, minWidth: 0 }}>
-                  <div style={Object.assign({}, bdy, { fontSize: 14, fontWeight: 600, color: on ? C.ash : C.bone, textDecoration: on ? "line-through" : "none" })}>{it[0]}</div>
-                  <div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash, marginTop: 1 })}>{it[1]}</div>
+                  <div style={Object.assign({}, bdy, { fontSize: SZ.row, fontWeight: 600, color: on ? C.ash : C.bone, textDecoration: on ? "line-through" : "none" })}>{it[0]}</div>
+                  <div style={Object.assign({}, bdy, { fontSize: SZ.amount, color: C.ash, marginTop: 3 })}>{it[1]}</div>
                 </span>
               </div>);
           })}
@@ -987,7 +1044,7 @@ function verdicts(rows) {
 function Trend({ lines, unit }) {
   const W = 300, H = 92, P = { l: 4, r: 4, t: 10, b: 16 };
   const all = lines.flatMap((l) => l.pts);
-  if (all.length < 2) return <div style={Object.assign({}, bdy, { fontSize: 12, color: C.ash, fontStyle: "italic", padding: "14px 0" })}>Two entries and the line starts.</div>;
+  if (all.length < 2) return <div style={Object.assign({}, bdy, { fontSize: FS(12), color: C.ash, fontStyle: "italic", padding: "14px 0" })}>Two entries and the line starts.</div>;
   const xs = all.map((p) => parseISO(p.d).getTime());
   const x0 = Math.min(...xs), x1 = Math.max(...xs);
   const vs = all.map((p) => p.v);
@@ -1004,7 +1061,7 @@ function Trend({ lines, unit }) {
       {lines.map((l) => l.pts.map((p, i) => <circle key={l.k + i} cx={X(p.d)} cy={Y(p.v)} r="4" fill={l.c} stroke={C.card} strokeWidth="2" />))}
       {lines.map((l) => { const p = l.pts[l.pts.length - 1];
         return <text key={l.k + "lab"} x={Math.min(X(p.d) + 7, W - 2)} y={Y(p.v) - 7} textAnchor={X(p.d) > W - 60 ? "end" : "start"}
-          style={Object.assign({}, mno, { fontSize: 10, fontWeight: 700 })} fill={C.bone}>{p.v}{unit}</text>; })}
+          style={Object.assign({}, mno, { fontSize: FS(10), fontWeight: 700 })} fill={C.bone}>{p.v}{unit}</text>; })}
     </svg>);
 }
 
@@ -1038,12 +1095,12 @@ function Referee({ tape, setTape, phase }) {
       <Card ac={C.ember}>
         <Eye c={C.ember}>The referee</Eye>
         <Note s={{ marginTop: 0 }}>Bodyweight and waist every Sunday; arm and shoulder every four weeks. Nothing here counts calories burned — what the tape and the scale do over weeks is the only verdict that counts.</Note>
-        <div style={{ display: "flex", gap: 10, marginTop: 12 }}>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 12 }}>
           {MEASURES.map((m) => { const v = latest(m.k);
             return (
-              <div key={m.k} style={{ flex: 1, minWidth: 0 }}>
-                <div style={Object.assign({}, mno, { fontSize: 7.5, letterSpacing: 1, color: C.ash })}>{m.n}</div>
-                <div style={Object.assign({}, mno, { fontSize: 17, fontWeight: 700, color: v == null ? C.line : m.c, lineHeight: 1.2 })}>{v == null ? "—" : v}</div>
+              <div key={m.k} style={{ flex: "1 1 130px", minWidth: 0 }}>
+                <div style={Object.assign({}, mno, { fontSize: FS(7.5), letterSpacing: 1, color: C.ash })}>{m.n}</div>
+                <div style={Object.assign({}, mno, { fontSize: FS(17), fontWeight: 700, color: v == null ? C.ash : m.c, lineHeight: 1.2 })}>{v == null ? "—" : v}</div>
               </div>); })}
         </div>
       </Card>
@@ -1052,9 +1109,9 @@ function Referee({ tape, setTape, phase }) {
         <Card ac={P.c}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
             <Eye c={P.c} s={{ marginBottom: 0 }}>{P.n}{P.sub ? " · " + P.sub : ""}</Eye>
-            <span style={Object.assign({}, mno, { fontSize: 12, fontWeight: 700, color: C.honey, whiteSpace: "nowrap" })}>~{P.t.kcal.toLocaleString()}</span>
+            <span style={Object.assign({}, mno, { fontSize: FS(12), fontWeight: 700, color: C.honey, whiteSpace: "nowrap" })}>~{P.t.kcal.toLocaleString()}</span>
           </div>
-          <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 4 })}>P{P.t.p} · C{P.t.c} · F{P.t.f} · DAILY AVERAGE</div>
+          <div style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash, marginTop: 4 })}>P{P.t.p} · C{P.t.c} · F{P.t.f} · DAILY AVERAGE</div>
           {P.r.map((x, i) => <Note key={i} s={{ marginTop: 6 }}>{x}</Note>)}
         </Card>) : null}
 
@@ -1081,7 +1138,7 @@ function Referee({ tape, setTape, phase }) {
         <Card key={m.k} ac={m.c}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
             <Eye c={m.c} s={{ marginBottom: 0 }}>{m.n} · {m.unit}</Eye>
-            <span style={Object.assign({}, mno, { fontSize: 9, color: C.ash, whiteSpace: "nowrap" })}>{series(rows, m.k).length} ENTRIES{m.every4 ? " · EVERY 4 WEEKS" : ""}</span>
+            <span style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash, textAlign: "right" })}>{series(rows, m.k).length} ENTRIES{m.every4 ? " · EVERY 4 WEEKS" : ""}</span>
           </div>
           <Trend lines={[{ k: m.k, c: m.c, pts: series(rows, m.k) }]} unit={m.unit} />
         </Card>))}
@@ -1091,11 +1148,11 @@ function Referee({ tape, setTape, phase }) {
         {V.map((v) => (
           <div key={v.id} style={{ borderTop: "1px solid " + C.line, padding: "10px 0 2px" }}>
             <div style={{ display: "flex", gap: 8, alignItems: "flex-start" }}>
-              <span style={Object.assign({}, mno, { fontSize: 9, fontWeight: 700, color: v.lit ? C.copper : C.line, flexShrink: 0, marginTop: 2 })}>{v.lit ? "●" : "○"}</span>
+              <span style={Object.assign({}, mno, { fontSize: FS(9), fontWeight: 700, color: v.lit ? C.copper : C.ash, flexShrink: 0, marginTop: 2 })}>{v.lit ? "●" : "○"}</span>
               <span style={{ flex: 1, minWidth: 0 }}>
-                <div style={Object.assign({}, bdy, { fontSize: 13, fontWeight: 600, color: v.lit ? C.bone : C.ash })}>{v.head}</div>
-                <div style={Object.assign({}, mno, { fontSize: 10, color: v.lit ? C.honey : C.ash, marginTop: 3 })}>{v.read}</div>
-                {v.lit ? <div style={Object.assign({}, bdy, { fontSize: 12.5, color: C.bone, marginTop: 5, lineHeight: 1.5 })}>{v.act}</div> : null}
+                <div style={Object.assign({}, bdy, { fontSize: FS(13), fontWeight: 600, color: v.lit ? C.bone : C.ash })}>{v.head}</div>
+                <div style={Object.assign({}, mno, { fontSize: FS(10), color: v.lit ? C.honey : C.ash, marginTop: 3 })}>{v.read}</div>
+                {v.lit ? <div style={Object.assign({}, bdy, { fontSize: FS(12.5), color: C.bone, marginTop: 5, lineHeight: 1.5 })}>{v.act}</div> : null}
               </span>
             </div>
           </div>))}
@@ -1106,13 +1163,13 @@ function Referee({ tape, setTape, phase }) {
         <Eye>Every reading</Eye>
         {rows.length ? rows.slice().reverse().map((r) => (
           <div key={r.d} style={{ display: "flex", gap: 8, alignItems: "center", padding: "8px 0", borderTop: "1px solid " + C.line }}>
-            <span style={Object.assign({}, mno, { fontSize: 10, color: C.ash, width: 74, flexShrink: 0 })}>{r.d}</span>
+            <span style={Object.assign({}, mno, { fontSize: SZ.amount, color: C.ash, width: "6.2rem", flexShrink: 0 })}>{r.d}</span>
             <span style={{ flex: 1, minWidth: 0, display: "flex", flexWrap: "wrap", gap: "2px 10px" }}>
               {MEASURES.map((m) => r[m.k] == null ? null : (
-                <span key={m.k} style={Object.assign({}, mno, { fontSize: 11, color: m.c, whiteSpace: "nowrap" })}>
-                  <span style={{ fontSize: 8, color: C.ash, letterSpacing: 1, marginRight: 3 }}>{m.n.slice(0, 2)}</span>{r[m.k]}</span>))}
+                <span key={m.k} style={Object.assign({}, mno, { fontSize: SZ.amount, color: m.c, whiteSpace: "nowrap" })}>
+                  <span style={{ fontSize: FS(8), color: C.ash, letterSpacing: 1, marginRight: 3 }}>{m.n.slice(0, 2)}</span>{r[m.k]}</span>))}
             </span>
-            <button onClick={() => drop(r.d)} aria-label={"Delete " + r.d} style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: 32, height: 32, cursor: "pointer", fontSize: 13, flexShrink: 0 })}>×</button>
+            <button onClick={() => drop(r.d)} aria-label={"Delete " + r.d} style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: TAP, height: TAP, cursor: "pointer", fontSize: FS(13), flexShrink: 0 })}>×</button>
           </div>)) : <Note s={{ fontStyle: "italic" }}>Nothing logged yet. Tape every four to six weeks; waist is the number that decides.</Note>}
       </Card>
     </div>);
@@ -1166,14 +1223,14 @@ function MdTable({ head, body }) {
       <div style={{ marginTop: 10 }}>
         {hasHead ? <Eye s={{ marginBottom: 6 }}>{head.join(" · ")}</Eye> : null}
         {body.map((r, i) => shortVals ? (
-          <div key={i} style={{ display: "flex", justifyContent: "space-between", gap: 12, padding: "6px 0", borderTop: i ? "1px solid " + C.line : "none" }}>
-            <span style={Object.assign({}, bdy, { fontSize: 13, color: C.bone })}>{mdBold(r[0])}</span>
-            <span style={Object.assign({}, mno, { fontSize: 11.5, color: C.honey, textAlign: "right", flexShrink: 0 })}>{mdBold(r[1] || "")}</span>
+          <div key={i} style={{ display: "flex", justifyContent: "space-between", flexWrap: "wrap", gap: "2px 12px", padding: "6px 0", borderTop: i ? "1px solid " + C.line : "none" }}>
+            <span style={Object.assign({}, bdy, { fontSize: FS(13), color: C.bone, minWidth: 0 })}>{mdBold(r[0])}</span>
+            <span style={Object.assign({}, mno, { fontSize: FS(11.5), color: C.honey, textAlign: "right", flexShrink: 1, minWidth: 0 })}>{mdBold(r[1] || "")}</span>
           </div>
         ) : (
           <div key={i} style={{ padding: "7px 0", borderTop: i ? "1px solid " + C.line : "none" }}>
-            <div style={Object.assign({}, bdy, { fontSize: 13, fontWeight: 600, color: C.bone })}>{mdBold(r[0])}</div>
-            <div style={Object.assign({}, bdy, { fontSize: 12.5, color: C.ash, lineHeight: 1.5, marginTop: 2 })}>{mdBold(r[1] || "")}</div>
+            <div style={Object.assign({}, bdy, { fontSize: FS(13), fontWeight: 600, color: C.bone })}>{mdBold(r[0])}</div>
+            <div style={Object.assign({}, bdy, { fontSize: FS(12.5), color: C.ash, lineHeight: 1.5, marginTop: 2 })}>{mdBold(r[1] || "")}</div>
           </div>
         ))}
       </div>
@@ -1184,16 +1241,18 @@ function MdTable({ head, body }) {
      one wordy one (the day plans). Anything wider stacks, so nothing important
      ends up off the right-hand edge. */
   if (cols <= 3 && longCols <= 1) {
-    const th = Object.assign({}, mno, { fontSize: 8.5, letterSpacing: 1, color: C.ash, textAlign: "left", padding: "0 8px 6px 0", textTransform: "uppercase", whiteSpace: "nowrap" });
-    const td = Object.assign({}, bdy, { fontSize: 12.5, padding: "6px 8px 6px 0", borderTop: "1px solid " + C.line, verticalAlign: "top", lineHeight: 1.45 });
+    const th = Object.assign({}, mno, { fontSize: FS(8.5), letterSpacing: 1, color: C.ash, textAlign: "left", padding: "0 8px 6px 0", textTransform: "uppercase" });
+    const td = Object.assign({}, bdy, { fontSize: FS(12.5), padding: "6px 8px 6px 0", borderTop: "1px solid " + C.line, verticalAlign: "top", lineHeight: 1.45 });
     return (
       <div style={{ marginTop: 10 }}>
+        <div style={{ overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
         <table style={{ borderCollapse: "collapse", width: "100%", tableLayout: "auto" }}>
           {hasHead ? <thead><tr>{head.map((c, i) => <th key={i} style={th}>{c}</th>)}</tr></thead> : null}
           <tbody>{body.map((r, i) => <tr key={i}>{r.map((c, j) => (
-            <td key={j} style={Object.assign({}, td, j === 0 ? Object.assign({}, mno, { fontSize: 11, color: C.ash, whiteSpace: "nowrap", width: 1 }) : { color: C.bone }, j && j === cols - 1 && c.length <= LONG ? Object.assign({}, mno, { fontSize: 11.5, color: C.honey, textAlign: "right", whiteSpace: "nowrap", width: 1 }) : {})}>{mdBold(c)}</td>
+            <td key={j} style={Object.assign({}, td, j === 0 ? Object.assign({}, mno, { fontSize: FS(11), color: C.ash, whiteSpace: "nowrap", width: 1 }) : { color: C.bone }, j && j === cols - 1 && c.length <= LONG ? Object.assign({}, mno, { fontSize: FS(11.5), color: C.honey, textAlign: "right" }) : {})}>{mdBold(c)}</td>
           ))}</tr>)}</tbody>
         </table>
+        </div>
       </div>
     );
   }
@@ -1208,11 +1267,11 @@ function MdTable({ head, body }) {
         const brief = rest.filter((x) => x.v.length <= LONG);
         return (
           <div key={i} style={{ padding: "8px 0", borderTop: i ? "1px solid " + C.line : "none" }}>
-            <div style={Object.assign({}, bdy, { fontSize: 13.5, fontWeight: 600, color: C.bone })}>{mdBold(r[0])}</div>
-            {wordy.map((x, j) => <div key={j} style={Object.assign({}, bdy, { fontSize: 12.5, color: C.ash, lineHeight: 1.5, marginTop: 3 })}>{x.h && head.some((c) => c) ? <span style={Object.assign({}, mno, { fontSize: 8.5, letterSpacing: 1, color: C.ash, marginRight: 6, textTransform: "uppercase" })}>{x.h}</span> : null}{mdBold(x.v)}</div>)}
+            <div style={Object.assign({}, bdy, { fontSize: FS(13.5), fontWeight: 600, color: C.bone })}>{mdBold(r[0])}</div>
+            {wordy.map((x, j) => <div key={j} style={Object.assign({}, bdy, { fontSize: FS(12.5), color: C.ash, lineHeight: 1.5, marginTop: 3 })}>{x.h && head.some((c) => c) ? <span style={Object.assign({}, mno, { fontSize: FS(8.5), letterSpacing: 1, color: C.ash, marginRight: 6, textTransform: "uppercase" })}>{x.h}</span> : null}{mdBold(x.v)}</div>)}
             {brief.length ? (
               <div style={{ display: "flex", flexWrap: "wrap", gap: "2px 12px", marginTop: 4 }}>
-                {brief.map((x, j) => <span key={j} style={Object.assign({}, mno, { fontSize: 11, color: C.honey, whiteSpace: "nowrap" })}>{x.h ? <span style={{ fontSize: 8.5, letterSpacing: 1, color: C.ash, marginRight: 4, textTransform: "uppercase" }}>{x.h}</span> : null}{mdBold(x.v)}</span>)}
+                {brief.map((x, j) => <span key={j} style={Object.assign({}, mno, { fontSize: FS(11), color: C.honey, maxWidth: "100%" })}>{x.h ? <span style={{ fontSize: FS(8.5), letterSpacing: 1, color: C.ash, marginRight: 4, textTransform: "uppercase" }}>{x.h}</span> : null}{mdBold(x.v)}</span>)}
               </div>
             ) : null}
           </div>
@@ -1225,9 +1284,9 @@ function MdTable({ head, body }) {
 function MdBody({ blocks }) {
   return blocks.map((b, i) => {
     if (b.t === "hr") return null;
-    if (b.t === "h") return <div key={i} style={Object.assign({}, dsp, { fontSize: 14, fontWeight: 700, letterSpacing: 1, color: C.honey, marginTop: i ? 14 : 0 })}>{b.s}</div>;
+    if (b.t === "h") return <div key={i} style={Object.assign({}, dsp, { fontSize: FS(14), fontWeight: 700, letterSpacing: 1, color: C.honey, marginTop: i ? 14 : 0 })}>{b.s}</div>;
     if (b.t === "table") return <MdTable key={i} head={b.head} body={b.body} />;
-    return <div key={i} style={Object.assign({}, bdy, { fontSize: 12.5, color: C.ash, lineHeight: 1.6, marginTop: 10 })}>{mdBold(b.s)}</div>;
+    return <div key={i} style={Object.assign({}, bdy, { fontSize: FS(12.5), color: C.ash, lineHeight: 1.6, marginTop: 10 })}>{mdBold(b.s)}</div>;
   });
 }
 
@@ -1251,15 +1310,15 @@ function PlanView() {
   return (
     <div>
       <Card ac={C.ember}>
-        <div style={Object.assign({}, dsp, { fontSize: 22, fontWeight: 800, letterSpacing: 1.4, color: C.bone, lineHeight: 1.05 })}>{PLAN_DOC.title}</div>
+        <div style={Object.assign({}, dsp, { fontSize: FS(22), fontWeight: 800, letterSpacing: 1.4, color: C.bone, lineHeight: 1.05 })}>{PLAN_DOC.title}</div>
         <MdBody blocks={PLAN_DOC.intro} />
       </Card>
 
       <Card ac={C.honey}>
         <Eye c={C.honey}>Contents</Eye>
         {PLAN_DOC.secs.map((sec, i) => (
-          <button key={i} onClick={() => go(i)} style={Object.assign({}, bdy, { display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", borderTop: i ? "1px solid " + C.line : "none", color: C.bone, fontSize: 13, padding: "9px 0", cursor: "pointer", lineHeight: 1.35 })}>
-            <span style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginRight: 8 })}>{String(i + 1).padStart(2, "0")}</span>{sec.h}
+          <button key={i} onClick={() => go(i)} style={Object.assign({}, bdy, { display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", borderTop: i ? "1px solid " + C.line : "none", color: C.bone, fontSize: FS(13), padding: "9px 0", minHeight: TAP, cursor: "pointer", lineHeight: 1.35 })}>
+            <span style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash, marginRight: 8 })}>{String(i + 1).padStart(2, "0")}</span>{sec.h}
           </button>
         ))}
       </Card>
@@ -1267,7 +1326,7 @@ function PlanView() {
       {PLAN_DOC.secs.map((sec, i) => (
         <div key={i} ref={(el) => { refs.current[i] = el; }}>
           <Card ac={C.line}>
-            <div style={Object.assign({}, dsp, { fontSize: 16, fontWeight: 700, letterSpacing: 1.1, color: C.bone, lineHeight: 1.15 })}>{sec.h}</div>
+            <div style={Object.assign({}, dsp, { fontSize: FS(16), fontWeight: 700, letterSpacing: 1.1, color: C.bone, lineHeight: 1.15 })}>{sec.h}</div>
             <MdBody blocks={sec.blocks} />
           </Card>
         </div>
@@ -1325,7 +1384,7 @@ function Backup({ onExport, onImport }) {
       <div style={{ marginTop: 14 }}>
         <Lab>Restore — paste a backup here</Lab>
         <textarea value={txt} onChange={(e) => setTxt(e.target.value)} placeholder='{"app":"optimal-8-fuel",…}' rows={3}
-          style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: 12, padding: 8, resize: "vertical" })} />
+          style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: FS(12), padding: 8, resize: "vertical" })} />
         <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
           <Btn small c={C.sage} s={{ flex: 1 }} dis={!txt.trim()} on={() => doImport(txt)}>IMPORT PASTED TEXT</Btn>
           <Btn small c={C.sage} s={{ flex: 1 }} on={() => fileRef.current && fileRef.current.click()}>IMPORT FROM FILE</Btn>
@@ -1340,7 +1399,72 @@ function Backup({ onExport, onImport }) {
 }
 
 const TFld = ({ v, on }) => <input type="time" value={v || ""} onChange={(e) => on(e.target.value)}
-  style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: 15, padding: "9px 6px", textAlign: "center", minHeight: 44 })} />;
+  style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: FS(15), padding: "9px 6px", textAlign: "center", minHeight: TAP })} />;
+
+/* ================================================================
+   GUIDE — the written guide, big, with a live line at the top saying
+   where today sits and what is next.
+   ================================================================ */
+const GUIDE_DOC = GUIDE_MD ? (() => {
+  const lines = GUIDE_MD.replace(/\r/g, "").split("\n");
+  const title = (lines.find((l) => /^#\s/.test(l)) || "# Guide").replace(/^#\s*/, "");
+  const secs = []; let cur = null; const pre = [];
+  for (const l of lines) {
+    if (/^##\s/.test(l)) { cur = { h: l.replace(/^##\s*/, ""), lines: [] }; secs.push(cur); continue; }
+    if (/^#\s/.test(l)) continue;
+    (cur ? cur.lines : pre).push(l);
+  }
+  return { title, intro: mdBlocks(pre), secs: secs.map((x) => ({ h: x.h, blocks: mdBlocks(x.lines) })) };
+})() : null;
+
+function Guide({ phase, next }) {
+  const refs = useRef({});
+  const go = (i) => { const el = refs.current[i]; if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 70, behavior: "smooth" }); };
+  const P = phase ? PHASES[phase] : null;
+  return (
+    <div>
+      <Card ac={C.ember}>
+        <Eye c={C.ember}>Today</Eye>
+        <div style={Object.assign({}, bdy, { fontSize: SZ.row, color: C.bone, lineHeight: 1.45 })}>
+          <span style={{ color: C.ash }}>Today's phase: </span>
+          <span style={{ fontWeight: 600, color: P ? P.c : C.bone }}>{P ? P.n : "no program set"}</span>
+          <span style={{ color: C.ash }}> — {P && P.chg ? P.chg : "the normal day"}</span>
+        </div>
+        <div style={Object.assign({}, bdy, { fontSize: SZ.row, color: C.bone, lineHeight: 1.45, marginTop: 10, paddingTop: 10, borderTop: "1px solid " + C.line })}>
+          <span style={{ color: C.ash }}>Next feed: </span>
+          {next ? <span><span style={{ fontWeight: 600 }}>{next.n}</span><span style={{ color: C.ash }}> at </span><span style={Object.assign({}, mno, { fontWeight: 700, color: C.honey })}>{next.t}</span></span>
+                : <span style={{ color: C.ash }}>nothing left today</span>}
+        </div>
+      </Card>
+
+      {!GUIDE_DOC ? (
+        <Card ac={C.copper}>
+          <Eye c={C.copper}>The guide isn't in the app yet</Eye>
+          <Note s={{ marginTop: 0 }}>This tab renders <span style={{ color: C.bone }}>guide-fuel.md</span>, and that file isn't in the repository. Add it the way you added the other plans — GitHub, Add file, Upload files — and it appears here by itself on the next update. Nothing else needs doing.</Note>
+        </Card>
+      ) : (
+        <div>
+          <Card ac={C.ember}>
+            <div style={Object.assign({}, dsp, { fontSize: FS(22), fontWeight: 800, letterSpacing: 1.2, color: C.bone, lineHeight: 1.1 })}>{GUIDE_DOC.title}</div>
+            <MdBody blocks={GUIDE_DOC.intro} />
+          </Card>
+          <Card ac={C.honey}>
+            <Eye c={C.honey}>Contents</Eye>
+            {GUIDE_DOC.secs.map((sec, i) => (
+              <button key={i} onClick={() => go(i)} style={Object.assign({}, bdy, { display: "block", width: "100%", textAlign: "left", background: "transparent", border: "none", borderTop: i ? "1px solid " + C.line : "none", color: C.bone, fontSize: SZ.amount, padding: "12px 0", cursor: "pointer", lineHeight: 1.35, minHeight: TAP })}>
+                <span style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash, marginRight: 8 })}>{String(i + 1).padStart(2, "0")}</span>{sec.h}
+              </button>))}
+          </Card>
+          {GUIDE_DOC.secs.map((sec, i) => (
+            <div key={i} ref={(el) => { refs.current[i] = el; }}>
+              <Card ac={C.line}>
+                <div style={Object.assign({}, dsp, { fontSize: FS(17), fontWeight: 700, letterSpacing: 1, color: C.bone, lineHeight: 1.15 })}>{sec.h}</div>
+                <MdBody blocks={sec.blocks} />
+              </Card>
+            </div>))}
+        </div>)}
+    </div>);
+}
 
 function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
   const se = st.season || {};
@@ -1353,8 +1477,8 @@ function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
     <div style={{ position: "fixed", inset: 0, background: "rgba(20,17,13,.94)", zIndex: 95, overflowY: "auto" }} onClick={close}>
       <div className="rise" onClick={(e) => e.stopPropagation()} style={{ background: C.card, maxWidth: 640, margin: "24px auto", marginTop: "calc(24px + env(safe-area-inset-top))", marginBottom: "calc(24px + env(safe-area-inset-bottom))", borderRadius: 8, border: "1px solid " + C.line, padding: 16 }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
-          <span style={Object.assign({}, dsp, { fontSize: 20, fontWeight: 800, letterSpacing: 1.4, color: C.bone })}>SETTINGS</span>
-          <Btn on={close} c={C.ash} small s={{ minWidth: 44, minHeight: 44 }}>CLOSE</Btn>
+          <span style={Object.assign({}, dsp, { fontSize: FS(20), fontWeight: 800, letterSpacing: 1.4, color: C.bone })}>SETTINGS</span>
+          <Btn on={close} c={C.ash} small s={{ minWidth: 44, minHeight: TAP }}>CLOSE</Btn>
         </div>
         <Lab>Monday of Optimal 8 week 1 — keeps the easy-week and taper banners honest</Lab>
         <Fld type="date" v={st.start} on={(v) => { if (v) setSt(Object.assign({}, st, { start: iso(mondayOf(parseISO(v))) })); }} s={{ textAlign: "left" }} />
@@ -1363,8 +1487,18 @@ function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
           <div key={x[0]} onClick={() => setSt(Object.assign({}, st, { [x[0]]: !st[x[0]] }))} style={{ display: "flex", gap: 10, alignItems: "center", padding: "12px 0", borderTop: "1px solid " + C.line, cursor: "pointer", marginTop: 10 }}>
             <span style={{ width: 40, height: 24, borderRadius: 12, background: st[x[0]] ? C.sage : C.ink, border: "1px solid " + (st[x[0]] ? C.sage : C.line), position: "relative", flexShrink: 0 }}>
               <span style={{ position: "absolute", top: 2, left: st[x[0]] ? 18 : 2, width: 18, height: 18, borderRadius: 9, background: C.bone, transition: "left .15s" }} /></span>
-            <span style={{ flex: 1 }}><div style={Object.assign({}, bdy, { fontSize: 13.5, fontWeight: 600, color: C.bone })}>{x[1]}</div><div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash })}>{x[2]}</div></span>
+            <span style={{ flex: 1 }}><div style={Object.assign({}, bdy, { fontSize: FS(13.5), fontWeight: 600, color: C.bone })}>{x[1]}</div><div style={Object.assign({}, bdy, { fontSize: FS(11.5), color: C.ash })}>{x[2]}</div></span>
           </div>))}
+        <div style={{ borderTop: "1px solid " + C.line, marginTop: 14, paddingTop: 14 }}>
+          <Eye c={C.ember}>Text size</Eye>
+          <Note s={{ marginTop: 0 }}>Scales the whole app. It already follows your phone's own text-size setting; this goes on top of it.</Note>
+          <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+            {TEXT_STEPS.map((x) => { const on = (st.text || "normal") === x[0];
+              return <button key={x[0]} onClick={() => setSt(Object.assign({}, st, { text: x[0] }))}
+                style={Object.assign({}, dsp, { flex: 1, fontSize: FS(12) , fontWeight: 700, letterSpacing: .6, padding: "12px 4px", borderRadius: 4, cursor: "pointer", minHeight: TAP, background: on ? C.ember : "transparent", color: on ? C.ink : C.bone, border: "1px solid " + (on ? C.ember : C.line) })}>{x[1]}</button>; })}
+          </div>
+        </div>
+
         <div style={{ borderTop: "1px solid " + C.line, marginTop: 14, paddingTop: 14 }}>
           <Eye c={C.ember}>The season</Eye>
           <Note s={{ marginTop: 0 }}>Which block of training today sits in. The phase sets the day's target and the changes the plan makes to Menu A.</Note>
@@ -1373,17 +1507,17 @@ function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
               {PROGRAMS.map((x) => { const on = (se.prog || "") === x[0];
                 return <button key={x[0]} onClick={() => setSe({ prog: on ? "" : x[0] })}
-                  style={Object.assign({}, dsp, { flex: "1 1 45%", fontSize: 11.5, fontWeight: 700, letterSpacing: .5, padding: "10px 4px", borderRadius: 4, cursor: "pointer", minHeight: 44, background: on ? C.ember : "transparent", color: on ? C.ink : C.ash, border: "1px solid " + (on ? C.ember : C.line) })}>{x[1]}</button>; })}
+                  style={Object.assign({}, dsp, { flex: "1 1 45%", fontSize: FS(11.5), fontWeight: 700, letterSpacing: .5, padding: "10px 4px", borderRadius: 4, cursor: "pointer", minHeight: TAP, background: on ? C.ember : "transparent", color: on ? C.ink : C.ash, border: "1px solid " + (on ? C.ember : C.line) })}>{x[1]}</button>; })}
             </div>
           </div>
           <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
-            <div style={{ flex: 1, minWidth: 0 }}><Lab>Program start date</Lab><Fld type="date" v={se.start || ""} on={(v) => setSe({ start: v })} s={{ textAlign: "left", fontSize: 14 }} /></div>
-            <div style={{ flex: 1, minWidth: 0 }}><Lab>Fight date (optional)</Lab><Fld type="date" v={se.fight || ""} on={(v) => setSe({ fight: v })} s={{ textAlign: "left", fontSize: 14 }} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><Lab>Program start date</Lab><Fld type="date" v={se.start || ""} on={(v) => setSe({ start: v })} s={{ textAlign: "left", fontSize: FS(14) }} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><Lab>Fight date (optional)</Lab><Fld type="date" v={se.fight || ""} on={(v) => setSe({ fight: v })} s={{ textAlign: "left", fontSize: FS(14) }} /></div>
           </div>
           <div onClick={() => setSe({ cut: !se.cut })} style={{ display: "flex", gap: 10, alignItems: "center", padding: "12px 0", borderTop: "1px solid " + C.line, cursor: "pointer", marginTop: 10 }}>
             <span style={{ width: 40, height: 24, borderRadius: 12, background: se.cut ? C.copper : C.ink, border: "1px solid " + (se.cut ? C.copper : C.line), position: "relative", flexShrink: 0 }}>
               <span style={{ position: "absolute", top: 2, left: se.cut ? 18 : 2, width: 18, height: 18, borderRadius: 9, background: C.bone, transition: "left .15s" }} /></span>
-            <span style={{ flex: 1 }}><div style={Object.assign({}, bdy, { fontSize: 13.5, fontWeight: 600, color: C.bone })}>Making weight</div><div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash })}>Only when the limit demands it, decided in camp week 1. Overrides the phase.</div></span>
+            <span style={{ flex: 1 }}><div style={Object.assign({}, bdy, { fontSize: FS(13.5), fontWeight: 600, color: C.bone })}>Making weight</div><div style={Object.assign({}, bdy, { fontSize: FS(11.5), color: C.ash })}>Only when the limit demands it, decided in camp week 1. Overrides the phase.</div></span>
           </div>
           <Note c={phase ? C.honey : C.ash}>{phase ? <span>Today reads as <span style={{ color: PHASES[phase].c }}>{PHASES[phase].n}</span>.</span> : "Set a program and a start date and the phase shows on TODAY."}</Note>
         </div>
@@ -1404,7 +1538,7 @@ function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
               {[["mon", "MON"], ["tue", "TUE"], ["wed", "WED"], ["thu", "THU"], ["sat", "SAT"], ["sun", "SUN"]].map((x) => (
                 <div key={x[0]} style={{ flex: "1 1 30%", minWidth: 0 }}>
-                  <div style={Object.assign({}, mno, { fontSize: 8, color: C.ash, letterSpacing: 1, textAlign: "center", marginBottom: 3 })}>{x[1]}</div>
+                  <div style={Object.assign({}, mno, { fontSize: FS(8), color: C.ash, letterSpacing: 1, textAlign: "center", marginBottom: 3 })}>{x[1]}</div>
                   <Fld v={len[x[0]]} on={(v) => setLen(x[0], v)} />
                 </div>))}
             </div>
@@ -1414,7 +1548,7 @@ function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
 
         <Backup onExport={onExport} onImport={onImport} />
         <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid " + C.line }}>
-          <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, textAlign: "center", letterSpacing: .8 })}>VERSION {__BUILD__}</div>
+          <div style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash, textAlign: "center", letterSpacing: .8 })}>VERSION {__BUILD__}</div>
           <Btn small c={C.ash} s={{ width: "100%", marginTop: 8 }} on={() => {
             if (typeof window !== "undefined" && window.__fuelUpdate) window.__fuelUpdate(true);
             else window.location.reload();
@@ -1426,7 +1560,7 @@ function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
 }
 
 const KEYS = { st: "fu8-settings", done: "fu8-done", cook: "fu8-cook", foods: "fu8-foods", shop: "fu8-shop", tape: "fu8-tape", menu: "fu8-menu", drink: "fu8-drink" };
-const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true, breaks: DEFAULT_BREAKS(), len: DEFAULT_LEN(), pick: null, season: { prog: "", start: "", fight: "", cut: false } });
+const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true, text: "normal", breaks: DEFAULT_BREAKS(), len: DEFAULT_LEN(), pick: null, season: { prog: "", start: "", fight: "", cut: false } });
 export default function App() {
   const [st, setStRaw] = useState(DEFAULT_ST);
   const [loaded, setLoaded] = useState(false);
@@ -1440,6 +1574,7 @@ export default function App() {
   const [menuAll, setMenuRaw] = useState({});
   const [drinkAll, setDrinkRaw] = useState({});
   const [showSet, setShowSet] = useState(false);
+  useEffect(() => { applyTextSize(st.text); }, [st.text]);
   const beep = useBeep(st.sound);
   const K = useKTimer(beep);
   const chimed = useRef({});
@@ -1506,41 +1641,42 @@ export default function App() {
   }, 20000); return () => clearInterval(id); }, [st, doneAll, beep]);
   const season = st.season || {};
   const phase = useMemo(() => phaseOf(season, dateK, week), [season, dateK, week]);
-  const TABS = [["today", "TODAY"], ["cook", "COOK"], ["shop", "SHOP"], ["plan", "PLAN"], ["ref", "REFEREE"]];
+  const TABS = [["today", "TODAY"], ["cook", "COOK"], ["shop", "SHOP"], ["plan", "PLAN"], ["ref", "REFEREE"], ["guide", "GUIDE"]];
   return (
     <div style={Object.assign({}, bdy, { background: C.ink, minHeight: "100vh", color: C.bone })}>
       <style>{FONTS}</style>
       {showSet ? <Settings st={st} setSt={setSt} week={week} close={() => setShowSet(false)} onExport={buildBackup} onImport={applyBackup} phase={phase} /> : null}
       <div style={{ borderBottom: "1px solid " + C.line, background: C.slab, position: "sticky", top: 0, zIndex: 30, paddingTop: "env(safe-area-inset-top)" }}>
         <div style={{ borderTop: "3px solid " + C.ember }} />
-        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 13px", paddingLeft: "max(13px, env(safe-area-inset-left))", paddingRight: "max(13px, env(safe-area-inset-right))", maxWidth: 640, margin: "0 auto" }}>
-          <span style={Object.assign({}, dsp, { fontSize: 19, fontWeight: 800, letterSpacing: 2, color: C.bone })}>FUEL<span style={{ color: C.ember }}>·</span>O8</span>
-          <span style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <Chip c={C.honey}>WK {week} · ~3,600 KCAL</Chip>
-            <button onClick={() => setShowSet(true)} aria-label="Settings" style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: 44, height: 44, cursor: "pointer", fontSize: 16 })}>⚙</button>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", flexWrap: "wrap", rowGap: 8, padding: "10px 13px", paddingLeft: "max(13px, env(safe-area-inset-left))", paddingRight: "max(13px, env(safe-area-inset-right))", maxWidth: 640, margin: "0 auto" }}>
+          <span style={Object.assign({}, dsp, { fontSize: FS(19), fontWeight: 800, letterSpacing: 2, color: C.bone })}>FUEL<span style={{ color: C.ember }}>·</span>O8</span>
+          <span style={{ display: "flex", alignItems: "center", gap: 8, minWidth: 0, flexShrink: 1 }}>
+            <Chip c={C.honey} s={{ minWidth: 0 }}>WK {week} · ~3,600 KCAL</Chip>
+            <button onClick={() => setShowSet(true)} aria-label="Settings" style={Object.assign({}, mno, { background: "transparent", border: "1px solid " + C.line, color: C.ash, borderRadius: 4, width: TAP, height: TAP, cursor: "pointer", fontSize: FS(16) })}>⚙</button>
           </span>
         </div>
         {tab === "today" ? (
           <div style={{ maxWidth: 640, margin: "0 auto", padding: "0 13px 10px", display: "flex", gap: 3 }}>
             {DAYS.map((k) => { const active = day === k, isT = k === todayKey();
-              return <button key={k} onClick={() => setDay(k)} style={Object.assign({}, dsp, { flex: 1, fontSize: 10.5, fontWeight: 700, padding: "7px 0", borderRadius: 4, cursor: "pointer", minHeight: 32, background: active ? C.ember : "transparent", color: active ? C.ink : isT ? C.sage : C.ash, border: "1px solid " + (active ? C.ember : isT ? C.sage : C.line) })}>{DSH[k]}</button>; })}
+              return <button key={k} onClick={() => setDay(k)} style={Object.assign({}, dsp, { flex: "1 1 auto", minWidth: 0, fontSize: FS(10.5), fontWeight: 700, padding: "7px 1px", borderRadius: 4, cursor: "pointer", minHeight: TAP, background: active ? C.ember : "transparent", color: active ? C.ink : isT ? C.sage : C.ash, border: "1px solid " + (active ? C.ember : isT ? C.sage : C.line) })}>{DSH[k]}</button>; })}
           </div>) : <div style={{ paddingBottom: 2 }} />}
       </div>
-      <div style={{ padding: "13px 13px 150px", maxWidth: 640, margin: "0 auto" }}>
-        {!loaded ? <div style={Object.assign({}, mno, { fontSize: 11, color: C.ash, padding: "40px 0", textAlign: "center" })}>LOADING…</div> : (
+      <div style={{ padding: "13px 13px 10rem", maxWidth: 640, margin: "0 auto" }}>
+        {!loaded ? <div style={Object.assign({}, mno, { fontSize: FS(11), color: C.ash, padding: "40px 0", textAlign: "center" })}>LOADING…</div> : (
           <div>
             {tab === "today" ? <Today day={day} setDay={setDay} week={week} cycle={L} done={dayDone} tick={tick} cook={cook} sound={st.sound} st={st} pick={picks[day]} setPick={setPick} menu={dayMenu} setMenu={setMenu} drink={dayDrink} setDrink={setDrink} phase={phase} /> : null}
             {tab === "cook" ? <Cook cook={cook} setCook={setCook} foods={foods} setFoods={setFoods} K={K} prep={menuAll.prep || {}} setPrep={setPrep} /> : null}
             {tab === "shop" ? <Shop shop={shop} setShop={setShop} used={menuAll.used || {}} today={dateK} /> : null}
             {tab === "plan" ? <PlanView /> : null}
             {tab === "ref" ? <Referee tape={tape} setTape={setTape} phase={phase} /> : null}
-            <div style={Object.assign({}, bdy, { fontSize: 10.5, color: C.ash, textAlign: "center", padding: "24px 0 6px", lineHeight: 1.6 })}>Eat for it. The training only writes the cheque.</div>
+            {tab === "guide" ? <Guide phase={phase} next={nextFeedToday(st, phase, picks[todayKey()], dayMenu, doneAll[dateK + "-" + todayKey()] || {})} /> : null}
+            <div style={Object.assign({}, bdy, { fontSize: FS(10.5), color: C.ash, textAlign: "center", padding: "24px 0 6px", lineHeight: 1.6 })}>Eat for it. The training only writes the cheque.</div>
           </div>)}
       </div>
-      <KDock K={K} />
       <div style={{ position: "fixed", left: 0, right: 0, bottom: 0, zIndex: 50, background: C.slab, borderTop: "1px solid " + C.line, paddingBottom: "env(safe-area-inset-bottom)" }}>
-        <div style={{ display: "flex", maxWidth: 640, margin: "0 auto" }}>
-          {TABS.map((x) => <button key={x[0]} onClick={() => setTab(x[0])} style={Object.assign({}, dsp, { flex: 1, fontSize: 11, fontWeight: 700, letterSpacing: .8, background: "transparent", border: "none", borderTop: "2px solid " + (tab === x[0] ? C.ember : "transparent"), color: tab === x[0] ? C.bone : C.ash, padding: "12px 2px 14px", cursor: "pointer", minHeight: 50 })}>{x[1]}</button>)}
+        <KDock K={K} />
+        <div style={{ display: "flex", flexWrap: "wrap", maxWidth: 640, margin: "0 auto" }}>
+          {TABS.map((x) => <button key={x[0]} onClick={() => setTab(x[0])} style={Object.assign({}, dsp, { flex: "1 1 auto", minWidth: "max-content", fontSize: FS(11), fontWeight: 700, letterSpacing: .8, background: "transparent", border: "none", borderTop: "2px solid " + (tab === x[0] ? C.ember : "transparent"), color: tab === x[0] ? C.bone : C.ash, padding: "12px 10px 14px", cursor: "pointer", minHeight: TAP })}>{x[1]}</button>)}
         </div>
       </div>
     </div>);
