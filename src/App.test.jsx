@@ -383,4 +383,37 @@ describe("Fuel · Optimal 8 Fighter", () => {
     const largest = parseFloat(root.style.fontSize);
     expect(largest).toBeGreaterThan(large);
   });
+
+  it("puts the creatine on one drink a day, every day", async () => {
+    await mounted();
+
+    /* A training weekday: on the porridge drink. */
+    fireEvent.click(screen.getByText("WED"));
+    let row = screen.getByText(/With the porridge/).closest("div").parentElement;
+    expect(within(row).getByText(/CREATINE 5 G IN THE WATER/)).toBeTruthy();
+    expect(screen.getAllByText(/CREATINE 5 G IN THE WATER/).length).toBe(1);
+
+    /* Friday has no session and no porridge, so it rides on the waking drink. */
+    fireEvent.click(screen.getByText("FRI"));
+    row = screen.getByText(/On waking/).closest("div").parentElement;
+    expect(within(row).getByText(/CREATINE 5 G IN THE WATER/)).toBeTruthy();
+    expect(screen.getAllByText(/CREATINE 5 G IN THE WATER/).length).toBe(1);
+
+    /* The weekend: straight after the session. */
+    for (const d of ["SAT", "SUN"]) {
+      fireEvent.click(screen.getByText(d));
+      row = screen.getByText(/Straight after/).closest("div").parentElement;
+      expect(within(row).getByText(/CREATINE 5 G IN THE WATER/)).toBeTruthy();
+      expect(screen.getAllByText(/CREATINE 5 G IN THE WATER/).length).toBe(1);
+    }
+  });
+
+  it("names the creatine on the shop and on the guide", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("SHOP"));
+    expect(screen.getByText("Creatine 5 g in the post-session water, daily")).toBeTruthy();
+
+    fireEvent.click(screen.getByText("GUIDE"));
+    expect(screen.getByText("Creatine 5 g in the post-session water, daily")).toBeTruthy();
+  });
 });

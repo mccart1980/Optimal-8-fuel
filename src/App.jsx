@@ -364,6 +364,11 @@ const MIDBANANA = { fast: 1, camp: 1 };
 const FEEDY = ["batch", "batchbig", "wraps", "tunabagel", "eggbagel"];
 const DINNERY = ["steak", "steakbig", "chicken", "pasta"];
 const SACHET = "⚡";
+const CREATINE = "+ CREATINE 5 G IN THE WATER";
+/* The row the creatine goes in, by day: the porridge drink on a training
+   weekday, the waking drink on Friday when there is no session or porridge,
+   and the straight-after drink at the weekend. Every week, every phase. */
+const CRE_ROW = { mon: "porr", tue: "porr", wed: "porr", thu: "porr", fri: "wake", sat: "after", sun: "after" };
 const HYDRA = {
   work: [
     { id: "wake", lab: "On waking", ml: 500, tl: "WAKING", ord: -1, note: "Before the strap reading if you can wait, straight after if not. You lose about half a litre overnight." },
@@ -422,7 +427,7 @@ function hydraFor(day, feeds, bkey, sauna) {
       if (hit) mins = tMin(hit.t);
     }
     seen[r.id] = 1;
-    return Object.assign({}, r, { mins: mins == null ? 0 : mins, tl });
+    return Object.assign({}, r, { mins: mins == null ? 0 : mins, tl, cre: r.id === CRE_ROW[day] });
   }).sort((a, b) => a.mins - b.mins);
 }
 
@@ -432,7 +437,7 @@ const SHOP = [
   ["CARBS", [["Sweet potato", "4.3 kg raw"], ["Ben's Original rice pouches", "8"], ["Pasta, dry", "250 g"], ["Quaker Oat So Simple Golden Syrup sachets", "17 — two boxes of 15 last under a fortnight"], ["Honey", "~200 g"], ["Bananas", "~35"]]],
   ["THE REST", [["Passata", "2.5 L — the batch, plus the two chicken dinners"], ["Beef stock", "as needed"], ["UFIT 50 g", "6 bottles"], ["Casein", "a 1 kg tub lasts about six weeks"], ["Milk", "2 L — the porridge only"], ["Mushrooms", "1.3 kg"], ["Electrolytes", "as needed"]]],
   ["MENU B — ADDED TO MENU A", [["Wholemeal tortilla wraps, standard (about 40 g)", "10–12"], ["Plain bagels", "10"], ["Tuna in spring water", "4 tins"], ["Eggs", "+21 on top of Menu A's 15"], ["Bananas", "+5 — the third banana on full Menu B days"], ["Honey", "as before"], ["A cool bag and a freezer block", "once"], ["A 1-litre bottle and a 500 ml bottle", "once"], ["Electrolyte sachets", "8–12 a week"]]],
-  ["SUPPLEMENTS", [["Creatine monohydrate", "5 g every day, any time, in the bottle"], ["Omega-3 (fish oil)", "1–2 g EPA+DHA daily — there is no oily fish anywhere in your diet"], ["Vitamin D", "1,000–2,000 IU daily, October to April"], ["Multivitamin", "as before — cheap insurance"], ["Beta-alanine (optional)", "3.2 g/day split in two; needs four-plus weeks to work, so start week 1 or don't bother. Helps exactly where it hurts: the 40-second repeats, the repeat bursts and the fight sim. The tingling is harmless."]]],
+  ["SUPPLEMENTS", [["Creatine monohydrate", "Creatine 5 g in the post-session water, daily"], ["Omega-3 (fish oil)", "1–2 g EPA+DHA daily — there is no oily fish anywhere in your diet"], ["Vitamin D", "1,000–2,000 IU daily, October to April"], ["Multivitamin", "as before — cheap insurance"], ["Beta-alanine (optional)", "3.2 g/day split in two; needs four-plus weeks to work, so start week 1 or don't bother. Helps exactly where it hurts: the 40-second repeats, the repeat bursts and the fight sim. The tingling is harmless."]]],
 ];
 
 /* Typical raw→cooked yields (fallbacks until he weighs his own) */
@@ -544,7 +549,8 @@ function Drink({ day, rows, st8, set }) {
               <span style={Object.assign({}, mno, { fontSize: SZ.amount, color: C.ash, width: "4.2rem", flexShrink: 0 })}>{r.tl || hhmm(r.mins)}</span>
               <span style={{ flex: 1, minWidth: 0 }}>
                 <div style={Object.assign({}, bdy, { fontSize: SZ.amount, color: dark ? C.copper : C.bone })}>{r.lab}{ml ? " · " + ml + " ml" : ""}</div>
-                {r.sachet ? <span style={Object.assign({}, mno, { fontSize: FS(8), letterSpacing: 1, display: "inline-block", marginTop: 3, padding: "1px 5px", borderRadius: 3, color: litSachet ? C.ink : C.ash, background: litSachet ? C.honey : "transparent", border: "1px solid " + (litSachet ? C.honey : C.line) })}>{SACHET} {r.sachet}</span> : null}
+                {r.sachet ? <span style={Object.assign({}, mno, { fontSize: FS(8), letterSpacing: 1, display: "inline-block", marginTop: 3, marginRight: 5, padding: "1px 5px", borderRadius: 3, color: litSachet ? C.ink : C.ash, background: litSachet ? C.honey : "transparent", border: "1px solid " + (litSachet ? C.honey : C.line) })}>{SACHET} {r.sachet}</span> : null}
+                {r.cre ? <span style={Object.assign({}, mno, { fontSize: FS(8), letterSpacing: 1, display: "inline-block", marginTop: 3, padding: "1px 5px", borderRadius: 3, color: C.ink, background: C.sage, border: "1px solid " + C.sage })}>{CREATINE}</span> : null}
                 {r.note ? <div style={Object.assign({}, bdy, { fontSize: FS(11), color: C.ash, marginTop: 3, lineHeight: 1.45 })}>{r.note}</div> : null}
                 {r.check ? (
                   <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
@@ -1434,6 +1440,9 @@ function Guide({ phase, next }) {
           <span style={{ color: C.ash }}>Next feed: </span>
           {next ? <span><span style={{ fontWeight: 600 }}>{next.n}</span><span style={{ color: C.ash }}> at </span><span style={Object.assign({}, mno, { fontWeight: 700, color: C.honey })}>{next.t}</span></span>
                 : <span style={{ color: C.ash }}>nothing left today</span>}
+        </div>
+        <div style={Object.assign({}, bdy, { fontSize: SZ.row, color: C.bone, lineHeight: 1.45, marginTop: 10, paddingTop: 10, borderTop: "1px solid " + C.line })}>
+          <span style={{ color: C.ash }}>Every day: </span><span style={{ fontWeight: 600, color: C.sage }}>Creatine 5 g in the post-session water, daily</span>
         </div>
       </Card>
 
