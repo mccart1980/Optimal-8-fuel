@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import PLAN_MD from "../fuel-optimal-8-fighter.md?raw";
 import MENUB_MD from "../fuel-menu-b.md?raw";
+import SEASON_MD from "../fuel-season.md?raw";
 
 /* ================================================================
    FUEL — OPTIMAL 8 · companion app
@@ -73,12 +74,62 @@ const B = {
   tunabagel: { n: "TUNA & EGG BAGEL + BANANA", kcal: 590, p: 47, c: 72, f: 12, menu: "B", bn: "Assembled the night before and foiled, or carried as parts and put together at the break. Salt and pepper, nothing else needed.", i: [["Plain bagel", "1"], ["Tuna in spring water", "1 tin, drained"], ["Boiled eggs", "2, sliced"], ["Banana", "1"]] },
   eggbagel:  { n: "EGG BAGEL + BANANA", kcal: 568, p: 30, c: 72, f: 17, menu: "B", bn: "The lightest on protein of the three and the easiest to carry — nothing to open.", i: [["Plain bagel", "1"], ["Boiled eggs", "3"], ["Banana", "1"]] },
   onebagel:  { n: "ONE BAGEL", kcal: 230, p: 9, c: 45, f: 1, menu: "B", bn: "The 3pm feed, when two bananas are two things too many to carry. Honey on it if you want; it's 60 calories you'll use.", i: [["Plain bagel", "1"], ["Honey (optional)", "+60 kcal"]] },
+  /* The season document's swaps — one set per slot, each matching Menu A's
+     feed for that slot to within about sixty calories. */
+  halfhoney: { n: "HALF BOTTLE + HONEY", kcal: 205, p: 25, c: 25, f: 0, bn: "The morning the banana won't sit.", i: [["UFIT 50g", "half · 250ml"], ["Honey", "20g, in it"]] },
+  halfdates: { n: "HALF BOTTLE + 3 DATES", kcal: 215, p: 26, c: 40, f: 0, extra: [["Dried dates", "a small bag"]], i: [["UFIT 50g", "half · 250ml"], ["Dried dates", "3"]] },
+  oatscold:  { n: "OVERNIGHT SACHETS", kcal: 570, p: 16, c: 105, f: 10, bn: "The same as the porridge in a tub, cold, made the night before.", i: [["Quaker Oat So Simple Golden Syrup", "2 sachets"], ["Milk", "250ml"], ["Honey", "20g"], ["Banana", "1"]] },
+  eggbagelbf: { n: "EGG BAGEL BREAKFAST", kcal: 629, p: 30, c: 88, f: 17, extra: [["Plain bagels", "as Menu B"], ["Eggs", "3 per breakfast taken"]], i: [["Plain bagel", "1"], ["Boiled eggs", "3"], ["Banana", "1"], ["Honey", "20g on the bagel"]] },
+  eggbagelbb: { n: "EGG BAGEL BREAKFAST BIG", kcal: 800, p: 39, c: 133, f: 18, extra: [["Plain bagels", "as Menu B"], ["Eggs", "3 per breakfast taken"]], i: [["Plain bagels", "2"], ["Boiled eggs", "3"], ["Banana", "1"], ["Honey", "none"]] },
+  tunabagelbf: { n: "TUNA BAGEL BREAKFAST", kcal: 601, p: 35, c: 115, f: 2, extra: [["Plain bagels", "as Menu B"], ["Tuna in spring water", "4 tins a week"]], i: [["Plain bagel", "1"], ["Tuna in spring water", "1 tin"], ["Bananas", "2"], ["Honey", "20g"]] },
+  jacket:    { n: "JACKET POTATO, TUNA & EGG", kcal: 535, p: 44, c: 64, f: 12, extra: [["Potatoes", "for the jacket or the potato top-up"], ["Tuna in spring water", "4 tins a week"]], i: [["Baking potato", "300g"], ["Tuna in spring water", "1 tin"], ["Boiled eggs", "2"]] },
+  chickpouch: { n: "CHICKEN & POUCH", kcal: 610, p: 58, c: 72, f: 11, bn: "Eaten cold from a tub.", extra: [["Chicken breast", "+150g per feed taken"]], i: [["Chicken breast, cooked", "150g"], ["Ben's Original rice pouch", "1"]] },
+  twofruit:  { n: "ANY TWO PIECES OF FRUIT", kcal: 200, p: 2, c: 50, f: 0, bn: "Apples, pears, oranges; two bananas is the standard.", extra: [["Apples, pears or oranges", "two a day when taken"]], i: [["Fruit", "2 pieces"]] },
+  flapjack:  { n: "HOMEMADE FLAPJACK", kcal: 250, p: 5, c: 40, f: 8, bn: "Oats, honey, a little butter; made on batch day.", extra: [["Oats and butter for the flapjack", "as needed"]], i: [["Flapjack", "60g"]] },
+  pastatop:  { n: "PASTA TOP-UP", kcal: 546, p: 17, c: 110, f: 3, extra: [["Pasta, dry", "+125g per top-up taken"]], i: [["Pasta", "125g dry"], ["Passata", ""], ["Honey", "20g after"]] },
+  potatotop: { n: "POTATO TOP-UP", kcal: 516, p: 9, c: 123, f: 1, extra: [["Potatoes", "for the jacket or the potato top-up"]], i: [["Boiled potatoes", "400g"], ["Banana", "1"], ["Honey", "20g"]] },
+  salmon:    { n: "SALMON, EGGS & RICE", kcal: 945, p: 63, c: 77, f: 43, bn: "The only thing on the list that puts real omega-3 in the day. Two salmon dinners a week does more for recovery and joints than the capsules do.", extra: [["Salmon", "two 200g fillets a week"]], i: [["Salmon", "200g"], ["Eggs", "2"], ["Ben's Original rice pouch", "1"], ["Mushrooms", "150g"]] },
+  turkey:    { n: "TURKEY CHILLI & RICE", kcal: 905, p: 83, c: 78, f: 28, extra: [["Lean turkey mince", "500g if you take the chilli"]], i: [["Lean turkey mince", "250g"], ["Passata", ""], ["Ben's Original rice pouch", "1"], ["Eggs", "2 on top"]] },
+  minceeggs: { n: "MINCE, EGGS & RICE", kcal: 930, p: 75, c: 88, f: 25, extra: [["Beef mince 5%", "+250g per dinner taken"]], i: [["Beef mince 5%", "250g"], ["Passata", ""], ["Ben's Original rice pouch", "1"], ["Eggs", "2"]] },
+  threeeggs: { n: "THREE BOILED EGGS", kcal: 233, p: 20, c: 1, f: 16, extra: [["Eggs", "3 per night taken"]], i: [["Boiled eggs", "3"]] },
   bageltop:  { n: "BAGEL TOP-UP", kcal: 521, p: 18, c: 106, f: 2, menu: "B", bn: "The 5pm feed on a night you're not home by five — same carbohydrate as the pouch, no fridge, no microwave. It loads tomorrow's session exactly as the pouch does.", i: [["Plain bagels", "2"], ["Honey", "20g"]] },
 };
 
 /* Which Menu A feeds have a Menu B alternative, and what it is. */
-const SWAPS = { batch: ["wraps", "tunabagel", "eggbagel"], batchbig: ["wraps", "tunabagel", "eggbagel"], twoban: ["onebagel"], topup: ["bageltop"] };
-const BIG_NOTE = "Weekend BIG: three wraps instead of two, or a second egg on the tuna bagel — about fifty calories either way.";
+/* ================================================================
+   THE SLOTS — every feed of the day and the options that match it.
+   Each option holds the slot's timing and its carbohydrate, so any
+   option can be taken in any phase and the day still adds up.
+   ================================================================ */
+const SLOT_OF = { halfban: "pre", porridge: "breakfast", porridgeb: "breakfast", batch: "lunch", batchbig: "lunch",
+  twoban: "three", topup: "five", steak: "dinner", steakbig: "dinner", chicken: "dinner", pasta: "dinner", casein: "bed" };
+/* Menu A's BIG portions, and the increment the document puts on each slot.
+   Where the document names a BIG option outright it is used as written;
+   the rest take the increment of that slot's own A -> BIG pair, which
+   reproduces the document's "+130" at lunch and its ~1,135 dinner. */
+const BIGKEY = { porridgeb: 1, batchbig: 1, steakbig: 1 };
+const SLOTS = {
+  pre:       { n: "Before the session", opts: ["halfban", "halfhoney", "halfdates"] },
+  breakfast: { n: "Breakfast", opts: ["porridge", "oatscold", "eggbagelbf", "tunabagelbf"], big: { porridge: "porridgeb", eggbagelbf: "eggbagelbb" }, d: [140, 3, 25, 2] },
+  lunch:     { n: "Mid-morning and lunch", opts: ["batch", "wraps", "tunabagel", "eggbagel", "jacket", "chickpouch"], big: { batch: "batchbig" }, d: [128, 11, 10, 5] },
+  three:     { n: "The 3pm feed", opts: ["twoban", "onebagel", "twofruit", "flapjack"] },
+  five:      { n: "The 5pm top-up", opts: ["topup", "bageltop", "pastatop", "potatotop"] },
+  dinner:    { n: "Dinner", opts: ["steak", "chicken", "pasta", "salmon", "turkey", "minceeggs"], big: { steak: "steakbig" }, d: [192, 5, 27, -2] },
+  bed:       { n: "Before bed", opts: ["casein", "threeeggs", "half"] },
+};
+/* The option actually on the plate: the base option, or its BIG form on
+   the days Menu A serves a BIG portion in that slot. */
+function blockOf(key, slot, big) {
+  const S = SLOTS[slot];
+  if (!big || !S) return B[key];
+  if (S.big && S.big[key]) return B[S.big[key]];
+  const b = B[key], d = S.d;
+  if (!d) return b;
+  return Object.assign({}, b, { n: b.n + " BIG", kcal: b.kcal + d[0], p: b.p + d[1], c: b.c + d[2], f: b.f + d[3] });
+}
+/* The base key for a feed: BIG blocks resolve to the option they enlarge. */
+const BASE_OF = { porridgeb: "porridge", batchbig: "batch", steakbig: "steak" };
+const slotOf = (k) => SLOT_OF[k] || null;
 
 /* Day plans — Optimal 8's actual clock */
 const F = (t, b, o) => Object.assign({ t, b }, o);
@@ -147,6 +198,106 @@ function retime(k, feeds, start, st) {
     return f;
   });
 }
+
+/* ================================================================
+   THE SEASON — which block of training today sits in, and what the
+   phase table changes about the food. The base day is Menu A.
+   ================================================================ */
+const PROGRAMS = [["prep14", "Prep 14-week"], ["prep16", "Prep 16-week"], ["camp", "Camp"], ["o8", "Optimal 8 Fighter"]];
+const BASE_TARGET = { kcal: 3600, p: 245, c: 487, f: 78 };
+/* The document's phase table. `rules` are applied to the day automatically. */
+const PHASES = {
+  build:   { n: "BUILD", sub: "Prep accumulation", t: { kcal: 3900, p: 245, c: 560, f: 80 }, c: C.honey,
+             r: ["Add a CARB TOP-UP at 17:00 on Monday and Thursday — the two days without one.", "Surplus about 300. Tissue is being built; feed it. The tape at the block's end decides whether it stays."] },
+  heavy:   { n: "HEAVY", sub: "Intensify", t: BASE_TARGET, c: C.ember, r: ["Menu A as written. The extra top-ups come off."] },
+  fast:    { n: "FAST", sub: "Convert", t: BASE_TARGET, c: C.ember, r: ["Menu A as written.", "On the scored round weeks, the mid-session banana."] },
+  test:    { n: "TEST WEEK", sub: "Prep's last week", t: BASE_TARGET, c: C.frost, r: ["Do not cut. Training drops, carbs hold; the tank fills.", "Test day eats like a Saturday."] },
+  camp:    { n: "CAMP", sub: "Foundation, build, peak", t: BASE_TARGET, c: C.ember,
+             r: ["Menu A.", "Seven-round weeks keep the mid-session banana.", "Sauna weeks: the hydration schedule's sauna line."] },
+  easy:    { n: "EASY WEEK", sub: "Camp", t: BASE_TARGET, c: C.sage, r: ["Do not cut. The commonest way to lose a fight is eating less because you're training less."] },
+  sharpen: { n: "SHARPEN", sub: "Camp", t: BASE_TARGET, c: C.sage, r: ["Do not cut. The commonest way to lose a fight is eating less because you're training less."] },
+  fight:   { n: "FIGHT WEEK", sub: "", t: BASE_TARGET, c: C.copper, r: ["Menu A exactly.", "Weigh-in day per the weight section."] },
+  trans:   { n: "TRANSITION", sub: "The two weeks after a fight", t: { kcal: 3300, p: 235, c: 420, f: 78 }, c: C.frost,
+             r: ["Drop the 3pm feed on Monday, Wednesday and Thursday, and Saturday's BIG portion back to standard.", "Maintenance. Protein holds so the muscle does."] },
+  cut:     { n: "MAKING WEIGHT", sub: "Only when the limit demands it", t: { kcal: 3100, p: 200, c: 400, f: 70 }, c: C.copper,
+             r: ["Carbs off the light days, never protein, never the bottle, never the 5pm loads.", "Cut in order: the casein, then Saturday's BIG back to standard, then one of the 3pm bananas on Monday and Thursday.", "Half a percent of bodyweight a week, no faster."] },
+};
+/* Week 1 is the week containing the program start. Prep's shape follows the
+   document: accumulation 1-5 (1-6 over sixteen), then intensify, convert,
+   and the last week as test week. Camp's ten weeks run foundation, build,
+   easy week, peak, sharpen, fight week. */
+function weekOf(startISO, onISO) {
+  if (!startISO) return null;
+  const a = mondayOf(parseISO(startISO)), b = mondayOf(parseISO(onISO));
+  const w = Math.floor((b - a) / 604800000) + 1;
+  return w;
+}
+function phaseOf(season, onISO, cycleWeek) {
+  if (!season) return null;
+  if (season.cut) return "cut";
+  if (season.fight) {
+    const d = (parseISO(onISO) - parseISO(season.fight)) / 86400000;
+    if (d > 0 && d <= 14) return "trans";
+  }
+  const w = weekOf(season.start, onISO);
+  if (season.prog === "o8") {
+    const k = cycleWeek;
+    if (k === 5 || k === 10) return "easy";
+    if (k === 15 || k === 16) return "test";
+    return "camp";
+  }
+  if (w == null || w < 1) return null;
+  if (season.prog === "prep14") {
+    if (w <= 5) return "build";
+    if (w <= 10) return "heavy";
+    if (w <= 13) return "fast";
+    if (w === 14) return "test";
+    return null;
+  }
+  if (season.prog === "prep16") {
+    if (w <= 6) return "build";
+    if (w <= 12) return "heavy";
+    if (w <= 15) return "fast";
+    if (w === 16) return "test";
+    return null;
+  }
+  if (season.prog === "camp") {
+    if (w <= 3) return "camp";
+    if (w <= 6) return "camp";
+    if (w === 7) return "easy";
+    if (w === 8) return "camp";
+    if (w === 9) return "sharpen";
+    if (w === 10) return "fight";
+    return null;
+  }
+  return null;
+}
+
+/* The phase table's changes, applied to a day's feeds. */
+function phaseFeeds(ph, day, feeds) {
+  if (!ph) return feeds;
+  if (ph === "build" && (day === "mon" || day === "thu")) {
+    /* the 17:00 top-up the two light days don't otherwise get */
+    const at = feeds.findIndex((f) => f.b && tMin(f.t) > tMin("15:00"));
+    const row = F("17:00", "topup", { crit: 1, note: "BUILD adds this on Monday and Thursday — the two days without one." });
+    return feeds.slice(0, at < 0 ? feeds.length : at).concat([row], at < 0 ? [] : feeds.slice(at));
+  }
+  if (ph === "trans") {
+    let out = feeds;
+    if (day === "mon" || day === "wed" || day === "thu") out = out.filter((f) => f.b !== "twoban");
+    if (day === "sat") out = out.map((f) => f.b === "batchbig" ? Object.assign({}, f, { b: "batch" }) : f);
+    return out;
+  }
+  if (ph === "cut") {
+    /* the making-weight section, in its order */
+    let out = feeds.filter((f) => f.b !== "casein");
+    out = out.map((f) => f.b === "batchbig" ? Object.assign({}, f, { b: "batch" }) : f);
+    if (day === "mon" || day === "thu") out = out.map((f) => f.b === "twoban" ? Object.assign({}, f, { b: "banana" }) : f);
+    return out;
+  }
+  return feeds;
+}
+const MIDBANANA = { fast: 1, camp: 1 };
 
 /* ================================================================
    HYDRATION — the schedule replaces thirst. Fixed times, fixed
@@ -362,17 +513,29 @@ function MacroBar({ label, val, max, c }) {
       <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 3 }}><div style={{ width: Math.min(100, val / max * 100) + "%", height: "100%", background: c, borderRadius: 2, transition: "width .3s" }} /></div>
     </div>);
 }
-function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, setPick, menu, setMenu, drink, setDrink }) {
+function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, setPick, menu, setMenu, drink, setDrink, phase }) {
   const d = D[day], today = todayKey(), isToday = day === today;
   const dl = done || {};
-  const feeds = useMemo(() => retime(day, d.feeds, pick, st), [day, d, pick, st]);
+  const feeds = useMemo(() => retime(day, phaseFeeds(phase, day, d.feeds), pick, st), [day, d, pick, st, phase]);
   const mn = menu || {};
-  /* A feed shows Menu B only where the document offers one for that slot. */
-  const bkey = (f, i) => (f.b && mn[i] && (SWAPS[f.b] || []).indexOf(mn[i]) >= 0) ? mn[i] : f.b;
-  const tot = feeds.reduce((a, f, i) => { if (!f.b) return a; const b = B[bkey(f, i)];
+  /* Each feed belongs to a slot. The slot remembers what was last chosen for
+     this weekday; BIG applies where Menu A serves a BIG portion. */
+  const meta = (() => { const seen = {};
+    return feeds.map((f) => {
+      if (!f.b) return null;
+      const base = BASE_OF[f.b] || f.b, slot = slotOf(f.b);
+      if (!slot) return { base, slot: null, big: false, id: null, key: f.b };
+      const nth = seen[slot] || 0; seen[slot] = nth + 1;
+      const id = day + "-" + slot + (nth ? "-" + nth : "");
+      const chosen = mn[id];
+      const key = chosen && SLOTS[slot].opts.indexOf(chosen) >= 0 ? chosen : base;
+      return { base, slot, big: !!BIGKEY[f.b], id, key };
+    }); })();
+  const blk = (i) => { const m = meta[i]; return m.slot ? blockOf(m.key, m.slot, m.big) : B[m.key]; };
+  const tot = feeds.reduce((a, f, i) => { if (!f.b) return a; const b = blk(i);
     return { k: a.k + b.kcal, p: a.p + b.p, c: a.c + b.c, f: a.f + b.f }; }, { k: 0, p: 0, c: 0, f: 0 });
-  const onB = feeds.some((f, i) => f.b && bkey(f, i) !== f.b);
-  const eaten = feeds.reduce((a, f, i) => { if (!f.b || !dl[i]) return a; const b = B[bkey(f, i)];
+  const swapped = feeds.some((f, i) => f.b && meta[i].slot && meta[i].key !== meta[i].base);
+  const eaten = feeds.reduce((a, f, i) => { if (!f.b || !dl[i]) return a; const b = blk(i);
     return { k: a.k + b.kcal, p: a.p + b.p, c: a.c + b.c, f: a.f + b.f }; }, { k: 0, p: 0, c: 0, f: 0 });
   const nm = nowMin();
   const nextIdx = isToday ? feeds.findIndex((f, i) => f.b && !dl[i] && tMin(f.t) >= nm - 5) : -1;
@@ -394,7 +557,21 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
           ? <span>Morning re-timed around <span style={{ color: C.honey }}>{pick}</span>.</span>
           : <span>Showing the plan's printed times. Set {wake ? "when you woke" : "when you start"} and the morning moves with it.</span>}</Note>
       </Card>
-      <Drink day={day} rows={hydraFor(day, feeds, bkey, !!(drink || {}).sauna)} st8={drink || {}} set={setDrink} />
+      {phase ? (() => { const P = PHASES[phase];
+        return (
+          <Card ac={P.c} s={{ padding: "12px 14px" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+              <span>
+                <span style={Object.assign({}, dsp, { fontSize: 17, fontWeight: 800, letterSpacing: 1.3, color: P.c })}>{P.n}</span>
+                {P.sub ? <span style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash, marginLeft: 7 })}>{P.sub}</span> : null}
+              </span>
+              <span style={Object.assign({}, mno, { fontSize: 12, fontWeight: 700, color: C.honey, whiteSpace: "nowrap" })}>~{P.t.kcal.toLocaleString()}</span>
+            </div>
+            <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 3 })}>P{P.t.p} · C{P.t.c} · F{P.t.f} · DAILY AVERAGE</div>
+            {P.r.map((x, i) => <Note key={i} s={{ marginTop: 6 }}>{x}</Note>)}
+            {MIDBANANA[phase] && day === "sun" ? <Note c={C.honey} bold>Scored and seven-round weeks: the mid-session banana, in the gap before the Nordics.</Note> : null}
+          </Card>); })() : null}
+      <Drink day={day} rows={hydraFor(day, feeds, (f, i) => (meta[i] && meta[i].key) || f.b, !!(drink || {}).sauna)} st8={drink || {}} set={setDrink} />
       {dload ? <Card ac={C.sage}><Eye c={C.sage}>Easy week {week}</Eye><Note c={C.bone} s={{ marginTop: 0 }}>Keep eating exactly as written — the training drops, the building doesn't. No fight rounds means no mid-session banana on Sunday.</Note></Card> : null}
       {taper ? <Card ac={C.frost}><Eye c={C.frost}>{week === 16 ? "Test week" : "Taper week " + week}</Eye><Note c={C.bone} s={{ marginTop: 0 }}>Volume drops, food holds. Do not cut carbs — arrive at {week === 16 ? "Saturday" : "test day"} full.{week === 16 ? " Test day eats exactly like a normal Saturday." : ""}</Note></Card> : null}
 
@@ -404,7 +581,7 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
             <span style={Object.assign({}, dsp, { fontSize: 28, fontWeight: 800, letterSpacing: 1.6, color: C.bone, lineHeight: 1 })}>{d.star ? "★ " : ""}{d.n}</span>
             <span style={{ textAlign: "right" }}>
               <span style={Object.assign({}, mno, { fontSize: 18, fontWeight: 700, color: C.honey })}>{tot.k.toLocaleString()}<span style={{ fontSize: 9, color: C.ash }}> KCAL</span></span>
-              {onB ? <div style={Object.assign({}, mno, { fontSize: 8, letterSpacing: 1.2, color: C.ember, marginTop: 2 })}>MENU B IN PLAY</div> : null}
+              {swapped ? <div style={Object.assign({}, mno, { fontSize: 8, letterSpacing: 1.2, color: C.ember, marginTop: 2 })}>SWAPS IN PLAY</div> : null}
             </span>
           </div>
           <div style={Object.assign({}, bdy, { fontSize: 12.5, color: C.ash, marginTop: 4 })}>{d.tag}</div>
@@ -445,8 +622,8 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
               <span style={Object.assign({}, dsp, { position: "relative", display: "inline-block", background: C.ink, padding: "0 8px", fontSize: 13, fontWeight: 700, letterSpacing: 1, lineHeight: 1.25, color: f.ev.indexOf("★") >= 0 ? C.ember : C.ash })}>{f.ev}</span>
             </span>
           </div>);
-        const key = bkey(f, i), bl = B[key], on = !!dl[i], isNext = i === nextIdx, isOpen = open === i;
-        const alts = SWAPS[f.b] || [];
+        const m = meta[i], bl = blk(i), on = !!dl[i], isNext = i === nextIdx, isOpen = open === i;
+        const S = m.slot ? SLOTS[m.slot] : null;
         return (
           <Card key={i} tid="feed" ac={on ? C.sage : f.crit ? C.ember : C.line} s={{ padding: 0, opacity: on ? .68 : 1, borderColor: isNext ? C.ember : C.line }}>
             <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px" }}>
@@ -456,7 +633,7 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
                   <div style={Object.assign({}, bdy, { fontSize: 14.5, fontWeight: 600, color: f.crit && !on ? C.ember : C.bone })}>{f.crit ? "★ " : ""}{bl.n}</div>
                   <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 2, display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" })}>
                     <span>{bl.kcal} KCAL · P{bl.p} C{bl.c} F{bl.f}</span>
-                    {alts.length ? <span style={{ fontSize: 8, letterSpacing: 1, color: bl.menu === "B" ? C.ink : C.ash, background: bl.menu === "B" ? C.ember : "transparent", border: "1px solid " + (bl.menu === "B" ? C.ember : C.line), borderRadius: 3, padding: "1px 4px" }}>{bl.menu === "B" ? "MENU B" : "MENU A"}</span> : null}
+                    {S ? <span style={{ fontSize: 8, letterSpacing: 1, color: m.key !== m.base ? C.ink : C.ash, background: m.key !== m.base ? C.ember : "transparent", border: "1px solid " + (m.key !== m.base ? C.ember : C.line), borderRadius: 3, padding: "1px 4px" }}>{m.key !== m.base ? "SWAP" : "AS WRITTEN"}</span> : null}
                   </div>
                 </span>
               </span>
@@ -477,20 +654,19 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
                 })() : null}
                 {bl.bn ? <Note s={{ fontStyle: "italic" }}>{bl.bn}</Note> : null}
                 {f.note ? <Note s={{ fontStyle: "italic" }}>{f.note}</Note> : null}
-                {alts.length ? (
+                {S ? (
                   <div style={{ marginTop: 10, borderTop: "1px solid " + C.line, paddingTop: 8 }}>
-                    <Eye c={C.ember} s={{ marginBottom: 6 }}>Menu A or B</Eye>
-                    {[f.b].concat(alts).map((k) => { const b = B[k], sel = k === key;
+                    <Eye c={C.ember} s={{ marginBottom: 6 }}>{S.n}{m.big ? " · BIG" : ""}</Eye>
+                    {S.opts.map((k, oi) => { const b = blockOf(k, m.slot, m.big), sel = k === m.key;
                       return (
-                        <button key={k} onClick={() => { setMenu(i, k === f.b ? null : k); buzz(20); }}
-                          style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, textAlign: "left", background: "transparent", border: "none", borderTop: k === f.b ? "none" : "1px solid " + C.line, padding: "8px 0", cursor: "pointer", minHeight: 44 }}>
+                        <button key={k} onClick={() => { setMenu(m.id, k === m.base ? null : k, k); buzz(20); }}
+                          style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, textAlign: "left", background: "transparent", border: "none", borderTop: oi ? "1px solid " + C.line : "none", padding: "8px 0", cursor: "pointer", minHeight: 44 }}>
                           <span style={Object.assign({}, mno, { fontSize: 11, color: sel ? C.ember : C.line, flexShrink: 0 })}>{sel ? "●" : "○"}</span>
                           <span style={{ flex: 1, minWidth: 0 }}>
                             <span style={Object.assign({}, bdy, { fontSize: 13, fontWeight: sel ? 600 : 400, color: sel ? C.bone : C.ash, display: "block" })}>{b.n}</span>
-                            <span style={Object.assign({}, mno, { fontSize: 9, color: C.ash })}>{b.menu === "B" ? "B · " : "A · "}{b.kcal} KCAL · P{b.p} C{b.c} F{b.f}</span>
+                            <span style={Object.assign({}, mno, { fontSize: 9, color: C.ash })}>{b.kcal} KCAL · P{b.p} C{b.c} F{b.f}</span>
                           </span>
                         </button>); })}
-                    {f.b === "batchbig" ? <Note s={{ fontStyle: "italic" }}>{BIG_NOTE}</Note> : null}
                   </div>) : null}
               </div>) : null}
             {f.sub && isOpen ? <div style={{ padding: "0 12px 10px 62px" }}><Note s={{ marginTop: 0 }}>{f.sub}</Note></div> : null}
@@ -672,8 +848,19 @@ function Cook({ cook, setCook, foods, setFoods, K, prep, setPrep }) {
 /* ================================================================
    SHOP
    ================================================================ */
-function Shop({ shop, setShop }) {
-  const total = SHOP.reduce((a, g) => a + g[1].length, 0);
+function Shop({ shop, setShop, used, today }) {
+  /* Only the extras for options taken in the last fortnight. */
+  const swaps = (() => {
+    const rows = [], seen = {};
+    for (const [k, d] of Object.entries(used || {})) {
+      if (!B[k] || !B[k].extra) continue;
+      if ((parseISO(today) - parseISO(d)) / 86400000 > 14) continue;
+      for (const [item, qty] of B[k].extra) { if (seen[item]) continue; seen[item] = 1; rows.push([item, qty]); }
+    }
+    return rows;
+  })();
+  const GROUPS = swaps.length ? SHOP.concat([["SWAPS — WHAT YOU'VE BEEN TAKING", swaps]]) : SHOP;
+  const total = GROUPS.reduce((a, g) => a + g[1].length, 0);
   const got = Object.values(shop).filter(Boolean).length;
   return (
     <div>
@@ -684,9 +871,9 @@ function Shop({ shop, setShop }) {
         </div>
         <div style={{ height: 4, background: C.ink, borderRadius: 2, marginTop: 10 }}><div style={{ width: got / total * 100 + "%", height: "100%", background: C.honey, borderRadius: 2, transition: "width .3s" }} /></div>
       </Card>
-      {SHOP.map((g, gi) => (
-        <Card key={g[0]} ac={[C.copper, C.honey, C.frost, C.ember, C.sage][gi]}>
-          <Eye c={[C.copper, C.honey, C.frost, C.ember, C.sage][gi]}>{g[0]}</Eye>
+      {GROUPS.map((g, gi) => (
+        <Card key={g[0]} ac={[C.copper, C.honey, C.frost, C.ember, C.sage, C.frost][gi]}>
+          <Eye c={[C.copper, C.honey, C.frost, C.ember, C.sage, C.frost][gi]}>{g[0]}</Eye>
           {g[1].map((it, i) => { const k = gi + "-" + i, on = !!shop[k];
             return (
               <div key={k} onClick={() => setShop(Object.assign({}, shop, { [k]: !on }))} style={{ display: "flex", gap: 11, alignItems: "center", padding: "9px 0", borderTop: i ? "1px solid " + C.line : "none", cursor: "pointer" }}>
@@ -821,7 +1008,7 @@ function Trend({ lines, unit }) {
     </svg>);
 }
 
-function Referee({ tape, setTape }) {
+function Referee({ tape, setTape, phase }) {
   const rows = (tape || []).slice().sort((a, b) => a.d < b.d ? -1 : 1);
   const [d, setD] = useState(iso(sundayOf(new Date())));
   const [f, setF] = useState({ kg: "", waist: "", arm: "", shoulder: "" });
@@ -841,6 +1028,7 @@ function Referee({ tape, setTape }) {
   };
   const drop = (date) => { setTape(rows.filter((r) => r.d !== date)); buzz(30); };
 
+  const P = phase ? PHASES[phase] : null;
   const V = verdicts(rows);
   const lit = V.filter((v) => v.lit);
   const latest = (k) => { const p = series(rows, k); return p.length ? p[p.length - 1].v : null; };
@@ -859,6 +1047,16 @@ function Referee({ tape, setTape }) {
               </div>); })}
         </div>
       </Card>
+
+      {P ? (
+        <Card ac={P.c}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+            <Eye c={P.c} s={{ marginBottom: 0 }}>{P.n}{P.sub ? " · " + P.sub : ""}</Eye>
+            <span style={Object.assign({}, mno, { fontSize: 12, fontWeight: 700, color: C.honey, whiteSpace: "nowrap" })}>~{P.t.kcal.toLocaleString()}</span>
+          </div>
+          <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, marginTop: 4 })}>P{P.t.p} · C{P.t.c} · F{P.t.f} · DAILY AVERAGE</div>
+          {P.r.map((x, i) => <Note key={i} s={{ marginTop: 6 }}>{x}</Note>)}
+        </Card>) : null}
 
       <Card>
         <Eye c={C.honey}>Log a reading</Eye>
@@ -1035,7 +1233,7 @@ function MdBody({ blocks }) {
 
 /* Split the document into its ## sections, keeping whatever sits above the first. */
 const PLAN_DOC = (() => {
-  const lines = (PLAN_MD + "\n\n---\n\n" + MENUB_MD.replace(/^#\s+/, "## ")).replace(/\r/g, "").split("\n");
+  const lines = [PLAN_MD, MENUB_MD.replace(/^#\s+/, "## "), SEASON_MD.replace(/^#\s+/, "## ")].join("\n\n---\n\n").replace(/\r/g, "").split("\n");
   const title = (lines.find((l) => /^#\s/.test(l)) || "# FUEL").replace(/^#\s*/, "");
   const secs = [];
   let cur = null, pre = [];
@@ -1144,7 +1342,9 @@ function Backup({ onExport, onImport }) {
 const TFld = ({ v, on }) => <input type="time" value={v || ""} onChange={(e) => on(e.target.value)}
   style={Object.assign({}, mno, { width: "100%", background: C.ink, border: "1px solid " + C.line, borderRadius: 4, color: C.bone, fontSize: 15, padding: "9px 6px", textAlign: "center", minHeight: 44 })} />;
 
-function Settings({ st, setSt, week, close, onExport, onImport }) {
+function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
+  const se = st.season || {};
+  const setSe = (patch) => setSt(Object.assign({}, st, { season: Object.assign({}, se, patch) }));
   const breaks = st.breaks || DEFAULT_BREAKS();
   const len = st.len || DEFAULT_LEN();
   const setBreak = (i, v) => { const n = breaks.slice(); n[i] = v; setSt(Object.assign({}, st, { breaks: n })); };
@@ -1165,6 +1365,29 @@ function Settings({ st, setSt, week, close, onExport, onImport }) {
               <span style={{ position: "absolute", top: 2, left: st[x[0]] ? 18 : 2, width: 18, height: 18, borderRadius: 9, background: C.bone, transition: "left .15s" }} /></span>
             <span style={{ flex: 1 }}><div style={Object.assign({}, bdy, { fontSize: 13.5, fontWeight: 600, color: C.bone })}>{x[1]}</div><div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash })}>{x[2]}</div></span>
           </div>))}
+        <div style={{ borderTop: "1px solid " + C.line, marginTop: 14, paddingTop: 14 }}>
+          <Eye c={C.ember}>The season</Eye>
+          <Note s={{ marginTop: 0 }}>Which block of training today sits in. The phase sets the day's target and the changes the plan makes to Menu A.</Note>
+          <div style={{ marginTop: 10 }}>
+            <Lab>Program</Lab>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
+              {PROGRAMS.map((x) => { const on = (se.prog || "") === x[0];
+                return <button key={x[0]} onClick={() => setSe({ prog: on ? "" : x[0] })}
+                  style={Object.assign({}, dsp, { flex: "1 1 45%", fontSize: 11.5, fontWeight: 700, letterSpacing: .5, padding: "10px 4px", borderRadius: 4, cursor: "pointer", minHeight: 44, background: on ? C.ember : "transparent", color: on ? C.ink : C.ash, border: "1px solid " + (on ? C.ember : C.line) })}>{x[1]}</button>; })}
+            </div>
+          </div>
+          <div style={{ display: "flex", gap: 6, marginTop: 10 }}>
+            <div style={{ flex: 1, minWidth: 0 }}><Lab>Program start date</Lab><Fld type="date" v={se.start || ""} on={(v) => setSe({ start: v })} s={{ textAlign: "left", fontSize: 14 }} /></div>
+            <div style={{ flex: 1, minWidth: 0 }}><Lab>Fight date (optional)</Lab><Fld type="date" v={se.fight || ""} on={(v) => setSe({ fight: v })} s={{ textAlign: "left", fontSize: 14 }} /></div>
+          </div>
+          <div onClick={() => setSe({ cut: !se.cut })} style={{ display: "flex", gap: 10, alignItems: "center", padding: "12px 0", borderTop: "1px solid " + C.line, cursor: "pointer", marginTop: 10 }}>
+            <span style={{ width: 40, height: 24, borderRadius: 12, background: se.cut ? C.copper : C.ink, border: "1px solid " + (se.cut ? C.copper : C.line), position: "relative", flexShrink: 0 }}>
+              <span style={{ position: "absolute", top: 2, left: se.cut ? 18 : 2, width: 18, height: 18, borderRadius: 9, background: C.bone, transition: "left .15s" }} /></span>
+            <span style={{ flex: 1 }}><div style={Object.assign({}, bdy, { fontSize: 13.5, fontWeight: 600, color: C.bone })}>Making weight</div><div style={Object.assign({}, bdy, { fontSize: 11.5, color: C.ash })}>Only when the limit demands it, decided in camp week 1. Overrides the phase.</div></span>
+          </div>
+          <Note c={phase ? C.honey : C.ash}>{phase ? <span>Today reads as <span style={{ color: PHASES[phase].c }}>{PHASES[phase].n}</span>.</span> : "Set a program and a start date and the phase shows on TODAY."}</Note>
+        </div>
+
         <div style={{ borderTop: "1px solid " + C.line, marginTop: 14, paddingTop: 14 }}>
           <Eye c={C.ember}>Session times</Eye>
           <Note s={{ marginTop: 0 }}>What TODAY works from when you enter a session start.</Note>
@@ -1195,7 +1418,7 @@ function Settings({ st, setSt, week, close, onExport, onImport }) {
 }
 
 const KEYS = { st: "fu8-settings", done: "fu8-done", cook: "fu8-cook", foods: "fu8-foods", shop: "fu8-shop", tape: "fu8-tape", menu: "fu8-menu", drink: "fu8-drink" };
-const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true, breaks: DEFAULT_BREAKS(), len: DEFAULT_LEN(), pick: null });
+const DEFAULT_ST = () => ({ start: iso(mondayOf(new Date())), iron: false, sound: true, breaks: DEFAULT_BREAKS(), len: DEFAULT_LEN(), pick: null, season: { prog: "", start: "", fight: "", cut: false } });
 export default function App() {
   const [st, setStRaw] = useState(DEFAULT_ST);
   const [loaded, setLoaded] = useState(false);
@@ -1256,11 +1479,14 @@ export default function App() {
   };
   const dayKey = dateK + "-" + day;
   const dayDone = (doneAll[dayKey]) || {};
-  const dayMenu = ((menuAll.picks || {})[dayKey]) || {};
-  const setMenu = (i, k) => {
+  /* Slot picks are remembered per slot per weekday, so the default is
+     whatever was chosen last. `used` dates each option for the shop. */
+  const dayMenu = menuAll.picks || {};
+  const setMenu = (id, k, chosen) => {
     const sel = Object.assign({}, dayMenu);
-    if (k) sel[i] = k; else delete sel[i];
-    setMenuAll(Object.assign({}, menuAll, { picks: Object.assign({}, menuAll.picks, { [dayKey]: sel }) }));
+    if (k) sel[id] = k; else delete sel[id];
+    const used = Object.assign({}, menuAll.used, chosen ? { [chosen]: dateK } : {});
+    setMenuAll(Object.assign({}, menuAll, { picks: sel, used }));
   };
   const setPrep = (v) => setMenuAll(Object.assign({}, menuAll, { prep: v }));
   const dayDrink = drinkAll[dayKey] || {};
@@ -1270,11 +1496,13 @@ export default function App() {
     const sel = st.pick && st.pick.date === iso(new Date()) ? (st.pick.sel || {}) : {};
     retime(t, D[t].feeds, sel[t], st).forEach((f, i) => { if (f.b && tMin(f.t) === nm && !chimed.current[dateK + i] && !((doneAll[dateK + "-" + t] || {})[i])) { chimed.current[dateK + i] = 1; beep(660, 200); setTimeout(() => beep(880, 350), 220); buzz([120, 60, 120]); } });
   }, 20000); return () => clearInterval(id); }, [st, doneAll, beep]);
+  const season = st.season || {};
+  const phase = useMemo(() => phaseOf(season, dateK, week), [season, dateK, week]);
   const TABS = [["today", "TODAY"], ["cook", "COOK"], ["shop", "SHOP"], ["plan", "PLAN"], ["ref", "REFEREE"]];
   return (
     <div style={Object.assign({}, bdy, { background: C.ink, minHeight: "100vh", color: C.bone })}>
       <style>{FONTS}</style>
-      {showSet ? <Settings st={st} setSt={setSt} week={week} close={() => setShowSet(false)} onExport={buildBackup} onImport={applyBackup} /> : null}
+      {showSet ? <Settings st={st} setSt={setSt} week={week} close={() => setShowSet(false)} onExport={buildBackup} onImport={applyBackup} phase={phase} /> : null}
       <div style={{ borderBottom: "1px solid " + C.line, background: C.slab, position: "sticky", top: 0, zIndex: 30, paddingTop: "env(safe-area-inset-top)" }}>
         <div style={{ borderTop: "3px solid " + C.ember }} />
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "10px 13px", paddingLeft: "max(13px, env(safe-area-inset-left))", paddingRight: "max(13px, env(safe-area-inset-right))", maxWidth: 640, margin: "0 auto" }}>
@@ -1293,11 +1521,11 @@ export default function App() {
       <div style={{ padding: "13px 13px 150px", maxWidth: 640, margin: "0 auto" }}>
         {!loaded ? <div style={Object.assign({}, mno, { fontSize: 11, color: C.ash, padding: "40px 0", textAlign: "center" })}>LOADING…</div> : (
           <div>
-            {tab === "today" ? <Today day={day} setDay={setDay} week={week} cycle={L} done={dayDone} tick={tick} cook={cook} sound={st.sound} st={st} pick={picks[day]} setPick={setPick} menu={dayMenu} setMenu={setMenu} drink={dayDrink} setDrink={setDrink} /> : null}
+            {tab === "today" ? <Today day={day} setDay={setDay} week={week} cycle={L} done={dayDone} tick={tick} cook={cook} sound={st.sound} st={st} pick={picks[day]} setPick={setPick} menu={dayMenu} setMenu={setMenu} drink={dayDrink} setDrink={setDrink} phase={phase} /> : null}
             {tab === "cook" ? <Cook cook={cook} setCook={setCook} foods={foods} setFoods={setFoods} K={K} prep={menuAll.prep || {}} setPrep={setPrep} /> : null}
-            {tab === "shop" ? <Shop shop={shop} setShop={setShop} /> : null}
+            {tab === "shop" ? <Shop shop={shop} setShop={setShop} used={menuAll.used || {}} today={dateK} /> : null}
             {tab === "plan" ? <PlanView /> : null}
-            {tab === "ref" ? <Referee tape={tape} setTape={setTape} /> : null}
+            {tab === "ref" ? <Referee tape={tape} setTape={setTape} phase={phase} /> : null}
             <div style={Object.assign({}, bdy, { fontSize: 10.5, color: C.ash, textAlign: "center", padding: "24px 0 6px", lineHeight: 1.6 })}>Eat for it. The training only writes the cheque.</div>
           </div>)}
       </div>

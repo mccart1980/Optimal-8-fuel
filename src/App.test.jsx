@@ -52,7 +52,8 @@ describe("Fuel · Optimal 8 Fighter", () => {
     const withCasein = [];
     for (const day of ["MON", "TUE", "WED", "THU", "FRI", "SAT", "SUN"]) {
       fireEvent.click(screen.getByText(day));
-      if (screen.queryByText(/CASEIN/)) withCasein.push(day);
+      // count feed cards, not any text: the "next feed" card names it too
+      if (screen.getAllByTestId("feed").some((c) => /CASEIN/.test(c.textContent))) withCasein.push(day);
     }
     expect(withCasein).toEqual(["MON", "WED", "THU", "FRI", "SUN"]);
   });
@@ -208,34 +209,70 @@ describe("Fuel · Optimal 8 Fighter", () => {
     .replace(/[^\d]/g, "").slice(0, 4));
   const feedCard = (re) => screen.getAllByTestId("feed").find((el) => re.test(el.textContent));
 
-  it("swaps a feed to Menu B and recomputes the day", async () => {
+  const ago = (days) => { const d = new Date(); d.setDate(d.getDate() - days); return d.toISOString().slice(0, 10); };
+  const seedSeason = (season) => window.localStorage.setItem("fu8-settings",
+    JSON.stringify({ start: ago(0), iron: false, sound: true, pick: null, season }));
+
+  it("swaps a slot and recomputes the day", async () => {
     await mounted();
     fireEvent.click(screen.getByText("MON"));
-    const before = dayKcal();
-    expect(before).toBe(3332);
+    expect(dayKcal()).toBe(3332);
 
     fireEvent.click(within(feedCard(/09:00[\s\S]*BATCH/)).getByText("BATCH"));
-    const card = feedCard(/09:00/);
-    fireEvent.click(within(card).getByText("MINCE WRAPS + BANANA"));
+    fireEvent.click(within(feedCard(/09:00/)).getByText("MINCE WRAPS + BANANA"));
 
     expect(dayKcal()).toBe(3369);                       // 3332 + 37
-    expect(screen.getByText("MENU B IN PLAY")).toBeTruthy();
-    expect(within(feedCard(/09:00/)).getByText("MENU B")).toBeTruthy();
+    expect(screen.getByText("SWAPS IN PLAY")).toBeTruthy();
+    expect(within(feedCard(/09:00/)).getByText("SWAP")).toBeTruthy();
 
     fireEvent.click(within(feedCard(/09:00/)).getAllByText("BATCH")[0]);
-    expect(dayKcal()).toBe(3332);                       // back to Menu A
+    expect(dayKcal()).toBe(3332);                       // back as written
   });
 
-  it("offers Menu B only where the document does", async () => {
+  it("gives every documented slot a picker", async () => {
     await mounted();
     fireEvent.click(screen.getByText("MON"));
-    // the A/B chip appears only on the slots the document swaps
-    const chip = (re) => within(feedCard(re)).queryByText(/^MENU [AB]$/);
-    for (const re of [/03:10/, /04:50[\s\S]*PORRIDGE/, /18:30/, /21:00/]) expect(chip(re)).toBeNull();
-    for (const re of [/09:00/, /12:30/, /15:00/]) expect(chip(re)).toBeTruthy();
-    // the 17:00 top-up lives on Tuesday and Friday
+    const chip = (re) => within(feedCard(re)).queryByText(/^SWAP$|^AS WRITTEN$/);
+    // before the session, breakfast, mid-morning, lunch, 3pm, dinner, bedtime
+    for (const re of [/03:10/, /04:50[\s\S]*PORRIDGE/, /09:00/, /12:30/, /15:00/, /18:30/, /21:00/]) {
+      expect(chip(re)).toBeTruthy();
+    }
+    // the post-session half bottle is not a slot the document swaps
+    expect(chip(/04:50[\s\S]*HALF BOTTLE/)).toBeNull();
+
     fireEvent.click(screen.getByText("TUE"));
-    expect(chip(/17:00/)).toBeTruthy();
+    expect(chip(/17:00/)).toBeTruthy();                 // the 5pm top-up
+  });
+
+  it("adds the 17:00 top-up on Monday in BUILD", async () => {
+    seedSeason({ prog: "prep14", start: ago(14), fight: "", cut: false });   // week 3 — accumulation
+    await mounted();
+    expect(screen.getByText("BUILD")).toBeTruthy();
+
+    fireEvent.click(screen.getByText("MON"));
+    expect(feedCard(/17:00[\s\S]*CARB TOP-UP/)).toBeTruthy();
+    expect(dayKcal()).toBe(3858);                       // 3332 + 526
+  });
+
+  it("drops Monday's 3pm feed in TRANSITION", async () => {
+    seedSeason({ prog: "prep14", start: ago(14), fight: ago(7), cut: false });
+    await mounted();
+    expect(screen.getByText("TRANSITION")).toBeTruthy();
+
+    fireEvent.click(screen.getByText("MON"));
+    expect(feedCard(/15:00/)).toBeUndefined();
+    expect(screen.queryByText("TWO BANANAS")).toBeNull();
+    expect(dayKcal()).toBe(3122);                       // 3332 − 210
+  });
+
+  it("recomputes the day when the salmon dinner is chosen", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+    fireEvent.click(within(feedCard(/18:30/)).getByText("STEAK & EGGS"));
+    fireEvent.click(within(feedCard(/18:30/)).getByText("SALMON, EGGS & RICE"));
+
+    expect(dayKcal()).toBe(3334);                       // 3332 − 943 + 945
+    expect(screen.getByText("/234")).toBeTruthy();      // protein 249 − 78 + 63
   });
 
   it("runs the drink schedule against the day's target", async () => {
