@@ -5,6 +5,7 @@ import react from "@vitejs/plugin-react";
    inside jsdom. Everything else matches the real build. */
 export default defineConfig({
   plugins: [react()],
+  define: { __BUILD__: JSON.stringify("test") },
   test: {
     environment: "jsdom",
     globals: true,

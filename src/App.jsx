@@ -1413,6 +1413,14 @@ function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
         </div>
 
         <Backup onExport={onExport} onImport={onImport} />
+        <div style={{ marginTop: 14, paddingTop: 12, borderTop: "1px solid " + C.line }}>
+          <div style={Object.assign({}, mno, { fontSize: 9, color: C.ash, textAlign: "center", letterSpacing: .8 })}>VERSION {__BUILD__}</div>
+          <Btn small c={C.ash} s={{ width: "100%", marginTop: 8 }} on={() => {
+            if (typeof window !== "undefined" && window.__fuelUpdate) window.__fuelUpdate(true);
+            else window.location.reload();
+          }}>CHECK FOR UPDATE</Btn>
+          <Note s={{ fontStyle: "italic" }}>The app updates itself when you open it online. This forces it.</Note>
+        </div>
       </div>
     </div>);
 }

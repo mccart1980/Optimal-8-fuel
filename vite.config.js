@@ -9,8 +9,13 @@ import { VitePWA } from "vite-plugin-pwa";
 const REPO = (process.env.GITHUB_REPOSITORY || "mccart1980/Optimal-8-fuel").split("/")[1];
 const BASE = "/" + REPO + "/";
 
+/* Stamped into the build so the app can show which version is running. */
+const BUILD = new Date().toISOString().slice(0, 16).replace("T", " ") + " UTC"
+  + (process.env.GITHUB_SHA ? " \u00b7 " + process.env.GITHUB_SHA.slice(0, 7) : "");
+
 export default defineConfig({
   base: BASE,
+  define: { __BUILD__: JSON.stringify(BUILD) },
   plugins: [
     react(),
     VitePWA({
@@ -40,6 +45,7 @@ export default defineConfig({
         navigateFallback: BASE + "index.html",
         cleanupOutdatedCaches: true,
         clientsClaim: true,
+        skipWaiting: true,
         runtimeCaching: [
           {
             // Once the fonts have been seen online they stay available offline.
