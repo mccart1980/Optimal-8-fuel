@@ -2,7 +2,7 @@ import React from "react";
 import { describe, it, expect } from "vitest";
 import { render, screen, fireEvent, waitFor, within } from "@testing-library/react";
 import App from "./App.jsx";
-import PLAN_MD from "../fuel-optimal-8-fighter.md?raw";
+import MENU_MD from "../fuel-the-menu.md?raw";
 
 const GUIDE_FILES = import.meta.glob("../guide-fuel.md", { query: "?raw", import: "default", eager: true });
 const GUIDE_MD = GUIDE_FILES["../guide-fuel.md"] || null;
@@ -161,7 +161,7 @@ describe("Fuel · Optimal 8 Fighter", () => {
     await mounted();
     fireEvent.click(screen.getByText("REFEREE"));
     expect(await screen.findByText(/Waist \+1.5 cm against \+0.2 cm up top/)).toBeTruthy();
-    expect(screen.getByText(/one of the 3pm bananas on Monday and Thursday/)).toBeTruthy();
+    expect(screen.getByText(/one of the three o'clock bananas on Monday and Thursday/)).toBeTruthy();
     expect(screen.queryByText(/Arms and shoulders up, waist flat/)).toBeNull();
   });
 
@@ -253,7 +253,7 @@ describe("Fuel · Optimal 8 Fighter", () => {
     expect(screen.getByText("BUILD")).toBeTruthy();
 
     fireEvent.click(screen.getByText("MON"));
-    expect(feedCard(/17:00[\s\S]*CARB TOP-UP/)).toBeTruthy();
+    expect(feedCard(/17:00[\s\S]*POUCH LOAD/)).toBeTruthy();
     expect(dayKcal()).toBe(3858);                       // 3332 + 526
   });
 
@@ -325,25 +325,51 @@ describe("Fuel · Optimal 8 Fighter", () => {
     expect(screen.getByText(/After the sauna/)).toBeTruthy();
   });
 
-  it("carries Menu B onto the shop list and the cook page", async () => {
+  it("shows an as-you-use-them item only once its option has been chosen", async () => {
     await mounted();
-    fireEvent.click(screen.getByText("SHOP"));
-    expect(screen.getByText(/MENU B — ADDED TO MENU A/)).toBeTruthy();
-    expect(screen.getByText("Wholemeal tortilla wraps, standard (about 40 g)")).toBeTruthy();
-    expect(screen.getByText("10–12")).toBeTruthy();
 
+    /* Nothing chosen yet: the standing list only. */
+    fireEvent.click(screen.getByText("SHOP"));
+    expect(screen.queryByText(/AS YOU USE THEM/)).toBeNull();
+    expect(screen.queryByText("Wholemeal wraps")).toBeNull();
+    expect(screen.getByText("Ben's Original rice pouches")).toBeTruthy();
+
+    /* Take the wraps at mid-morning and the item appears. */
+    fireEvent.click(screen.getByText("TODAY"));
+    fireEvent.click(screen.getByText("MON"));
+    fireEvent.click(within(feedCard(/09:00[\s\S]*BATCH/)).getByText("BATCH"));
+    fireEvent.click(within(feedCard(/09:00/)).getByText("MINCE WRAPS + BANANA"));
+
+    fireEvent.click(screen.getByText("SHOP"));
+    expect(screen.getByText(/AS YOU USE THEM/)).toBeTruthy();
+    expect(screen.getByText("Wholemeal wraps")).toBeTruthy();
+    expect(screen.getByText("10")).toBeTruthy();
+    expect(screen.queryByText("Scallops")).toBeNull();
+  });
+
+  it("takes the prep checklist from the document", async () => {
+    await mounted();
     fireEvent.click(screen.getByText("COOK"));
-    expect(screen.getByText(/Menu B prep/)).toBeTruthy();
-    expect(screen.getByText("Portion the mince separately.")).toBeTruthy();
+    expect(screen.getByText(/The batch and the prep/)).toBeTruthy();
     expect(screen.getByText("Boil the eggs.")).toBeTruthy();
+    expect(screen.getByText("Prawns and cod.")).toBeTruthy();
+    expect(screen.getByText("Wraps rolled the night before.")).toBeTruthy();
   });
 
   it("renders every section of the plan document", async () => {
     await mounted();
     fireEvent.click(screen.getByText("PLAN"));
-    const heads = PLAN_MD.split("\n").filter((l) => l.startsWith("## ")).map((l) => l.slice(3));
-    expect(heads.length).toBeGreaterThan(15);
+    const heads = MENU_MD.split("\n").filter((l) => l.startsWith("## ")).map((l) => l.slice(3));
+    expect(heads.length).toBeGreaterThan(8);
     for (const h of heads) expect(screen.getAllByText(h).length).toBeGreaterThan(0);
+
+    /* The hydration schedule stays alongside it. */
+    expect(screen.getAllByText(/HYDRATION — WHEN TO DRINK/).length).toBeGreaterThan(0);
+    expect(screen.getAllByText(/WORK DAYS — set these alarms/).length).toBeGreaterThan(0);
+
+    /* The documents it replaces are gone. */
+    expect(screen.queryByText(/MENU B — ADDED TO MENU A/)).toBeNull();
+    expect(screen.queryByText(/THE PHASE TABLE/)).toBeNull();
   });
 
   it("gives the GUIDE tab the guide document and today's live panel", async () => {
@@ -415,5 +441,98 @@ describe("Fuel · Optimal 8 Fighter", () => {
 
     fireEvent.click(screen.getByText("GUIDE"));
     expect(screen.getByText("Creatine 5 g in the post-session water, daily")).toBeTruthy();
+  });
+
+  it("offers the document's five breakfasts and five loads", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+
+    /* BREAKFAST — five options, in the document's order. */
+    const bf = feedCard(/04:50[\s\S]*PORRIDGE/);
+    fireEvent.click(within(bf).getByText("PORRIDGE"));
+    for (const n of ["PORRIDGE", "APPLE & RAISIN PORRIDGE", "OVERNIGHT SACHETS",
+                     "EGG BAGEL BREAKFAST", "TUNA BAGEL BREAKFAST"]) {
+      expect(within(bf).getAllByText(n).length).toBeGreaterThan(0);
+    }
+    expect(within(bf).getByText("Breakfast")).toBeTruthy();
+    expect(within(bf).getAllByText(/KCAL · P/).length).toBe(6);   // the feed's own line + five options
+
+    /* THE 5PM LOAD — five options. Tuesday is a load night. */
+    fireEvent.click(screen.getByText("TUE"));
+    const load = feedCard(/17:00/);
+    fireEvent.click(within(load).getByText(/^★? ?POUCH LOAD$/));
+    for (const n of ["POUCH LOAD", "BAGEL LOAD", "PASTA LOAD", "RICE CAKE LOAD", "POTATO LOAD"]) {
+      expect(within(load).getAllByText(n).length).toBeGreaterThan(0);
+    }
+    expect(within(load).getByText("The 5pm load")).toBeTruthy();
+    expect(within(load).getAllByText(/KCAL · P/).length).toBe(6);
+  });
+
+  it("recomputes the day when the cod & prawns dinner is chosen", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+    expect(dayKcal()).toBe(3332);
+
+    fireEvent.click(within(feedCard(/18:30/)).getByText("STEAK & EGGS"));
+    fireEvent.click(within(feedCard(/18:30/)).getByText("COD & PRAWNS WITH RICE"));
+
+    expect(dayKcal()).toBe(3304);                       // 3332 − 943 + 915
+    expect(screen.getByText("/267")).toBeTruthy();      // protein 249 − 78 + 96
+    expect(screen.getByText("SWAPS IN PLAY")).toBeTruthy();
+  });
+
+  it("groups mid-morning and lunch sit down and on the move", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("MON"));
+    const card = feedCard(/09:00[\s\S]*BATCH/);
+    fireEvent.click(within(card).getByText("BATCH"));
+
+    expect(within(card).getByText("Sit down")).toBeTruthy();
+    expect(within(card).getByText("On the move")).toBeTruthy();
+    for (const n of ["BATCH", "JACKET POTATO, BEANS & TUNA", "JACKET POTATO, BEANS & EGGS", "PRAWN RICE",
+                     "MINCE WRAPS + BANANA", "TUNA & EGG BAGEL + BANANA", "CHICKEN & POUCH",
+                     "RICE CAKES, TUNA, EGG & APPLE"]) {
+      expect(within(card).getAllByText(n).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("gives the weekend post-session feed its own picker", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("SAT"));
+    const card = feedCard(/10:00/);
+    fireEvent.click(within(card).getByText(/^★? ?HALF BOTTLE \+ 2 BANANAS$/));
+    expect(within(card).getByText("Weekend post-session")).toBeTruthy();
+    for (const n of ["HALF BOTTLE + 2 BANANAS", "HALF BOTTLE + BANANA + RAISINS", "HALF BOTTLE + 4 RICE CAKES"]) {
+      expect(within(card).getAllByText(n).length).toBeGreaterThan(0);
+    }
+  });
+
+  it("remembers a slot's choice per weekday", async () => {
+    await mounted();
+
+    fireEvent.click(screen.getByText("MON"));
+    fireEvent.click(within(feedCard(/18:30/)).getByText("STEAK & EGGS"));
+    fireEvent.click(within(feedCard(/18:30/)).getByText("SCALLOP & PRAWN RICE"));
+    expect(within(feedCard(/18:30/)).getAllByText("SCALLOP & PRAWN RICE").length).toBeGreaterThan(0);
+
+    /* Thursday's dinner is untouched by Monday's choice. */
+    fireEvent.click(screen.getByText("THU"));
+    expect(within(feedCard(/18:30/)).getAllByText("CHICKEN, EGGS & RICE").length).toBeGreaterThan(0);
+    expect(within(feedCard(/18:30/)).queryByText("SWAP")).toBeNull();
+
+    /* Back to Monday and the scallops are still there. */
+    fireEvent.click(screen.getByText("MON"));
+    expect(within(feedCard(/18:30/)).getAllByText("SCALLOP & PRAWN RICE").length).toBeGreaterThan(0);
+    expect(within(feedCard(/18:30/)).getByText("SWAP")).toBeTruthy();
+  });
+
+  it("names the day's slots on the guide as the document does", async () => {
+    await mounted();
+    fireEvent.click(screen.getByText("GUIDE"));
+    for (const n of ["BEFORE", "BREAKFAST", "MID-MORNING and LUNCH", "THE THREE O'CLOCK",
+                     "THE LOAD", "DINNER", "BEDTIME", "WEEKEND POST-SESSION"]) {
+      expect(screen.getAllByText(n).length).toBeGreaterThan(0);
+    }
+    expect(screen.getByText("~525 · 9 · 116 · 6")).toBeTruthy();
   });
 });

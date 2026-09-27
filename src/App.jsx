@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from "react";
-import PLAN_MD from "../fuel-optimal-8-fighter.md?raw";
-import MENUB_MD from "../fuel-menu-b.md?raw";
-import SEASON_MD from "../fuel-season.md?raw";
+import MENU_MD from "../fuel-the-menu.md?raw";
+import HYDRA_MD_SRC from "../fuel-menu-b.md?raw";
 /* The guide is optional: a glob doesn't fail the build when the file
    isn't there yet, and picks it up the moment it is added. */
 const GUIDE_FILES = import.meta.glob("../guide-fuel.md", { query: "?raw", import: "default", eager: true });
@@ -85,49 +84,71 @@ const hhmm = (m) => { const x = ((Math.round(m) % 1440) + 1440) % 1440; return S
    THE BLOCKS — every meal, weighed once
    ================================================================ */
 const B = {
-  batch:     { n: "BATCH", kcal: 543, p: 36, c: 66, f: 15, cook: "std", i: [["Beef mince 5%", "150g raw"], ["Sweet potato", "300g raw"], ["Passata + beef stock", "150g"], ["Mushrooms (optional)", "150g · +33 kcal"]] },
-  batchbig:  { n: "BATCH BIG", kcal: 671, p: 47, c: 76, f: 20, cook: "big", i: [["Beef mince 5%", "200g raw"], ["Sweet potato", "350g raw"], ["Passata", "150g"], ["Mushrooms (optional)", "150g"]] },
-  porridge:  { n: "PORRIDGE", kcal: 570, p: 16, c: 105, f: 10, bn: "Sachets into the thermos, hot milk on top, a splash of water if it's thick, honey stirred in. No decisions at half past four.", i: [["Quaker Oat So Simple Golden Syrup", "2 sachets · 2 × 36g"], ["Milk", "250ml"], ["Honey", "20g"], ["Banana", "1"]] },
-  porridgeb: { n: "PORRIDGE BIG", kcal: 710, p: 19, c: 130, f: 12, bn: "Sachets into the thermos, hot milk on top, a splash of water if it's thick, honey stirred in.", i: [["Quaker Oat So Simple Golden Syrup", "3 sachets"], ["Milk", "250ml"], ["Honey", "20g"], ["Banana", "1"]] },
-  halfban:   { n: "HALF BOTTLE + BANANA", kcal: 249, p: 26, c: 36, f: 1, bn: "One UFIT 50g on every training day — half before, half straight after. Six bottles a week. Nothing sitting heavy at half past three.", i: [["UFIT 50g", "half · 250ml"], ["Banana", "1"]] },
-  half:      { n: "HALF BOTTLE", kcal: 144, p: 25, c: 9, f: 0, bn: "The other half of the morning bottle, straight after the session.", i: [["UFIT 50g", "the other half"]] },
-  half2ban:  { n: "HALF BOTTLE + 2 BANANAS", kcal: 354, p: 27, c: 63, f: 1, bn: "The other half of the bottle with two bananas — after the weekend sessions.", i: [["UFIT 50g", "the other half"], ["Bananas", "2"]] },
-  twoban:    { n: "TWO BANANAS", kcal: 210, p: 2, c: 54, f: 1, i: [["Bananas", "2"]] },
-  topup:     { n: "CARB TOP-UP", kcal: 526, p: 9, c: 116, f: 6, bn: "One Ben's Original pouch is 100g of dry rice cooked — about 360 kcal, 72g carbs. Nothing to weigh.", i: [["Ben's Original rice pouch", "1 · 250g"], ["Banana", "1"], ["Honey", "20g"]] },
-  steak:     { n: "STEAK & EGGS", kcal: 943, p: 78, c: 72, f: 39, i: [["Steak", "200g"], ["Eggs", "3"], ["Ben's Original rice pouch", "1"]] },
-  steakbig:  { n: "STEAK & EGGS BIG", kcal: 1135, p: 83, c: 99, f: 37, i: [["Steak", "250g"], ["Eggs", "3"], ["Ben's Original rice pouch", "1"], ["Banana", "1"]] },
-  chicken:   { n: "CHICKEN, EGGS & RICE", kcal: 941, p: 91, c: 83, f: 25, i: [["Chicken breast", "250g"], ["Eggs", "3"], ["Ben's Original rice pouch", "1"], ["Passata", ""], ["Mushrooms", "150g"]] },
-  pasta:     { n: "CHICKEN PASTA", kcal: 916, p: 84, c: 100, f: 20, i: [["Chicken breast", "250g"], ["Pasta", "125g dry"], ["Passata", ""], ["Mushrooms", "150g"]] },
-  casein:    { n: "CASEIN", kcal: 130, p: 30, c: 3, f: 1, bn: "Slow protein through the night, on the five nights dinner is early. Three eggs do the same job if you'd rather eat.", i: [["Casein in water", "35g"]] },
-  banana:    { n: "BANANA", kcal: 105, p: 1, c: 27, f: 0, i: [["Banana", "1"]] },
-  /* Menu B — the same plan eaten standing up. Every one of these matches the
-     Menu A feed it replaces to within fifty calories. */
-  wraps:     { n: "MINCE WRAPS + BANANA", kcal: 580, p: 42, c: 73, f: 11, menu: "B", cook: "std", bn: "Same mince, same pot — the wraps stand in for the sweet potato. Rolled tight, foiled, made the night before. Cold mince travels in a cool bag with an ice block.", i: [["Wholemeal tortilla wraps", "2 × ~40g"], ["Pot mince, cooked", "1 standard portion"], ["Banana", "1"]] },
-  tunabagel: { n: "TUNA & EGG BAGEL + BANANA", kcal: 590, p: 47, c: 72, f: 12, menu: "B", bn: "Assembled the night before and foiled, or carried as parts and put together at the break. Salt and pepper, nothing else needed.", i: [["Plain bagel", "1"], ["Tuna in spring water", "1 tin, drained"], ["Boiled eggs", "2, sliced"], ["Banana", "1"]] },
-  eggbagel:  { n: "EGG BAGEL + BANANA", kcal: 568, p: 30, c: 72, f: 17, menu: "B", bn: "The lightest on protein of the three and the easiest to carry — nothing to open.", i: [["Plain bagel", "1"], ["Boiled eggs", "3"], ["Banana", "1"]] },
-  onebagel:  { n: "ONE BAGEL", kcal: 230, p: 9, c: 45, f: 1, menu: "B", bn: "The 3pm feed, when two bananas are two things too many to carry. Honey on it if you want; it's 60 calories you'll use.", i: [["Plain bagel", "1"], ["Honey (optional)", "+60 kcal"]] },
-  /* The season document's swaps — one set per slot, each matching Menu A's
-     feed for that slot to within about sixty calories. */
-  halfhoney: { n: "HALF BOTTLE + HONEY", kcal: 205, p: 25, c: 25, f: 0, bn: "The morning the banana won't sit.", i: [["UFIT 50g", "half · 250ml"], ["Honey", "20g, in it"]] },
-  halfdates: { n: "HALF BOTTLE + 3 DATES", kcal: 215, p: 26, c: 40, f: 0, extra: [["Dried dates", "a small bag"]], i: [["UFIT 50g", "half · 250ml"], ["Dried dates", "3"]] },
-  oatscold:  { n: "OVERNIGHT SACHETS", kcal: 570, p: 16, c: 105, f: 10, bn: "The same as the porridge in a tub, cold, made the night before.", i: [["Quaker Oat So Simple Golden Syrup", "2 sachets"], ["Milk", "250ml"], ["Honey", "20g"], ["Banana", "1"]] },
-  eggbagelbf: { n: "EGG BAGEL BREAKFAST", kcal: 629, p: 30, c: 88, f: 17, extra: [["Plain bagels", "as Menu B"], ["Eggs", "3 per breakfast taken"]], i: [["Plain bagel", "1"], ["Boiled eggs", "3"], ["Banana", "1"], ["Honey", "20g on the bagel"]] },
-  eggbagelbb: { n: "EGG BAGEL BREAKFAST BIG", kcal: 800, p: 39, c: 133, f: 18, extra: [["Plain bagels", "as Menu B"], ["Eggs", "3 per breakfast taken"]], i: [["Plain bagels", "2"], ["Boiled eggs", "3"], ["Banana", "1"], ["Honey", "none"]] },
-  tunabagelbf: { n: "TUNA BAGEL BREAKFAST", kcal: 601, p: 35, c: 115, f: 2, extra: [["Plain bagels", "as Menu B"], ["Tuna in spring water", "4 tins a week"]], i: [["Plain bagel", "1"], ["Tuna in spring water", "1 tin"], ["Bananas", "2"], ["Honey", "20g"]] },
-  jacket:    { n: "JACKET POTATO, TUNA & EGG", kcal: 535, p: 44, c: 64, f: 12, extra: [["Potatoes", "for the jacket or the potato top-up"], ["Tuna in spring water", "4 tins a week"]], i: [["Baking potato", "300g"], ["Tuna in spring water", "1 tin"], ["Boiled eggs", "2"]] },
+  /* BEFORE THE SESSION · ~250 kcal. The bottle is the constant; the carb is
+     whatever sits best at that hour. */
+  halfban:    { n: "HALF BOTTLE + BANANA", kcal: 249, p: 26, c: 36, f: 1, bn: "One UFIT 50g on every training day — half before, half straight after. Six bottles a week. Nothing sitting heavy at half past three.", i: [["UFIT 50g", "half · 250ml"], ["Banana", "1"]] },
+  halfraisin: { n: "HALF BOTTLE + RAISINS", kcal: 234, p: 26, c: 33, f: 0, extra: [["Raisins or sultanas", "500 g"]], i: [["UFIT 50g", "half · 250ml"], ["Raisins or sultanas", "30g"]] },
+  halfrc:     { n: "HALF BOTTLE + RICE CAKES", kcal: 275, p: 26, c: 45, f: 1, extra: [["Rice cakes", "2 packs"]], i: [["UFIT 50g", "half · 250ml"], ["Rice cakes", "2, with honey"], ["Honey", "on them"]] },
+  halfdates:  { n: "HALF BOTTLE + 3 DATES", kcal: 215, p: 26, c: 40, f: 0, extra: [["Dates", "a small bag"]], i: [["UFIT 50g", "half · 250ml"], ["Dried dates", "3"]] },
+  half:       { n: "HALF BOTTLE", kcal: 144, p: 25, c: 9, f: 0, bn: "The other half of the morning bottle, straight after the session.", i: [["UFIT 50g", "the other half"]] },
+
+  /* BREAKFAST · ~570 kcal (BIG on Wednesday, Saturday, Sunday: ~710) */
+  porridge:   { n: "PORRIDGE", kcal: 570, p: 16, c: 105, f: 10, bn: "Sachets into the thermos, hot milk on top, a splash of water if it's thick, honey stirred in. No decisions at half past four.", i: [["Quaker Oat So Simple Golden Syrup", "2 sachets · 2 × 36g"], ["Milk", "250ml"], ["Honey", "20g"], ["Banana", "1"]] },
+  porridgeb:  { n: "PORRIDGE BIG", kcal: 710, p: 19, c: 130, f: 12, bn: "The same with a third sachet.", i: [["Quaker Oat So Simple Golden Syrup", "3 sachets"], ["Milk", "250ml"], ["Honey", "20g"], ["Banana", "1"]] },
+  appleraisin:  { n: "APPLE & RAISIN PORRIDGE", kcal: 590, p: 16, c: 108, f: 10, extra: [["Apples", "7"], ["Raisins or sultanas", "500 g"]], i: [["Quaker Oat So Simple Golden Syrup", "2 sachets"], ["Milk", "250ml"], ["Apple", "1, chopped in"], ["Raisins or sultanas", "30g"]] },
+  appleraisinb: { n: "APPLE & RAISIN PORRIDGE BIG", kcal: 710, p: 19, c: 130, f: 12, extra: [["Apples", "7"], ["Raisins or sultanas", "500 g"]], i: [["Quaker Oat So Simple Golden Syrup", "3 sachets"], ["Milk", "250ml"], ["Apple", "1, chopped in"], ["Raisins or sultanas", "30g"]] },
+  oatscold:   { n: "OVERNIGHT SACHETS", kcal: 570, p: 16, c: 105, f: 10, bn: "The porridge or the apple and raisin one, made cold in a tub the night before.", i: [["Quaker Oat So Simple Golden Syrup", "2 sachets"], ["Milk", "250ml"], ["Honey", "20g"], ["Banana", "1"]] },
+  eggbagelbf: { n: "EGG BAGEL BREAKFAST", kcal: 629, p: 30, c: 88, f: 17, extra: [["Bagels", "10"]], i: [["Plain bagel", "1"], ["Boiled eggs", "3"], ["Banana", "1"], ["Honey", "on the bagel"]] },
+  eggbagelbb: { n: "EGG BAGEL BREAKFAST BIG", kcal: 800, p: 39, c: 133, f: 18, extra: [["Bagels", "10"]], i: [["Plain bagels", "2"], ["Boiled eggs", "3"], ["Banana", "1"], ["Honey", "none"]] },
+  tunabagelbf: { n: "TUNA BAGEL BREAKFAST", kcal: 601, p: 35, c: 115, f: 2, extra: [["Bagels", "10"], ["Tuna in spring water", "4 tins"]], i: [["Plain bagel", "1"], ["Tuna in spring water", "1 tin"], ["Bananas", "2"], ["Honey", "20g"]] },
+
+  /* MID-MORNING AND LUNCH · ~545 kcal each — sit down, then on the move */
+  batch:      { n: "BATCH", kcal: 543, p: 36, c: 66, f: 15, cook: "std", i: [["Beef mince 5%", "150g raw"], ["Sweet potato", "300g raw"], ["Passata + beef stock", "150g"], ["Mushrooms (optional)", "150g · +33 kcal"]] },
+  batchbig:   { n: "BATCH BIG", kcal: 671, p: 47, c: 76, f: 20, cook: "big", i: [["Beef mince 5%", "200g raw"], ["Sweet potato", "350g raw"], ["Passata", "150g"], ["Mushrooms (optional)", "150g"]] },
+  jacketbt:   { n: "JACKET POTATO, BEANS & TUNA", kcal: 540, p: 41, c: 89, f: 1, extra: [["Potatoes", "2 kg"], ["Beans", "2 tins"], ["Tuna in spring water", "4 tins"]], i: [["Baking potato", "300g"], ["Baked beans", "half a tin"], ["Tuna in spring water", "1 tin"]] },
+  jacketbe:   { n: "JACKET POTATO, BEANS & EGGS", kcal: 595, p: 30, c: 89, f: 12, extra: [["Potatoes", "2 kg"], ["Beans", "2 tins"]], i: [["Baking potato", "300g"], ["Baked beans", "half a tin"], ["Boiled eggs", "2"]] },
+  prawnrice:  { n: "PRAWN RICE", kcal: 550, p: 40, c: 78, f: 8, bn: "Frozen prawns, cooked from frozen in ten minutes.", extra: [["Frozen prawns", "1 kg"]], i: [["Prawns, cooked", "150g"], ["Ben's Original rice pouch", "1"], ["Passata", ""], ["Mushrooms", "150g"]] },
+  wraps:      { n: "MINCE WRAPS + BANANA", kcal: 580, p: 42, c: 73, f: 11, cook: "std", bn: "Same mince, same pot — the wraps stand in for the sweet potato. Rolled tight, foiled, made the night before. Cold mince travels in a cool bag with a freezer block.", extra: [["Wholemeal wraps", "10"]], i: [["Wholemeal tortilla wraps", "2 × ~40g"], ["Pot mince, cooked", "1 standard portion"], ["Banana", "1"]] },
+  tunabagel:  { n: "TUNA & EGG BAGEL + BANANA", kcal: 590, p: 47, c: 72, f: 12, bn: "Assembled the night before and foiled, or carried as parts and put together at the break. Salt and pepper, nothing else needed.", extra: [["Bagels", "10"], ["Tuna in spring water", "4 tins"]], i: [["Plain bagel", "1"], ["Tuna in spring water", "1 tin, drained"], ["Boiled eggs", "2, sliced"], ["Banana", "1"]] },
   chickpouch: { n: "CHICKEN & POUCH", kcal: 610, p: 58, c: 72, f: 11, bn: "Eaten cold from a tub.", extra: [["Chicken breast", "+150g per feed taken"]], i: [["Chicken breast, cooked", "150g"], ["Ben's Original rice pouch", "1"]] },
-  twofruit:  { n: "ANY TWO PIECES OF FRUIT", kcal: 200, p: 2, c: 50, f: 0, bn: "Apples, pears, oranges; two bananas is the standard.", extra: [["Apples, pears or oranges", "two a day when taken"]], i: [["Fruit", "2 pieces"]] },
-  flapjack:  { n: "HOMEMADE FLAPJACK", kcal: 250, p: 5, c: 40, f: 8, bn: "Oats, honey, a little butter; made on batch day.", extra: [["Oats and butter for the flapjack", "as needed"]], i: [["Flapjack", "60g"]] },
-  pastatop:  { n: "PASTA TOP-UP", kcal: 546, p: 17, c: 110, f: 3, extra: [["Pasta, dry", "+125g per top-up taken"]], i: [["Pasta", "125g dry"], ["Passata", ""], ["Honey", "20g after"]] },
-  potatotop: { n: "POTATO TOP-UP", kcal: 516, p: 9, c: 123, f: 1, extra: [["Potatoes", "for the jacket or the potato top-up"]], i: [["Boiled potatoes", "400g"], ["Banana", "1"], ["Honey", "20g"]] },
-  salmon:    { n: "SALMON, EGGS & RICE", kcal: 945, p: 63, c: 77, f: 43, bn: "The only thing on the list that puts real omega-3 in the day. Two salmon dinners a week does more for recovery and joints than the capsules do.", extra: [["Salmon", "two 200g fillets a week"]], i: [["Salmon", "200g"], ["Eggs", "2"], ["Ben's Original rice pouch", "1"], ["Mushrooms", "150g"]] },
-  turkey:    { n: "TURKEY CHILLI & RICE", kcal: 905, p: 83, c: 78, f: 28, extra: [["Lean turkey mince", "500g if you take the chilli"]], i: [["Lean turkey mince", "250g"], ["Passata", ""], ["Ben's Original rice pouch", "1"], ["Eggs", "2 on top"]] },
-  minceeggs: { n: "MINCE, EGGS & RICE", kcal: 930, p: 75, c: 88, f: 25, extra: [["Beef mince 5%", "+250g per dinner taken"]], i: [["Beef mince 5%", "250g"], ["Passata", ""], ["Ben's Original rice pouch", "1"], ["Eggs", "2"]] },
-  threeeggs: { n: "THREE BOILED EGGS", kcal: 233, p: 20, c: 1, f: 16, extra: [["Eggs", "3 per night taken"]], i: [["Boiled eggs", "3"]] },
-  bageltop:  { n: "BAGEL TOP-UP", kcal: 521, p: 18, c: 106, f: 2, menu: "B", bn: "The 5pm feed on a night you're not home by five — same carbohydrate as the pouch, no fridge, no microwave. It loads tomorrow's session exactly as the pouch does.", i: [["Plain bagels", "2"], ["Honey", "20g"]] },
+  rctuna:     { n: "RICE CAKES, TUNA, EGG & APPLE", kcal: 480, p: 37, c: 71, f: 7, bn: "Nothing to keep cold but the egg.", extra: [["Rice cakes", "2 packs"], ["Tuna in spring water", "4 tins"], ["Apples", "7"]], i: [["Rice cakes", "6"], ["Tuna in spring water", "1 tin"], ["Boiled egg", "1"], ["Apple", "1"]] },
+
+  /* THE THREE O'CLOCK · ~210 kcal */
+  twoban:     { n: "TWO BANANAS", kcal: 210, p: 2, c: 54, f: 1, i: [["Bananas", "2"]] },
+  onebagel:   { n: "ONE BAGEL", kcal: 230, p: 9, c: 45, f: 1, bn: "Honey on it if you like; it's 60 calories you'll use.", extra: [["Bagels", "10"]], i: [["Plain bagel", "1"], ["Honey (optional)", "+60 kcal"]] },
+  appleraisins: { n: "AN APPLE + RAISINS", kcal: 215, p: 1, c: 53, f: 0, extra: [["Apples", "7"], ["Raisins or sultanas", "500 g"]], i: [["Apple", "1"], ["Raisins or sultanas", "40g"]] },
+  rchoney:    { n: "FOUR RICE CAKES WITH HONEY", kcal: 201, p: 3, c: 47, f: 0, extra: [["Rice cakes", "2 packs"]], i: [["Rice cakes", "4"], ["Honey", "on them"]] },
+
+  /* THE 5PM LOAD · ~525 kcal — low fat, low fibre, easy to move on */
+  topup:      { n: "POUCH LOAD", kcal: 526, p: 9, c: 116, f: 6, bn: "One Ben's Original pouch is 100g of dry rice cooked — about 360 kcal, 72g carbs. Nothing to weigh.", i: [["Ben's Original rice pouch", "1 · 250g"], ["Banana", "1"], ["Honey", "20g"]] },
+  bageltop:   { n: "BAGEL LOAD", kcal: 521, p: 18, c: 106, f: 2, bn: "The night you're not home by five — same carbohydrate as the pouch, no fridge, no microwave.", extra: [["Bagels", "10"]], i: [["Plain bagels", "2"], ["Honey", "20g"]] },
+  pastatop:   { n: "PASTA LOAD", kcal: 546, p: 17, c: 110, f: 3, extra: [["Pasta, dry", "+125g per load taken"]], i: [["Pasta", "125g dry"], ["Passata", ""], ["Honey", "20g after"]] },
+  rcload:     { n: "RICE CAKE LOAD", kcal: 521, p: 7, c: 118, f: 1, bn: "The one that needs no kitchen.", extra: [["Rice cakes", "2 packs"], ["Raisins or sultanas", "500 g"]], i: [["Rice cakes", "8"], ["Raisins or sultanas", "60g"], ["Honey", "20g"]] },
+  potatotop:  { n: "POTATO LOAD", kcal: 541, p: 9, c: 117, f: 1, extra: [["Potatoes", "2 kg"]], i: [["Boiled potatoes", "400g"], ["Banana", "1"], ["Honey", "20g"]] },
+
+  /* DINNER · ~940 kcal (BIG on Wednesday and Saturday: ~1,135) */
+  steak:      { n: "STEAK & EGGS", kcal: 943, p: 78, c: 72, f: 39, i: [["Steak", "200g"], ["Eggs", "3"], ["Ben's Original rice pouch", "1"]] },
+  steakbig:   { n: "STEAK & EGGS BIG", kcal: 1135, p: 83, c: 99, f: 37, i: [["Steak", "250g"], ["Eggs", "3"], ["Ben's Original rice pouch", "1"], ["Banana", "1"]] },
+  chicken:    { n: "CHICKEN, EGGS & RICE", kcal: 941, p: 91, c: 83, f: 25, i: [["Chicken breast", "250g"], ["Eggs", "3"], ["Ben's Original rice pouch", "1"], ["Passata", ""], ["Mushrooms", "150g"]] },
+  pasta:      { n: "CHICKEN PASTA", kcal: 916, p: 84, c: 100, f: 20, i: [["Chicken breast", "250g"], ["Pasta", "125g dry"], ["Passata", ""], ["Mushrooms", "150g"]] },
+  salmon:     { n: "SALMON, EGGS & RICE", kcal: 945, p: 63, c: 77, f: 43, bn: "The one line on the page that beats the capsules. Twice a week if you'll eat it.", extra: [["Cod or salmon", "2 × 250 g"]], i: [["Salmon", "200g"], ["Eggs", "2"], ["Ben's Original rice pouch", "1"], ["Mushrooms", "150g"]] },
+  codprawns:  { n: "COD & PRAWNS WITH RICE", kcal: 915, p: 96, c: 79, f: 21, bn: "The leanest protein you can buy — any night you want a lighter plate that still hits the number. Both cook from frozen in ten minutes.", extra: [["Cod or salmon", "2 × 250 g"], ["Frozen prawns", "1 kg"]], i: [["Cod", "250g"], ["Prawns", "150g"], ["Eggs", "2"], ["Ben's Original rice pouch", "1"], ["Passata", ""]] },
+  scallops:   { n: "SCALLOP & PRAWN RICE", kcal: 905, p: 76, c: 73, f: 25, bn: "Scallops fresh, seared two minutes a side.", extra: [["Scallops", "when you want them"], ["Frozen prawns", "1 kg"]], i: [["Scallops", "200g"], ["Prawns", "100g"], ["Eggs", "2"], ["Ben's Original rice pouch", "1"], ["Butter", "15g"]] },
+  steakjacket: { n: "STEAK, JACKET & BEANS", kcal: 870, p: 73, c: 89, f: 23, extra: [["Potatoes", "2 kg"], ["Beans", "2 tins"]], i: [["Steak", "200g"], ["Baking potato", "300g"], ["Baked beans", "half a tin"], ["Egg", "1"]] },
+
+  /* BEDTIME · ~130 kcal, on the early-dinner nights */
+  casein:     { n: "CASEIN", kcal: 130, p: 30, c: 3, f: 1, bn: "Slow protein through the night, on the five nights dinner is early.", i: [["Casein in water", "35g"]] },
+  threeeggs:  { n: "THREE BOILED EGGS", kcal: 233, p: 20, c: 1, f: 16, i: [["Boiled eggs", "3"]] },
+  prawnscod:  { n: "PRAWNS OR COD, PLAIN", kcal: 150, p: 30, c: 0, f: 2, extra: [["Frozen prawns", "1 kg"], ["Cod or salmon", "2 × 250 g"]], i: [["Prawns or cod", "150g"]] },
+
+  /* WEEKEND POST-SESSION · ~350 kcal */
+  half2ban:   { n: "HALF BOTTLE + 2 BANANAS", kcal: 354, p: 27, c: 63, f: 1, bn: "The other half of the bottle with two bananas — within the hour after the weekend sessions.", i: [["UFIT 50g", "the other half"], ["Bananas", "2"]] },
+  halfbanrai: { n: "HALF BOTTLE + BANANA + RAISINS", kcal: 339, p: 27, c: 60, f: 1, extra: [["Raisins or sultanas", "500 g"]], i: [["UFIT 50g", "the other half"], ["Banana", "1"], ["Raisins or sultanas", "30g"]] },
+  halfrc4:    { n: "HALF BOTTLE + 4 RICE CAKES", kcal: 345, p: 28, c: 62, f: 1, extra: [["Rice cakes", "2 packs"]], i: [["UFIT 50g", "the other half"], ["Rice cakes", "4, with honey"], ["Honey", "on them"]] },
+
+  banana:     { n: "BANANA", kcal: 105, p: 1, c: 27, f: 0, i: [["Banana", "1"]] },
 };
 
-/* Which Menu A feeds have a Menu B alternative, and what it is. */
 /* The next feed due today — the same rule TODAY uses. */
 function nextFeedToday(st, phase, pickStart, menu, done) {
   const day = todayKey();
@@ -159,23 +180,45 @@ function nextFeedToday(st, phase, pickStart, menu, done) {
    option can be taken in any phase and the day still adds up.
    ================================================================ */
 const SLOT_OF = { halfban: "pre", porridge: "breakfast", porridgeb: "breakfast", batch: "lunch", batchbig: "lunch",
-  twoban: "three", topup: "five", steak: "dinner", steakbig: "dinner", chicken: "dinner", pasta: "dinner", casein: "bed" };
-/* Menu A's BIG portions, and the increment the document puts on each slot.
-   Where the document names a BIG option outright it is used as written;
-   the rest take the increment of that slot's own A -> BIG pair, which
-   reproduces the document's "+130" at lunch and its ~1,135 dinner. */
+  twoban: "three", topup: "five", steak: "dinner", steakbig: "dinner", chicken: "dinner", pasta: "dinner",
+  casein: "bed", half2ban: "post" };
+/* The days the document serves a BIG portion: breakfast on Wednesday,
+   Saturday and Sunday; mid-morning on Saturday; dinner on Wednesday and
+   Saturday. The day plans carry the BIG block, so this marks them. */
 const BIGKEY = { porridgeb: 1, batchbig: 1, steakbig: 1 };
+/* Every slot of the day, its options in the document's order, and where the
+   document groups them, the groups. `d` is the increment from that slot's own
+   printed A -> BIG pair, used for the options the document doesn't print a BIG
+   line for. */
 const SLOTS = {
-  pre:       { n: "Before the session", opts: ["halfban", "halfhoney", "halfdates"] },
-  breakfast: { n: "Breakfast", opts: ["porridge", "oatscold", "eggbagelbf", "tunabagelbf"], big: { porridge: "porridgeb", eggbagelbf: "eggbagelbb" }, d: [140, 3, 25, 2] },
-  lunch:     { n: "Mid-morning and lunch", opts: ["batch", "wraps", "tunabagel", "eggbagel", "jacket", "chickpouch"], big: { batch: "batchbig" }, d: [128, 11, 10, 5] },
-  three:     { n: "The 3pm feed", opts: ["twoban", "onebagel", "twofruit", "flapjack"] },
-  five:      { n: "The 5pm top-up", opts: ["topup", "bageltop", "pastatop", "potatotop"] },
-  dinner:    { n: "Dinner", opts: ["steak", "chicken", "pasta", "salmon", "turkey", "minceeggs"], big: { steak: "steakbig" }, d: [192, 5, 27, -2] },
-  bed:       { n: "Before bed", opts: ["casein", "threeeggs", "half"] },
+  pre:       { n: "Before the session", t: "~250 kcal · 25 g protein · 35 g carbs",
+               opts: ["halfban", "halfraisin", "halfrc", "halfdates"],
+               note: "The bottle is the constant; the carb is whatever sits best at that hour. Nothing with fibre or fat this close to a session." },
+  breakfast: { n: "Breakfast", t: "~570 · 16 · 105 · 10",
+               opts: ["porridge", "appleraisin", "oatscold", "eggbagelbf", "tunabagelbf"],
+               big: { porridge: "porridgeb", appleraisin: "appleraisinb", eggbagelbf: "eggbagelbb" }, d: [140, 3, 25, 2],
+               note: "Creatine, 5 g, goes in the water you drink with this feed, every day." },
+  lunch:     { n: "Mid-morning and lunch", t: "~545 kcal each",
+               opts: ["batch", "jacketbt", "jacketbe", "prawnrice", "wraps", "tunabagel", "chickpouch", "rctuna"],
+               groups: [["Sit down", ["batch", "jacketbt", "jacketbe", "prawnrice"]], ["On the move", ["wraps", "tunabagel", "chickpouch", "rctuna"]]],
+               big: { batch: "batchbig" }, d: [128, 11, 10, 5],
+               note: "BIG portions on Saturday: a third wrap, a second egg, or a second half-pouch — about 130 more." },
+  three:     { n: "The three o'clock", t: "~210 · 2 · 54 · 1",
+               opts: ["twoban", "onebagel", "appleraisins", "rchoney"] },
+  five:      { n: "The 5pm load", t: "~525 · 9 · 116 · 6",
+               opts: ["topup", "bageltop", "pastatop", "rcload", "potatotop"],
+               note: "Low fat, low fibre, easy to move on — no beans, no wholemeal, no eggs in this slot. It's loading tomorrow morning, not filling you tonight." },
+  dinner:    { n: "Dinner", t: "~940 · 80 · 75 · 35",
+               opts: ["steak", "chicken", "pasta", "salmon", "codprawns", "scallops", "steakjacket"],
+               big: { steak: "steakbig" }, d: [192, 5, 27, -2],
+               note: "Steak on the two heavy days. Salmon twice a week if you'll eat it. Cod, prawns and scallops are the leanest protein you can buy: any night you want a lighter plate that still hits the number." },
+  bed:       { n: "Bedtime", t: "~130 · 30 · 3 · 1",
+               opts: ["casein", "threeeggs", "half", "prawnscod"] },
+  post:      { n: "Weekend post-session", t: "~350 kcal",
+               opts: ["half2ban", "halfbanrai", "halfrc4"] },
 };
 /* The option actually on the plate: the base option, or its BIG form on
-   the days Menu A serves a BIG portion in that slot. */
+   the days the document serves a BIG portion in that slot. */
 function blockOf(key, slot, big) {
   const S = SLOTS[slot];
   if (!big || !S) return B[key];
@@ -185,7 +228,7 @@ function blockOf(key, slot, big) {
   return Object.assign({}, b, { n: b.n + " BIG", kcal: b.kcal + d[0], p: b.p + d[1], c: b.c + d[2], f: b.f + d[3] });
 }
 /* The base key for a feed: BIG blocks resolve to the option they enlarge. */
-const BASE_OF = { porridgeb: "porridge", batchbig: "batch", steakbig: "steak" };
+const BASE_OF = { porridgeb: "porridge", appleraisinb: "appleraisin", eggbagelbb: "eggbagelbf", batchbig: "batch", steakbig: "steak" };
 const slotOf = (k) => SLOT_OF[k] || null;
 
 /* Day plans — Optimal 8's actual clock */
@@ -258,26 +301,26 @@ function retime(k, feeds, start, st) {
 
 /* ================================================================
    THE SEASON — which block of training today sits in, and what the
-   phase table changes about the food. The base day is Menu A.
+   phase table changes about the food. The base day is the day as printed.
    ================================================================ */
 const PROGRAMS = [["prep14", "Prep 14-week"], ["prep16", "Prep 16-week"], ["camp", "Camp"], ["o8", "Optimal 8 Fighter"]];
 const BASE_TARGET = { kcal: 3600, p: 245, c: 487, f: 78 };
 /* The document's phase table. `rules` are applied to the day automatically. */
 const PHASES = {
-  build:   { n: "BUILD", sub: "Prep accumulation", t: { kcal: 3900, p: 245, c: 560, f: 80 }, c: C.honey, chg: "Add a CARB TOP-UP at 17:00 on Monday and Thursday.",
-             r: ["Add a CARB TOP-UP at 17:00 on Monday and Thursday — the two days without one.", "Surplus about 300. Tissue is being built; feed it. The tape at the block's end decides whether it stays."] },
-  heavy:   { n: "HEAVY", sub: "Intensify", t: BASE_TARGET, c: C.ember, r: ["Menu A as written. The extra top-ups come off."] },
-  fast:    { n: "FAST", sub: "Convert", t: BASE_TARGET, c: C.ember, chg: "On the scored round weeks, the mid-session banana.", r: ["Menu A as written.", "On the scored round weeks, the mid-session banana."] },
+  build:   { n: "BUILD", sub: "Prep accumulation", t: { kcal: 3900, p: 245, c: 560, f: 80 }, c: C.honey, chg: "The 5pm load on Monday and Thursday as well.",
+             r: ["The 5pm load on Monday and Thursday as well — the two days without one.", "Surplus about 300. Tissue is being built; feed it. The tape at the block's end decides whether it stays."] },
+  heavy:   { n: "HEAVY", sub: "Intensify", t: BASE_TARGET, c: C.ember, r: ["The day as printed. The extra loads come off."] },
+  fast:    { n: "FAST", sub: "Convert", t: BASE_TARGET, c: C.ember, chg: "On the scored round weeks, the mid-session banana.", r: ["The day as printed.", "On the scored round weeks, the mid-session banana."] },
   test:    { n: "TEST WEEK", sub: "Prep's last week", t: BASE_TARGET, c: C.frost, chg: "Do not cut. Training drops, carbs hold; the tank fills.", r: ["Do not cut. Training drops, carbs hold; the tank fills.", "Test day eats like a Saturday."] },
   camp:    { n: "CAMP", sub: "Foundation, build, peak", t: BASE_TARGET, c: C.ember,
-             r: ["Menu A.", "Seven-round weeks keep the mid-session banana.", "Sauna weeks: the hydration schedule's sauna line."] },
+             r: ["The day as printed. Do not cut in the light weeks.", "Seven-round weeks keep the mid-session banana.", "Sauna weeks: the hydration schedule's sauna line."] },
   easy:    { n: "EASY WEEK", sub: "Camp", t: BASE_TARGET, c: C.sage, chg: "Do not cut. Eating less because you are training less is how fights are lost.", r: ["Do not cut. The commonest way to lose a fight is eating less because you're training less."] },
   sharpen: { n: "SHARPEN", sub: "Camp", t: BASE_TARGET, c: C.sage, chg: "Do not cut. Eating less because you are training less is how fights are lost.", r: ["Do not cut. The commonest way to lose a fight is eating less because you're training less."] },
-  fight:   { n: "FIGHT WEEK", sub: "", t: BASE_TARGET, c: C.copper, r: ["Menu A exactly.", "Weigh-in day per the weight section."] },
-  trans:   { n: "TRANSITION", sub: "The two weeks after a fight", t: { kcal: 3300, p: 235, c: 420, f: 78 }, c: C.frost, chg: "Drop the 3pm feed on Monday, Wednesday and Thursday, and Saturday's BIG portion back to standard.",
-             r: ["Drop the 3pm feed on Monday, Wednesday and Thursday, and Saturday's BIG portion back to standard.", "Maintenance. Protein holds so the muscle does."] },
-  cut:     { n: "MAKING WEIGHT", sub: "Only when the limit demands it", t: { kcal: 3100, p: 200, c: 400, f: 70 }, c: C.copper, chg: "Carbs off the light days, never protein, never the bottle, never the 5pm loads.",
-             r: ["Carbs off the light days, never protein, never the bottle, never the 5pm loads.", "Cut in order: the casein, then Saturday's BIG back to standard, then one of the 3pm bananas on Monday and Thursday.", "Half a percent of bodyweight a week, no faster."] },
+  fight:   { n: "FIGHT WEEK", sub: "", t: BASE_TARGET, c: C.copper, r: ["The day as printed.", "Weigh-in day per the weight section."] },
+  trans:   { n: "TRANSITION", sub: "The two weeks after a fight", t: { kcal: 3300, p: 235, c: 420, f: 78 }, c: C.frost, chg: "No three o'clock on Monday, Wednesday and Thursday; Saturday's big portion standard.",
+             r: ["No three o'clock on Monday, Wednesday and Thursday; Saturday's big portion back to standard.", "Maintenance. Protein holds so the muscle does."] },
+  cut:     { n: "MAKING WEIGHT", sub: "Only when the limit demands it", t: { kcal: 3100, p: 200, c: 400, f: 70 }, c: C.copper, chg: "Carbs off the light days, never protein, never the bottle, never the loads.",
+             r: ["Carbs off the light days, never protein, never the bottle, never the loads.", "Cut in order: the casein, then Saturday's BIG back to standard, then one of the three o'clock bananas on Monday and Thursday.", "Half a percent of bodyweight a week, no faster."] },
 };
 /* Week 1 is the week containing the program start. Prep's shape follows the
    document: accumulation 1-5 (1-6 over sixteen), then intensify, convert,
@@ -334,9 +377,9 @@ function phaseOf(season, onISO, cycleWeek) {
 function phaseFeeds(ph, day, feeds) {
   if (!ph) return feeds;
   if (ph === "build" && (day === "mon" || day === "thu")) {
-    /* the 17:00 top-up the two light days don't otherwise get */
+    /* the 5pm load the two light days don't otherwise get */
     const at = feeds.findIndex((f) => f.b && tMin(f.t) > tMin("15:00"));
-    const row = F("17:00", "topup", { crit: 1, note: "BUILD adds this on Monday and Thursday — the two days without one." });
+    const row = F("17:00", "topup", { crit: 1, note: "BUILD puts the 5pm load on Monday and Thursday as well." });
     return feeds.slice(0, at < 0 ? feeds.length : at).concat([row], at < 0 ? [] : feeds.slice(at));
   }
   if (ph === "trans") {
@@ -361,8 +404,9 @@ const MIDBANANA = { fast: 1, camp: 1 };
    amounts, ticked off. Rows anchored to a feed follow the session
    start entered on TODAY; the rest sit on the clock.
    ================================================================ */
-const FEEDY = ["batch", "batchbig", "wraps", "tunabagel", "eggbagel"];
-const DINNERY = ["steak", "steakbig", "chicken", "pasta"];
+const withBig = (slot) => SLOTS[slot].opts.concat(Object.values(SLOTS[slot].big || {}));
+const FEEDY = withBig("lunch");
+const DINNERY = withBig("dinner");
 const SACHET = "⚡";
 const CREATINE = "+ CREATINE 5 G IN THE WATER";
 /* The row the creatine goes in, by day: the porridge drink on a training
@@ -433,12 +477,14 @@ function hydraFor(day, feeds, bkey, sauna) {
 
 /* Shopping list */
 const SHOP = [
-  ["MEAT & EGGS", [["Beef mince 5%", "2.2 kg raw — the batch only"], ["Steak", "3 — one 200 g, two 250 g"], ["Chicken breast", "4 × 250 g"], ["Eggs", "15"]]],
+  ["MEAT & EGGS", [["Beef mince 5%", "2.2 kg raw — the batch only"], ["Steak", "3 — one 200 g, two 250 g"], ["Chicken breast", "4 × 250 g"], ["Eggs", "3 dozen — 21 boiled (12 Sunday, 9 Wednesday) plus the dinners"]]],
   ["CARBS", [["Sweet potato", "4.3 kg raw"], ["Ben's Original rice pouches", "8"], ["Pasta, dry", "250 g"], ["Quaker Oat So Simple Golden Syrup sachets", "17 — two boxes of 15 last under a fortnight"], ["Honey", "~200 g"], ["Bananas", "~35"]]],
-  ["THE REST", [["Passata", "2.5 L — the batch, plus the two chicken dinners"], ["Beef stock", "as needed"], ["UFIT 50 g", "6 bottles"], ["Casein", "a 1 kg tub lasts about six weeks"], ["Milk", "2 L — the porridge only"], ["Mushrooms", "1.3 kg"], ["Electrolytes", "as needed"]]],
-  ["MENU B — ADDED TO MENU A", [["Wholemeal tortilla wraps, standard (about 40 g)", "10–12"], ["Plain bagels", "10"], ["Tuna in spring water", "4 tins"], ["Eggs", "+21 on top of Menu A's 15"], ["Bananas", "+5 — the third banana on full Menu B days"], ["Honey", "as before"], ["A cool bag and a freezer block", "once"], ["A 1-litre bottle and a 500 ml bottle", "once"], ["Electrolyte sachets", "8–12 a week"]]],
+  ["THE REST", [["Passata", "2.5 L — the batch, plus the two chicken dinners"], ["Beef stock", "as needed"], ["UFIT 50 g", "6 bottles"], ["Casein", "a 1 kg tub lasts about six weeks"], ["Milk", "2 L — the porridge only"], ["Mushrooms", "1.3 kg"], ["Electrolyte sachets", "8–12 a week"]]],
   ["SUPPLEMENTS", [["Creatine monohydrate", "Creatine 5 g in the post-session water, daily"], ["Omega-3 (fish oil)", "1–2 g EPA+DHA daily — there is no oily fish anywhere in your diet"], ["Vitamin D", "1,000–2,000 IU daily, October to April"], ["Multivitamin", "as before — cheap insurance"], ["Beta-alanine (optional)", "3.2 g/day split in two; needs four-plus weeks to work, so start week 1 or don't bother. Helps exactly where it hurts: the 40-second repeats, the repeat bursts and the fight sim. The tingling is harmless."]]],
 ];
+/* The document's "as you use them" list, in its order. An item appears only
+   once an option that needs it has been chosen in the last fortnight. */
+const AS_YOU_USE = ["Bagels", "Wholemeal wraps", "Rice cakes", "Raisins or sultanas", "Apples", "Tuna in spring water", "Beans", "Potatoes", "Frozen prawns", "Cod or salmon", "Scallops", "Dates", "Chicken breast", "Pasta, dry"];
 
 /* Typical raw→cooked yields (fallbacks until he weighs his own) */
 const YIELDS = [["White rice", "×2.6 from dry"], ["Pasta", "×2.2 from dry"], ["Chicken breast", "×0.75 from raw"], ["Mince 5%", "×0.7 from raw"], ["Sweet potato (boiled in)", "×0.8 from raw"], ["The batch, mixed", "≈ ×0.8 of everything in"]];
@@ -582,7 +628,7 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
   const feeds = useMemo(() => retime(day, phaseFeeds(phase, day, d.feeds), pick, st), [day, d, pick, st, phase]);
   const mn = menu || {};
   /* Each feed belongs to a slot. The slot remembers what was last chosen for
-     this weekday; BIG applies where Menu A serves a BIG portion. */
+     this weekday; BIG applies where the document serves a BIG portion. */
   const meta = (() => { const seen = {};
     return feeds.map((f) => {
       if (!f.b) return null;
@@ -667,7 +713,7 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <span>
                 <Eye c={C.ember} s={{ marginBottom: 3 }}>Next feed{sound ? " · chimes when due" : ""}</Eye>
-                <div style={Object.assign({}, dsp, { fontSize: FS(21), fontWeight: 800, letterSpacing: 1, color: C.bone })}>{B[f.b].n}</div>
+                <div style={Object.assign({}, dsp, { fontSize: FS(21), fontWeight: 800, letterSpacing: 1, color: C.bone })}>{blk(nextIdx).n}</div>
               </span>
               <span style={{ textAlign: "right" }}>
                 <div style={Object.assign({}, mno, { fontSize: FS(26), fontWeight: 700, color: C.ember, lineHeight: 1 })}>{f.tl || f.t}</div>
@@ -717,20 +763,34 @@ function Today({ day, setDay, week, cycle, done, tick, cook, sound, st, pick, se
                 })() : null}
                 {bl.bn ? <Note s={{ fontStyle: "italic" }}>{bl.bn}</Note> : null}
                 {f.note ? <Note s={{ fontStyle: "italic" }}>{f.note}</Note> : null}
-                {S ? (
-                  <div style={{ marginTop: 10, borderTop: "1px solid " + C.line, paddingTop: 8 }}>
-                    <Eye c={C.ember} s={{ marginBottom: 6 }}>{S.n}{m.big ? " · BIG" : ""}</Eye>
-                    {S.opts.map((k, oi) => { const b = blockOf(k, m.slot, m.big), sel = k === m.key;
-                      return (
-                        <button key={k} onClick={() => { setMenu(m.id, k === m.base ? null : k, k); buzz(20); }}
-                          style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, textAlign: "left", background: "transparent", border: "none", borderTop: oi ? "1px solid " + C.line : "none", padding: "8px 0", cursor: "pointer", minHeight: TAP }}>
-                          <span style={Object.assign({}, mno, { fontSize: FS(11), color: sel ? C.ember : C.ash, flexShrink: 0 })}>{sel ? "●" : "○"}</span>
-                          <span style={{ flex: 1, minWidth: 0 }}>
-                            <span style={Object.assign({}, bdy, { fontSize: FS(13), fontWeight: sel ? 600 : 400, color: sel ? C.bone : C.ash, display: "block" })}>{b.n}</span>
-                            <span style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash })}>{b.kcal} KCAL · P{b.p} C{b.c} F{b.f}</span>
-                          </span>
-                        </button>); })}
-                  </div>) : null}
+                {S ? (() => {
+                  /* The slot's options, in the document's order and under the
+                     document's headings where it groups them. */
+                  const row = (k, first) => { const b = blockOf(k, m.slot, m.big), sel = k === m.key;
+                    return (
+                      <button key={k} onClick={() => { setMenu(m.id, k === m.base ? null : k, k); buzz(20); }}
+                        style={{ display: "flex", width: "100%", alignItems: "center", gap: 8, textAlign: "left", background: "transparent", border: "none", borderTop: first ? "none" : "1px solid " + C.line, padding: "8px 0", cursor: "pointer", minHeight: TAP }}>
+                        <span style={Object.assign({}, mno, { fontSize: FS(11), color: sel ? C.ember : C.ash, flexShrink: 0 })}>{sel ? "●" : "○"}</span>
+                        <span style={{ flex: 1, minWidth: 0 }}>
+                          <span style={Object.assign({}, bdy, { fontSize: FS(13), fontWeight: sel ? 600 : 400, color: sel ? C.bone : C.ash, display: "block" })}>{b.n}</span>
+                          <span style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash })}>{b.kcal} KCAL · P{b.p} C{b.c} F{b.f}</span>
+                        </span>
+                      </button>); };
+                  return (
+                    <div style={{ marginTop: 10, borderTop: "1px solid " + C.line, paddingTop: 8 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", flexWrap: "wrap", gap: "2px 8px" }}>
+                        <Eye c={C.ember} s={{ marginBottom: 6 }}>{S.n}{m.big ? " · BIG" : ""}</Eye>
+                        {S.t ? <span style={Object.assign({}, mno, { fontSize: FS(9), color: C.ash, marginBottom: 6 })}>{S.t}</span> : null}
+                      </div>
+                      {S.groups
+                        ? S.groups.map((g, gi) => (
+                            <div key={g[0]} style={{ marginTop: gi ? 8 : 0 }}>
+                              <Eye s={{ marginBottom: 2, color: C.frost }}>{g[0]}</Eye>
+                              {g[1].map((k, oi) => row(k, oi === 0))}
+                            </div>))
+                        : S.opts.map((k, oi) => row(k, oi === 0))}
+                      {S.note ? <Note s={{ fontStyle: "italic" }}>{S.note}</Note> : null}
+                    </div>); })() : null}
               </div>) : null}
             {f.sub && isOpen ? <div style={{ padding: "0 12px 10px 62px" }}><Note s={{ marginTop: 0 }}>{f.sub}</Note></div> : null}
           </Card>);
@@ -880,15 +940,15 @@ function Cook({ cook, setCook, foods, setFoods, K, prep, setPrep }) {
 
       <Card ac={C.ember}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-          <Eye c={C.ember} s={{ marginBottom: 0 }}>Menu B prep — once, twice a week</Eye>
+          <Eye c={C.ember} s={{ marginBottom: 0 }}>The batch and the prep</Eye>
           <Btn small c={C.ash} on={() => { setPrep({}); buzz(30); }}>NEW COOK DAY</Btn>
         </div>
-        <Note s={{ marginTop: 8 }}>On the batch days — Sunday and Wednesday — three extra jobs, fifteen minutes.</Note>
-        {[["Portion the mince separately.", "The pot calculator already gives you the cooked grams per portion. Put four standard portions of mince alone into tubs for the wraps; the rest goes into the batch tubs with the sweet potato as now."],
-          ["Boil the eggs.", "Twelve on Sunday, nine on Wednesday, ten minutes from boiling, straight into cold water. In the shell they keep a week in the fridge; peel them the night before, not the week before."],
-          ["Bagels and tins in the bag.", "Bagels keep a week; tuna keeps forever. Two bagels and a tin live in the work bag permanently, so a day that goes wrong still has a Menu B in it."],
-          ["The night before.", "Wraps rolled and foiled, eggs peeled into a tub, bananas counted."],
-          ["Cold mince is cold mince.", "In a cool bag with an ice block from the fridge to the break, and eaten by lunchtime. Wraps made at 9pm and eaten at 12:30 with no cooling in between is the one way Menu B goes wrong."]].map((x, i) => {
+        <Note s={{ marginTop: 8 }}>On the batch days — Sunday and Wednesday.</Note>
+        {[["The mince pot and the sweet potato, cooked separately.", "Weighed once, cooked, in the calculators above — then four mince-only tubs for the wraps and the rest into the batch tubs."],
+          ["Boil the eggs.", "Twelve on Sunday, nine on Wednesday. A week in the shell."],
+          ["The work bag.", "Two bagels, a tin and a pack of rice cakes live in it, so a day that goes wrong still has a feed in it."],
+          ["Prawns and cod.", "Buy frozen, cook from frozen in ten minutes. Scallops fresh, seared two minutes a side."],
+          ["Wraps rolled the night before.", "In a cool bag with a freezer block."]].map((x, i) => {
           const on = !!prep[i];
           return (
             <div key={i} onClick={() => { setPrep(Object.assign({}, prep, { [i]: !on })); buzz(25); }}
@@ -914,15 +974,18 @@ function Cook({ cook, setCook, foods, setFoods, K, prep, setPrep }) {
 function Shop({ shop, setShop, used, today }) {
   /* Only the extras for options taken in the last fortnight. */
   const swaps = (() => {
-    const rows = [], seen = {};
+    const qty = {};
     for (const [k, d] of Object.entries(used || {})) {
       if (!B[k] || !B[k].extra) continue;
       if ((parseISO(today) - parseISO(d)) / 86400000 > 14) continue;
-      for (const [item, qty] of B[k].extra) { if (seen[item]) continue; seen[item] = 1; rows.push([item, qty]); }
+      for (const [item, q] of B[k].extra) if (!qty[item]) qty[item] = q;
     }
+    /* The document's order, not the order they happened to be picked in. */
+    const rows = AS_YOU_USE.filter((x) => qty[x]).map((x) => [x, qty[x]]);
+    for (const x of Object.keys(qty)) if (AS_YOU_USE.indexOf(x) < 0) rows.push([x, qty[x]]);
     return rows;
   })();
-  const GROUPS = swaps.length ? SHOP.concat([["SWAPS — WHAT YOU'VE BEEN TAKING", swaps]]) : SHOP;
+  const GROUPS = swaps.length ? SHOP.concat([["AS YOU USE THEM — THE LAST FORTNIGHT", swaps]]) : SHOP;
   const total = GROUPS.reduce((a, g) => a + g[1].length, 0);
   const got = Object.values(shop).filter(Boolean).length;
   return (
@@ -1006,11 +1069,11 @@ function verdicts(rows) {
     const dU = ups.length ? ups.reduce((x, y) => x + y, 0) / ups.length : 0;
     out.push({ id: "waist", lit: dW > 0 && dW > dU,
       head: "Waist climbing faster than arms and shoulders",
-      act: "Cut 100–150 kcal — one of the 3pm bananas on Monday and Thursday.",
+      act: "Cut 100–150 kcal — one of the three o'clock bananas on Monday and Thursday.",
       read: "Waist " + fmt(dW) + " cm against " + fmt(dU) + " cm up top, over " + wk.toFixed(0) + " week" + (Math.round(wk) === 1 ? "" : "s") + "." });
   } else {
     out.push({ id: "waist", lit: false, head: "Waist climbing faster than arms and shoulders",
-      act: "Cut 100–150 kcal — one of the 3pm bananas on Monday and Thursday.",
+      act: "Cut 100–150 kcal — one of the three o'clock bananas on Monday and Thursday.",
       read: "Needs two tape sessions with waist and arm or shoulder." });
   }
 
@@ -1022,11 +1085,11 @@ function verdicts(rows) {
     const upFlat = !upWk.length || upWk.every((x) => x <= 0.02);
     out.push({ id: "stuck", lit: Math.abs(wWk) <= 0.08 && Math.abs(kgWk) <= 0.06 && upFlat,
       head: "Nothing moving in six weeks, waist flat",
-      act: "Add 200 kcal — one extra CARB TOP-UP.",
+      act: "Add 200 kcal — one extra 5pm load.",
       read: "Weight " + fmt(kgWk * 6, 1) + " kg and waist " + fmt(wWk * 6, 1) + " cm over the last six weeks." });
   } else {
     out.push({ id: "stuck", lit: false, head: "Nothing moving in six weeks, waist flat",
-      act: "Add 200 kcal — one extra CARB TOP-UP.",
+      act: "Add 200 kcal — one extra 5pm load.",
       read: "Needs six weeks of weekly weigh-ins." });
   }
 
@@ -1036,11 +1099,11 @@ function verdicts(rows) {
     const kgWk = slope(four);
     out.push({ id: "falling", lit: kgWk < -0.5,
       head: "Bodyweight falling more than 0.5 kg a week",
-      act: "Add the CARB TOP-UP and a rice pouch on the light days. You're under-eating — the answer is food, not a program change.",
+      act: "Add the 5pm load and a rice pouch on the light days. You're under-eating — the answer is food, not a program change.",
       read: "Trending " + fmt(kgWk, 2) + " kg a week over the last four." });
   } else {
     out.push({ id: "falling", lit: false, head: "Bodyweight falling more than 0.5 kg a week",
-      act: "Add the CARB TOP-UP and a rice pouch on the light days.",
+      act: "Add the 5pm load and a rice pouch on the light days.",
       read: "Needs three weekly weigh-ins." });
   }
   return out;
@@ -1297,8 +1360,18 @@ function MdBody({ blocks }) {
 }
 
 /* Split the document into its ## sections, keeping whatever sits above the first. */
+/* The hydration schedule, lifted out of the document it was published in —
+   everything from its own heading up to the next top-level section. */
+const HYDRA_MD = (() => {
+  const src = HYDRA_MD_SRC.replace(/\r/g, "").split("\n");
+  const from = src.findIndex((l) => /^##\s+HYDRATION/i.test(l));
+  if (from < 0) return "";
+  let to = src.length;
+  for (let i = from + 1; i < src.length; i++) if (/^##\s/.test(src[i])) { to = i; break; }
+  return src.slice(from, to).join("\n");
+})();
 const PLAN_DOC = (() => {
-  const lines = [PLAN_MD, MENUB_MD.replace(/^#\s+/, "## "), SEASON_MD.replace(/^#\s+/, "## ")].join("\n\n---\n\n").replace(/\r/g, "").split("\n");
+  const lines = [MENU_MD, HYDRA_MD].join("\n\n---\n\n").replace(/\r/g, "").split("\n");
   const title = (lines.find((l) => /^#\s/.test(l)) || "# FUEL").replace(/^#\s*/, "");
   const secs = [];
   let cur = null, pre = [];
@@ -1423,6 +1496,18 @@ const GUIDE_DOC = GUIDE_MD ? (() => {
   return { title, intro: mdBlocks(pre), secs: secs.map((x) => ({ h: x.h, blocks: mdBlocks(x.lines) })) };
 })() : null;
 
+/* THE DAY — the slots the document names, in its order, with its times
+   and its targets. */
+const DAY_LIST = [
+  ["20 min before the session", "BEFORE", "~250 kcal · 25 g protein · 35 g carbs"],
+  ["straight after, on the way to work", "BREAKFAST", "~570 · 16 · 105 · 10"],
+  ["09:00 and 12:30 (11:30 and 14:30 at the weekend)", "MID-MORNING and LUNCH", "~545 · 36 · 66 · 15 each"],
+  ["15:00", "THE THREE O'CLOCK", "~210 · 2 · 54 · 1"],
+  ["17:00 Tue, Fri, Sat (Mon and Thu too in the build block)", "THE LOAD", "~525 · 9 · 116 · 6"],
+  ["18:30 (20:15 on load nights)", "DINNER", "~940 · 80 · 75 · 35"],
+  ["21:00 on early-dinner nights", "BEDTIME", "~130 · 30 · 3 · 1"],
+  ["within the hour after the weekend sessions", "WEEKEND POST-SESSION", "~350 kcal"],
+];
 function Guide({ phase, next }) {
   const refs = useRef({});
   const go = (i) => { const el = refs.current[i]; if (el) window.scrollTo({ top: el.getBoundingClientRect().top + window.scrollY - 70, behavior: "smooth" }); };
@@ -1444,6 +1529,17 @@ function Guide({ phase, next }) {
         <div style={Object.assign({}, bdy, { fontSize: SZ.row, color: C.bone, lineHeight: 1.45, marginTop: 10, paddingTop: 10, borderTop: "1px solid " + C.line })}>
           <span style={{ color: C.ash }}>Every day: </span><span style={{ fontWeight: 600, color: C.sage }}>Creatine 5 g in the post-session water, daily</span>
         </div>
+      </Card>
+
+      <Card ac={C.honey}>
+        <Eye c={C.honey}>The day</Eye>
+        {DAY_LIST.map((x, i) => (
+          <div key={x[1]} style={{ padding: "9px 0", borderTop: i ? "1px solid " + C.line : "none" }}>
+            <div style={Object.assign({}, bdy, { fontSize: SZ.row, fontWeight: 600, color: C.bone, lineHeight: 1.3 })}>{x[1]}</div>
+            <div style={Object.assign({}, bdy, { fontSize: SZ.amount, color: C.ash, marginTop: 3, lineHeight: 1.4 })}>{x[0]}</div>
+            <div style={Object.assign({}, mno, { fontSize: FS(11), color: C.honey, marginTop: 3 })}>{x[2]}</div>
+          </div>))}
+        <Note s={{ fontStyle: "italic" }}>Friday has no session: breakfast on waking, then the day as printed. Saturday and Sunday: breakfast big at 06:30, the bottle at 07:45, the other half with two bananas straight after, then the feeds through the day.</Note>
       </Card>
 
       {!GUIDE_DOC ? (
@@ -1510,7 +1606,7 @@ function Settings({ st, setSt, week, close, onExport, onImport, phase }) {
 
         <div style={{ borderTop: "1px solid " + C.line, marginTop: 14, paddingTop: 14 }}>
           <Eye c={C.ember}>The season</Eye>
-          <Note s={{ marginTop: 0 }}>Which block of training today sits in. The phase sets the day's target and the changes the plan makes to Menu A.</Note>
+          <Note s={{ marginTop: 0 }}>Which block of training today sits in. The phase sets the day's target and the changes it makes to the day as printed.</Note>
           <div style={{ marginTop: 10 }}>
             <Lab>Program</Lab>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 5 }}>
