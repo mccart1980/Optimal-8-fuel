@@ -4,7 +4,7 @@ First Choice Scaffolding's load check app, demo version. Gerry sends the load an
 
 **Address: https://ianmccart1980-blip.github.io/Fcs-load-check/**
 
-This version runs the demo only. Everything stays on the phone, nothing is shared or saved, and it only holds made-up jobs. Switch between **Gerry**, **Yard**, **Charge hand** and **Gang** at the top to show each person's screen. **Start again** puts the example jobs back. Closing the app fully also starts it again.
+This version is for practice. It starts with the staff list, the vehicles and a few days off, and no jobs, so you build a job from scratch. What you do stays on that phone, and nothing is shared between phones. Switch between **Gerry**, **Yard**, **Charge hand** and **Gang** at the top to see each person's screen. Charge hand and Gang show whoever was picked on the newest job. **Start again from scratch** wipes it back to the start.
 
 ## Put it on your iPhone home screen
 

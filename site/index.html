@@ -2712,8 +2712,8 @@ var ACT={
   toggledone:function(b){if(b.dataset.k==='board')S.showDoneBoard=!S.showDoneBoard;else S.showDoneMine=!S.showDoneMine;render(true);},
   toggleloaded:function(){S.showLoaded=!S.showLoaded;render(true);},
   demo:function(){enterDemo(false);toast('Demo started. You’re looking at what Gerry sees.');},
-  demorole:function(b){setDemoRole(b.dataset.v);toast('Now showing what '+((DEMO_ROLES[b.dataset.v]||{}).who||'they')+' sees');},
-  demoreset:function(){enterDemo(true);toast('Demo reset to the start');},
+  demorole:function(b){var v=b.dataset.v;setDemoRole(v);toast((v==='ch'||v==='gang')&&!demoJob()?'No job sent yet. Send one as Gerry, then this shows who’s on it.':'Now showing what '+demoWho(v)+' sees');},
+  demoreset:function(){if(!twoTap('confirmReset','x'))return;enterDemo(true);toast('Wiped. The demo is back to the start.');},
   demoexit:function(){exitDemo();toast('Back to your real jobs');},
   togglepast:function(){S.showPastOff=!S.showPastOff;render(true);},
   totday:function(b){S.totDay=b.dataset.d;render(true);},
@@ -2838,7 +2838,7 @@ $main.addEventListener('keydown',function(e){
 async function boot(){
   render(true);
   var cl=window.claude;
-  if(!cl||typeof cl.use!=='function'){S.phase='ready';S.got.jobs=S.got.people=S.got.crew=true;enterDemo(true);render(true);return;}
+  if(!cl||typeof cl.use!=='function'){S.phase='ready';S.standalone=true;S.got.jobs=S.got.people=S.got.crew=true;enterDemo(false);render(true);return;}
   var db=null,user=null,assets=null;
   try{var r=await Promise.all([cl.use('db'),cl.use('user'),cl.use('assets')]);db=r[0];user=r[1];assets=r[2];}catch(_){}
   S.user=user; S.assets=assets||null;
@@ -2868,6 +2868,7 @@ function subscribe(db,which){
       S[key]=m;
       if(col==='jobs')S.got.jobs=true; if(col==='people')S.got.people=true; if(col==='crew')S.got.crew=true;
       if(col==='jobs'||col==='people'||col==='daysoff'||col==='jobphotos') fetchNames();
+      if(which==='demo'&&(col==='jobs'||col==='crew')) demoResync();
       render();
     },fail);
   });
@@ -2894,43 +2895,75 @@ function demoSvg(scaffold){
   return 'data:image/svg+xml,'+encodeURIComponent(s+'</svg>');
 }
 DEMO_URLS.demo_house=demoSvg(false); DEMO_URLS.demo_scaf1=demoSvg(true); DEMO_URLS.demo_scaf2=demoSvg(true);
-var demoAssets={upload:async function(blob){var id='demo'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);DEMO_URLS[id]=URL.createObjectURL(blob);return {id:id,url:DEMO_URLS[id]};}};
-var DEMO_ROLES={boss:{uid:'du_boss',label:'Gerry',who:'Gerry'},yard:{uid:'du_kev',label:'Yard',who:'the yard (Kev)'},ch:{uid:'du_dave',label:'Charge hand',who:'the charge hand (Dave)'},gang:{uid:'du_tom',label:'Gang',who:'Tom on the gang'}};
+var demoAssets={upload:async function(blob){var id='demo'+Date.now().toString(36)+Math.random().toString(36).slice(2,5);var u=S.standalone?await smallDataUrl(blob):null;if(u){DEMO_URLS[id]=u;DEMO_SAVED[id]=u;saveDemoSoon();}else DEMO_URLS[id]=URL.createObjectURL(blob);return {id:id,url:DEMO_URLS[id]};}};
+var DEMO_ROLES={boss:{label:'Gerry'},yard:{label:'Yard'},ch:{label:'Charge hand'},gang:{label:'Gang'}};
 var DEMO_ORDER=['boss','yard','ch','gang'];
 var DEMO_HINTS={
-  boss:'You’re Gerry. Tap <b>New job</b>. Put in a postcode and tap <b>Find</b>, then tap the house: the property check comes up with a plan, the sizes, access and anything to watch. Or tap <b>Church Road terrace</b> under “Start from a past job” to fill it all in. Pick the van, charge hand and gang from the lists, then tap <b>Send to yard and crew</b>. Then tap <b>Yard</b> above.',
-  yard:'Open the Church Road load under Tomorrow. Tick each item, or tap <b>All on</b> for the tube and boards, then <b>Confirm loaded</b>. Then tap <b>Charge hand</b> above.',
-  ch:'Open the Church Road job. Do the morning check and the four safety ticks, then <b>Confirm</b> and <b>Leaving the yard now</b>. Take a photo, add some extra work, then <b>Job finished</b>. Then tap <b>Gang</b> above.',
-  gang:'This is what everyone else sees. Tom can open the jobs he’s on and see the address, the van and who’s with him, but can’t tick anything. He asks for time off from <b>Days off</b> below. Then tap <b>Gerry</b> above to sign the job off.'
+  boss:'You’re Gerry. Tap <b>New job</b>. Put in a postcode and tap <b>Find</b>, pick the van, the charge hand and the gang from the lists, add the load, then tap <b>Send to yard and crew</b>. Then tap <b>Yard</b> above.',
+  yard:'This is the yard. Open the load, tick each item, or tap <b>All on</b> for the tube and boards, then <b>Confirm loaded</b>. Then tap <b>Charge hand</b> above.',
+  ch:'This is the charge hand on the newest job. Open it, do the morning check and the four safety ticks, then <b>Confirm</b> and <b>Leaving the yard now</b>. Take a photo, add some extra work, then <b>Job finished</b>. Then tap <b>Gang</b> above.',
+  gang:'This is someone else on that job’s gang. They can see the job, the address, the van and who’s with them, but can’t tick anything. They ask for time off from <b>Days off</b> below. Then tap <b>Gerry</b> above to sign the job off.'
 };
 function demoSeed(){
-  var now=Date.now(), d=function(o){return todayStr(o);}, A1='Church Rd, Rayleigh SS6';
+  var now=Date.now(), d=function(o){return todayStr(o);};
   var full=[];
   TICKS.forEach(function(g){g.items.forEach(function(x){full.push({id:x[0],kind:'tick',name:x[2],qty:null});});});
   [['bm4',6],['bmj',12],['bmp',40],['bt24',10],['rpw',1]].forEach(function(c){full.push({id:c[0],kind:'count',name:CAT[c[0]].name,qty:c[1]});});
+  var dow=new Date().getDay(), mon=((8-dow)%7)||7;
   return {
-    crew:{c_boss:{name:'Gerry Fuller'},c_dave:{name:'Dave'},c_tom:{name:'Tom'},c_steve:{name:'Steve'},c_kev:{name:'Kev',yard:true},c_mark:{name:'Mark'},c_lee:{name:'Lee'},c_ray:{name:'Ray'},c_josh:{name:'Josh'}},
-    people:{du_boss:{crewId:'c_boss'},du_kev:{crewId:'c_kev'},du_dave:{crewId:'c_dave'},du_steve:{crewId:'c_steve'},du_tom:{crewId:'c_tom'}},
-    vehicles:{dv1:{reg:'AB12 CDE',name:'Dropside'},dv2:{reg:'KX19 FGH',name:'Tipper'},dv3:{reg:'LM21 OPQ',name:'Transit'}},
+    crew:{c_boss:{name:'Gerry Fuller'},c_ian:{name:'Ian Mccart'},c_lewis:{name:'Lewis Pooley'},c_owen:{name:'Owen Dare'},c_harry:{name:'Harry Rouse'},
+      c_dave:{name:'Dave'},c_tom:{name:'Tom'},c_steve:{name:'Steve'},c_kev:{name:'Kev',yard:true},c_mark:{name:'Mark'},c_lee:{name:'Lee'},c_ray:{name:'Ray'},c_josh:{name:'Josh'}},
+    people:{du_c_boss:{crewId:'c_boss'},du_c_kev:{crewId:'c_kev'},du_c_tom:{crewId:'c_tom'},du_c_ian:{crewId:'c_ian'},du_c_lewis:{crewId:'c_lewis'}},
+    vehicles:{dv4:{reg:'AZR',name:''},dv5:{reg:'AZP',name:''},dv6:{reg:'FWC',name:''},dv1:{reg:'AB12 CDE',name:'Dropside'},dv2:{reg:'KX19 FGH',name:'Tipper'},dv3:{reg:'LM21 OPQ',name:'Transit'}},
     settings:{roles:{bosses:['c_boss']}},
-    jobs:{
-      dj_past:{site:'Church Road terrace',address:A1,geo:{lat:51.586,lon:0.604,addr:A1},survey:demoSurvey(A1),marks:{bay:true,cons:true,bmf:true,bmr:true},contact:'Mrs Patel',phone:'07700 900123',codes:'Gate 4721, key safe 1990',hazards:'Overhead power line at the back',sitePhoto:'demo_house',
-        date:d(-21),vehicle:'AB12 CDE',load:'full',type:'Erect',crew:['c_dave','c_tom'],chargeHand:'c_dave',notes:'Park on the drive. Mrs Patel works from home.',items:full,status:'done',doneBy:'du_boss',doneAt:now-20*864e5,createdAt:now-22*864e5},
-      dj_today:{site:'High St shop front',address:'High St, Hadleigh SS7',contact:'Jim (shop owner)',phone:'07700 900456',codes:'',hazards:'Busy pavement, needs barriers',
-        date:d(0),vehicle:'KX19 FGH',load:'half',type:'Alter',crew:['c_steve','c_mark'],chargeHand:'c_steve',notes:'',
-        items:[{id:'b8',kind:'tick',name:'8ft boards',qty:null},{id:'b13',kind:'tick',name:'13ft boards',qty:null},{id:'cht',kind:'count',name:'Chutes',qty:5},{id:'hop',kind:'count',name:'Hoppers',qty:1},{id:'chb',kind:'count',name:'Chute brackets',qty:2}],
-        status:'open',createdAt:now-30*864e5}
+    jobs:{}, yardchecks:{}, checks:{}, jobphotos:{}, extras:{},
+    daysoff:{
+      dd1:{person:'c_tom',from:d(4),to:d(5),reason:'Appointment',note:'Hospital appointment',status:'pending',notice:4,requestedBy:'du_c_tom',requestedAt:now-36e5,seen:true,seenByPerson:true},
+      dd2:{person:'c_lewis',from:d(1),to:d(2),reason:'Holiday',note:'',status:'approved',notice:14,requestedBy:'du_c_lewis',requestedAt:now-14*864e5,seen:true,seenByPerson:true},
+      dd3:{person:'c_ian',from:d(mon),to:d(mon+4),reason:'Holiday',note:'',status:'approved',notice:21,requestedBy:'du_c_ian',requestedAt:now-21*864e5,seen:true,seenByPerson:true}
     },
-    yardchecks:{dj_today:{items:{b8:true,b13:true,cht:5,hop:1,chb:2},confirmed:true,confirmedBy:'du_kev',confirmedAt:now-15*36e5,updatedAt:now-15*36e5}},
-    checks:{dj_today:{items:{b8:true,b13:true,cht:5,hop:1,chb:2},safety:{strap:true,harn:true,tags:true,walk:true},confirmed:true,confirmedBy:'du_steve',confirmedAt:now-3*36e5,leftAt:now-28e5,leftBy:'du_steve',updatedAt:now-28e5}},
-    jobphotos:{dj_past:{photos:{demo_scaf1:{by:'du_dave',at:now-20*864e5},demo_scaf2:{by:'du_dave',at:now-20*864e5+6e4}}}},
-    extras:{dj_today:{items:{dx1:{text:'Client asked for an extra lift at the side for the sign fitters. 2 hours, 2 men.',by:'du_steve',at:now-9e5,billed:false}}}},
-    daysoff:{dd1:{person:'c_tom',from:d(4),to:d(5),reason:'Appointment',note:'Hospital appointment',status:'pending',notice:4,requestedBy:'du_tom',requestedAt:now-36e5,seen:true,seenByPerson:true}},
     kits:{dk1:{name:'House front, 2 lifts',items:full}}
   };
 }
-function makeDemoDb(seed){
-  var data=JSON.parse(JSON.stringify(seed)), subs=[];
+/* The demo on its own (home-screen version) keeps what you do on this phone until Start again. */
+var DEMO_KEY='fcs-demo-1', DEMO_SAVED={}, demoSaveT=null;
+function loadDemo(){try{var t=localStorage.getItem(DEMO_KEY);if(!t)return null;var o=JSON.parse(t);return o&&o.data?o:null;}catch(e){return null;}}
+function saveDemoSoon(){
+  if(!S.standalone||!S.demoDb||!S.demoDb.dump) return;
+  clearTimeout(demoSaveT);
+  demoSaveT=setTimeout(function(){
+    var o={data:S.demoDb.dump(),role:S.demoRole,urls:DEMO_SAVED,at:Date.now()};
+    try{localStorage.setItem(DEMO_KEY,JSON.stringify(o));}catch(e){try{o.urls={};localStorage.setItem(DEMO_KEY,JSON.stringify(o));}catch(_){}}
+  },250);
+}
+function smallDataUrl(blob){
+  return new Promise(function(resolve){
+    var url; try{url=URL.createObjectURL(blob);}catch(_){resolve(null);return;}
+    var img=new Image();
+    img.onload=function(){try{var max=1000,w=img.naturalWidth,h=img.naturalHeight,k=Math.min(1,max/Math.max(w,h)),c=document.createElement('canvas');c.width=Math.max(1,Math.round(w*k));c.height=Math.max(1,Math.round(h*k));c.getContext('2d').drawImage(img,0,0,c.width,c.height);var u=c.toDataURL('image/jpeg',0.6);URL.revokeObjectURL(url);resolve(u);}catch(_){URL.revokeObjectURL(url);resolve(null);}};
+    img.onerror=function(){URL.revokeObjectURL(url);resolve(null);};
+    img.src=url;
+  });
+}
+function demoFirst(id){var c=S.crew.get(id);return c&&c.name?String(c.name).trim().split(/\s+/)[0]:'';}
+function demoJob(){return Array.from(S.jobs.values()).filter(function(x){return (x.crew||[]).length;}).sort(function(a,b){return ((a.status==='done'?1:0)-(b.status==='done'?1:0))||((b.createdAt||0)-(a.createdAt||0));})[0]||null;}
+function demoCrewFor(r){
+  if(r==='boss') return S.bosses[0]||'c_boss';
+  if(r==='yard'){var y=null;S.crew.forEach(function(c,id){if(!y&&c&&c.yard&&!c.removed)y=id;});return y||'c_kev';}
+  var j=demoJob(), ch=j?(j.chargeHand&&j.crew.indexOf(j.chargeHand)>=0?j.chargeHand:j.crew[0]):null;
+  if(r==='ch') return ch||'c_ian';
+  var g=j?j.crew.filter(function(x){return x!==ch;})[0]:null;
+  return g||(ch==='c_owen'?'c_harry':'c_owen');
+}
+function demoWho(r){var n=demoFirst(demoCrewFor(r))||'they';return r==='boss'?n:(r==='yard'?'the yard ('+n+')':(r==='ch'?'the charge hand ('+n+')':n+' on the gang'));}
+function demoBe(r){
+  var cid=demoCrewFor(r), uid='du_'+cid;
+  if(!S.people.has(uid)||S.people.get(uid).crewId!==cid){S.people.set(uid,{crewId:cid,__id:uid});try{S.demoDb.doc('people/'+uid).set({crewId:cid});}catch(_){}}
+  var changed=S.me!==uid; S.me=uid; return changed;
+}
+function demoResync(){if(S.demo&&S.demoRole&&demoBe(S.demoRole))render();}
+function makeDemoDb(seed,onChange){
+  var data=JSON.parse(JSON.stringify(seed)), subs=[], ch=function(){if(onChange)onChange();};
   var copy=function(v){return v==null?v:JSON.parse(JSON.stringify(v));};
   var merge=function(t,s){Object.keys(s).forEach(function(k){var v=s[k];if(v&&typeof v==='object'&&!Array.isArray(v)&&t[k]&&typeof t[k]==='object'&&!Array.isArray(t[k]))merge(t[k],v);else t[k]=v;});};
   var snapDoc=function(c,id){var v=data[c]&&data[c][id];return {id:id,exists:!!v,data:function(){return copy(v);}};};
@@ -2938,21 +2971,27 @@ function makeDemoDb(seed){
   var newId=function(){return 'd'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);};
   var docRef=function(path){var p=path.split('/'),c=p[0],id=p[1];return {id:id,
     get:async function(){return snapDoc(c,id);},
-    set:async function(v){(data[c]=data[c]||{})[id]=copy(v);emit(c);},
-    update:async function(v){if(!data[c]||!data[c][id]){var e=new Error('Not found');e.code='not_found';throw e;}merge(data[c][id],copy(v));emit(c);},
-    delete:async function(){if(data[c])delete data[c][id];emit(c);},
+    set:async function(v){(data[c]=data[c]||{})[id]=copy(v);emit(c);ch();},
+    update:async function(v){if(!data[c]||!data[c][id]){var e=new Error('Not found');e.code='not_found';throw e;}merge(data[c][id],copy(v));emit(c);ch();},
+    delete:async function(){if(data[c])delete data[c][id];emit(c);ch();},
     onSnapshot:function(fn){var s={col:c,id:id,fn:fn};subs.push(s);setTimeout(function(){fn(snapDoc(c,id));},0);return function(){var i=subs.indexOf(s);if(i>=0)subs.splice(i,1);};}};};
-  return {doc:docRef,collection:function(c){return {
+  return {dump:function(){return copy(data);},doc:docRef,collection:function(c){return {
     doc:function(id){return docRef(c+'/'+(id||newId()));},
     add:async function(v){var r=docRef(c+'/'+newId());await r.set(v);return r;},
     onSnapshot:function(fn){var s={col:c,fn:fn};subs.push(s);emit(c);return function(){var i=subs.indexOf(s);if(i>=0)subs.splice(i,1);};}};}};
 }
 function clearDrafts(){S.view=null;S.jobId=null;S.form=null;S.offForm=null;S.mode=null;S.xform=null;S.lb=null;S.editingName=false;S.renaming=null;S.readOnly=false;S.calDay=null;S.calMonth=null;window.scrollTo(0,0);}
-function setDemoRole(r){flushAll();S.demoRole=r;S.me=DEMO_ROLES[r].uid;S.owner=false;clearDrafts();render(true);}
+function setDemoRole(r){flushAll();S.demoRole=r;demoBe(r);S.owner=false;clearDrafts();render(true);saveDemoSoon();}
 function enterDemo(fresh){
   flushAll();
   if(!S.demo) S.realId={me:S.me,owner:S.owner,canData:S.canData,assets:S.assets,db:S.db};
-  if(fresh||!S.demoDb){STORE.demo={};S.demoDb=makeDemoDb(demoSeed());subscribe(S.demoDb,'demo');}
+  if(fresh||!S.demoDb){
+    var saved=(!fresh&&S.standalone)?loadDemo():null;
+    if(fresh&&S.standalone){try{localStorage.removeItem(DEMO_KEY);}catch(_){}}
+    DEMO_SAVED=(saved&&saved.urls)||{}; Object.keys(DEMO_SAVED).forEach(function(k){DEMO_URLS[k]=DEMO_SAVED[k];});
+    STORE.demo={};S.demoDb=makeDemoDb(saved?saved.data:demoSeed(),saveDemoSoon);subscribe(S.demoDb,'demo');
+    if(saved&&saved.role&&!fresh) S.demoRole=saved.role;
+  }
   S.demo=true; S.db=S.demoDb; S.assets=demoAssets; S.canData=true;
   applyStore('demo'); setDemoRole(S.demoRole&&!fresh?S.demoRole:'boss');
 }
@@ -2966,10 +3005,10 @@ function demoPanel(){
   var v=curView(), compact=v==='job'||v==='form';
   if(compact) return '<section class="demo-panel" aria-label="Demo"><div class="demo-tape" aria-hidden="true"></div><div class="demo-in"><div class="modes" role="group" aria-label="Show the app as">'+DEMO_ORDER.map(function(r){return '<button type="button" class="seg" data-act="demorole" data-v="'+r+'" aria-pressed="'+(S.demoRole===r)+'">'+DEMO_ROLES[r].label+'</button>';}).join('')+'</div></div></section>';
   return '<section class="demo-panel" aria-label="Demo"><div class="demo-tape" aria-hidden="true"></div><div class="demo-in">'+
-    '<div class="demo-row"><span class="demo-tag">Demo</span><span class="hint">Example jobs. Nothing here is saved.</span></div>'+
+    '<div class="demo-row"><span class="demo-tag">Demo</span><span class="hint">'+(S.standalone?'Practice mode. What you do stays on this phone until you tap Start again.':'Example jobs. Nothing here is saved.')+'</span></div>'+
     '<div class="modes" role="group" aria-label="Show the app as">'+DEMO_ORDER.map(function(r){return '<button type="button" class="seg" data-act="demorole" data-v="'+r+'" aria-pressed="'+(S.demoRole===r)+'">'+DEMO_ROLES[r].label+'</button>';}).join('')+'</div>'+
     '<p class="demo-hint">'+DEMO_HINTS[S.demoRole||'boss']+'</p>'+
-    '<div class="demo-row"><button type="button" class="mini" data-act="demoreset">Start again</button><button type="button" class="mini" data-act="demoexit">Exit demo</button></div></div></section>';
+    '<div class="demo-row"><button type="button" class="mini'+(S.confirmReset?' mini-danger':'')+'" data-act="demoreset">'+(S.confirmReset?'Tap again to wipe everything':'Start again from scratch')+'</button><button type="button" class="mini" data-act="demoexit">Exit demo</button></div></div></section>';
 }
 boot();
 })();
