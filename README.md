@@ -2,13 +2,13 @@
 
 First Choice Scaffolding's load check app, demo version. Gerry sends the load and crew, the yard loads and ticks it off, the charge hand checks it in the morning, takes photos and finishes the job, and Gerry signs it off.
 
-**Address: https://ianmccart1980-blip.github.io/fcs-load-check/**
+**Address: https://ianmccart1980-blip.github.io/Fcs-load-check/**
 
 This version runs the demo only. Everything stays on the phone, nothing is shared or saved, and it only holds made-up jobs. Switch between **Gerry**, **Yard**, **Charge hand** and **Gang** at the top to show each person's screen. **Start again** puts the example jobs back. Closing the app fully also starts it again.
 
 ## Put it on your iPhone home screen
 
-1. Open **https://ianmccart1980-blip.github.io/fcs-load-check/** in **Safari**. It has to be Safari.
+1. Open **https://ianmccart1980-blip.github.io/Fcs-load-check/** in **Safari**. It has to be Safari.
 2. Tap the **Share** button, the square with the arrow pointing up. If you can't see it, tap the three dots (···) at the bottom first.
 3. Scroll down and tap **Add to Home Screen**.
 4. Tap **Add**.

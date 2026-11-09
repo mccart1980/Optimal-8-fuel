@@ -565,6 +565,10 @@ textarea.input{min-height:84px;resize:vertical}
 .pl-nb{fill:var(--surface-2);stroke:var(--line);stroke-width:1}
 .pl-sm{fill:none;stroke:var(--muted);stroke-width:1;stroke-dasharray:3 2}
 .pl-house{fill:var(--brand-soft);stroke:var(--brand-txt);stroke-width:2;stroke-linejoin:round}
+.pl-pick{fill:var(--brand-soft);stroke:var(--brand-txt);stroke-width:1.5;stroke-linejoin:round;cursor:pointer}
+.pl-pick:active,.pl-pick:focus-visible{fill:var(--accent);outline:none}
+.pl-num{pointer-events:none}
+.plan-pick{touch-action:manipulation;aspect-ratio:1/1.05}
 .pl-tree{fill:var(--ok-bg);stroke:var(--ok);stroke-width:1.2}
 .pl-power{fill:none;stroke:var(--short);stroke-width:2;stroke-dasharray:6 4}
 .pl-gap{stroke:var(--warn);stroke-width:2}
@@ -1852,8 +1856,9 @@ function addrSuggest(q){
   if(q.length<4||SUG.off){SUG.items=[];SUG.seq++;box.innerHTML='';return;}
   SUG.t=setTimeout(function(){
     var my=++SUG.seq;
-    getJSON('https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&limit=8&lang=en&lat=51.586&lon=0.604&bbox=-8.7,49.8,1.9,60.9',8000).then(function(js){
-      if(my!==SUG.seq) return;
+    var pu='https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&limit=10&lang=en&lat=51.586&lon=0.604&bbox=-8.7,49.8,1.9,60.9';
+    getJSON(pu+'&layer=house&layer=street',8000).catch(function(){return getJSON(pu,8000);}).then(function(js){
+      if(my!==SUG.seq) return; SUG.q=q;
       var seen={}, out=[];
       (js&&js.features||[]).forEach(function(ft){var a=photonAddr(ft.properties||{},ft.geometry);if(a&&!seen[a.full]){seen[a.full]=1;out.push(a);}});
       SUG.items=out.slice(0,6); paintSugg();
@@ -1870,7 +1875,7 @@ function photonAddr(p,g){
   if(!first) return null;
   var town=p.city||p.town||p.village||p.locality||p.district||''; if(town===first) town='';
   var c=g&&g.coordinates;
-  return {label:first,sub:[town,p.postcode].filter(Boolean).join(' '),full:first+(town?', '+town:'')+(p.postcode?' '+p.postcode:''),lat:c?c[1]:null,lon:c?c[0]:null};
+  return {label:first,sub:[town,p.postcode].filter(Boolean).join(' '),full:first+(town?', '+town:'')+(p.postcode?' '+p.postcode:''),lat:c?c[1]:null,lon:c?c[0]:null,exact:!!(p.housenumber&&st)};
 }
 function paintSugg(){
   var box=document.getElementById('addr-sugg'); if(!box) return;
@@ -2021,23 +2026,56 @@ async function propExtras(sv){
   await Promise.allSettled(tasks);
 }
 async function geocodeAddr(addr){
-  var js=await getJSON('https://photon.komoot.io/api/?q='+encodeURIComponent(addr)+'&limit=1&lang=en&lat=51.586&lon=0.604&bbox=-8.7,49.8,1.9,60.9',8000);
-  var ft=js&&js.features&&js.features[0]; if(!ft||!ft.geometry||(ft.properties&&ft.properties.countrycode&&ft.properties.countrycode!=='GB')) return null;
-  return {lat:ft.geometry.coordinates[1],lon:ft.geometry.coordinates[0]};
+  var hit=null;
+  try{
+    var js=await getJSON('https://photon.komoot.io/api/?q='+encodeURIComponent(addr)+'&limit=3&lang=en&lat=51.586&lon=0.604&bbox=-8.7,49.8,1.9,60.9',8000);
+    (js&&js.features||[]).forEach(function(ft){var p=ft.properties||{};if(hit||!ft.geometry||(p.countrycode&&p.countrycode!=='GB'))return;hit={lat:ft.geometry.coordinates[1],lon:ft.geometry.coordinates[0],exact:!!p.housenumber};});
+  }catch(e){}
+  if(hit&&hit.exact) return hit;
+  var pc=(String(addr).toUpperCase().match(/[A-Z]{1,2}\d[A-Z\d]?\s*\d[A-Z]{2}/)||[])[0];
+  if(pc){try{var pj=await getJSON('https://api.postcodes.io/postcodes/'+normPc(pc),8000);if(pj&&pj.result&&pj.result.latitude!=null)return {lat:pj.result.latitude,lon:pj.result.longitude,exact:false};}catch(e){}}
+  return hit;
 }
-async function propCheck(f){
+var PICK=null;
+function buildPick(ov,geo){
+  var o={lat:geo.lat,lon:geo.lon}, items=[], roads=[], nums=[];
+  ((ov&&ov.elements)||[]).forEach(function(e){var t=e.tags||{};
+    if(e.type==='way'&&t.building&&e.geometry&&!PROP_SMALL[t.building]){var r=pRing(e.geometry,o);if(r.length<3)return;var c=pCent(r);if(Math.hypot(c[0],c[1])>62)return;var g=xyGeo(c[0],c[1],o);items.push({p:ps(trimPts(r,24)),lat:g.lat,lon:g.lon,d:Math.hypot(c[0],c[1])});if(t['addr:housenumber'])nums.push({x:r1(c[0]),y:r1(c[1]),t:String(t['addr:housenumber'])});}
+    else if(e.type==='way'&&t.highway&&e.geometry&&(PROP_ROADS[t.highway]||PROP_PATHS[t.highway])){var l=pRing(e.geometry,o);if(l.length>=2&&lineNear([0,0],l,false).d<70)roads.push({p:ps(trimPts(l,40)),n:PROP_ROADS[t.highway]?(t.name||''):'',k:PROP_ROADS[t.highway]?0:1});}
+    else if(e.type==='node'&&t['addr:housenumber']&&e.lat!=null){var q=geoXY(e.lat,e.lon,o);if(Math.hypot(q[0],q[1])<62)nums.push({x:r1(q[0]),y:r1(q[1]),t:String(t['addr:housenumber'])});}
+  });
+  if(!items.length) return {status:'nohouse',at:Date.now(),lat:geo.lat,lon:geo.lon,addr:geo.addr||''};
+  items.sort(function(a,b){return a.d-b.d;});
+  return {status:'pick',at:Date.now(),lat:geo.lat,lon:geo.lon,addr:geo.addr||'',items:items.slice(0,60),roads:roads.slice(0,10),nums:nums.slice(0,60)};
+}
+function pickSvg(sv){
+  var half=sv.wide?62:34, x0=-half, y0=-half*1.05, w=half*2, h=half*2.1, fs=half*0.075, u=half/50, id='pk'+Math.random().toString(36).slice(2,8);
+  var pl=function(pts){return pts.map(function(p){return p[0].toFixed(1)+','+p[1].toFixed(1);}).join(' ');};
+  var s='<svg class="plan plan-pick" viewBox="'+[x0,y0,w,h].join(' ')+'" role="group" aria-label="Buildings near the address. North is at the top.">';
+  s+='<defs><clipPath id="'+id+'"><rect x="'+x0+'" y="'+y0+'" width="'+w+'" height="'+h+'"/></clipPath></defs><g clip-path="url(#'+id+')">';
+  (sv.roads||[]).forEach(function(r){var p=pp(r.p);if(p.length>1)s+=r.k?'<polyline class="pl-path" points="'+pl(p)+'" vector-effect="non-scaling-stroke"/>':'<polyline class="pl-road" points="'+pl(p)+'" stroke-width="6"/>';});
+  (sv.items||[]).forEach(function(b,i){var p=pp(b.p);if(p.length>2)s+='<polygon class="pl-pick" points="'+pl(p)+'" data-act="prophouse" data-i="'+i+'" role="button" tabindex="0" aria-label="Building '+(i+1)+'" vector-effect="non-scaling-stroke"/>';});
+  var seen={};
+  (sv.roads||[]).forEach(function(r){if(!r.n||seen[r.n])return;var g=lineNear([0,0],pp(r.p),false);if(!g.q||Math.abs(g.q[0])>half-6||Math.abs(g.q[1])>half-8)return;seen[r.n]=1;s+='<text class="pl-r" x="'+g.q[0].toFixed(1)+'" y="'+(g.q[1]+fs*0.35).toFixed(1)+'" font-size="'+fs.toFixed(2)+'" text-anchor="middle">'+esc(r.n)+'</text>';});
+  (sv.nums||[]).forEach(function(n){s+='<text class="pl-t pl-num" x="'+n.x+'" y="'+(n.y+fs*0.35).toFixed(2)+'" font-size="'+fs.toFixed(2)+'" stroke-width="'+(fs*0.3).toFixed(2)+'" text-anchor="middle">'+esc(n.t)+'</text>';});
+  s+='</g><g class="pl-scale"><line x1="'+(x0+4*u)+'" y1="'+(y0+h-5*u)+'" x2="'+(x0+4*u+10)+'" y2="'+(y0+h-5*u)+'" vector-effect="non-scaling-stroke"/><text x="'+(x0+4*u+5)+'" y="'+(y0+h-7*u)+'" font-size="'+(fs*0.85).toFixed(2)+'" text-anchor="middle">10m</text></g>';
+  var nx=x0+w-7*u, ny=y0+7*u;
+  s+='<g class="pl-north"><circle cx="'+nx+'" cy="'+ny+'" r="'+(4.6*u)+'" vector-effect="non-scaling-stroke"/><polygon class="pl-na" points="'+[[nx,ny-3.8*u],[nx-2*u,ny+2.4*u],[nx,ny+0.6*u],[nx+2*u,ny+2.4*u]].map(function(q){return q[0].toFixed(2)+','+q[1].toFixed(2);}).join(' ')+'"/></g>';
+  return s+'</svg>';
+}
+async function propCheck(f,forcePick){
   if(!f) return;
   var addr=String(f.address||'').trim(); if(!addr){toast('Put the address in first');return;}
   f.survey={status:'busy',addr:addr}; render(true);
   var sv;
   try{
     var geo=f.geo&&f.geo.addr===addr?f.geo:null;
-    if(!geo){var g=await geocodeAddr(addr);if(!g){sv={status:'nogeo',addr:addr};}else{geo=f.geo={lat:g.lat,lon:g.lon,addr:addr};}}
+    if(!geo){var g=await geocodeAddr(addr);if(!g){sv={status:'nogeo',addr:addr};}else{geo=f.geo={lat:g.lat,lon:g.lon,addr:addr,approx:!g.exact};}}
     if(geo){
-      var L=geo.lat+','+geo.lon;
-      var ov=await overpass('[out:json][timeout:25];(way["building"](around:45,'+L+');way["highway"](around:70,'+L+');way["power"~"^(line|minor_line)$"](around:60,'+L+');node["natural"="tree"](around:35,'+L+');node["addr:housenumber"](around:40,'+L+'););out geom;');
-      sv=buildSurvey(ov,geo);
-      if(sv.status==='ok') await propExtras(sv);
+      var pick=!!geo.approx||!!forcePick, L=geo.lat+','+geo.lon, R=pick?[100,125,110,90,90]:[45,70,60,35,40];
+      var ov=await overpass('[out:json][timeout:25];(way["building"](around:'+R[0]+','+L+');way["highway"](around:'+R[1]+','+L+');way["power"~"^(line|minor_line)$"](around:'+R[2]+','+L+');node["natural"="tree"](around:'+R[3]+','+L+');node["addr:housenumber"](around:'+R[4]+','+L+'););out geom;');
+      if(pick){sv=buildPick(ov,geo);PICK={ov:ov,form:f,sv:sv};}
+      else{sv=buildSurvey(ov,geo);if(sv.status==='ok')await propExtras(sv);}
     }
   }catch(e){sv={status:'err',addr:addr};}
   if(S.form!==f) return;
@@ -2125,7 +2163,8 @@ function propBody(sv,addr){
     var fl=propFlags(sv);
     if(fl.length) h+='<div class="pflags">'+fl.map(function(x){return '<p class="pflag pf-'+x[0]+'">'+esc(x[1])+'</p>';}).join('')+'</div>';
     h+='<div class="papps"><span class="eyebrow">Planning on record</span>'+(sv.apps&&sv.apps.length?sv.apps.map(function(a){return '<p class="papp"><b>'+esc(a.desc)+'</b><span>'+esc([a.ref,a.date?yearDate(a.date):'',a.dec].filter(Boolean).join(' · '))+'</span></p>';}).join(''):'<p class="hint">'+(sv.pdFail?'Couldn’t reach the national planning data.':'Nothing on the national planning data. Not every council is on it yet, and most conservatories don’t need planning.')+' Check the council’s record with <b>Planning history</b>.</p>')+'</div>';
-  }else if(sv.status==='nohouse') h+='<p class="hint">Found the address but not the building on the map. Use Street View and the satellite view.</p>';
+  }else if(sv.status==='pick') h+='<p class="hint"><b>Tap the house on the plan.</b> The free map doesn’t have the house numbers on this road, so it can’t tell which building it is. North is at the top. Use Street View or the satellite view to be sure.</p><div class="plan-wrap">'+pickSvg(sv)+'</div><button type="button" class="btn btn-ghost btn-left" data-act="pickzoom">'+(sv.wide?'Zoom in':'Zoom out to see more houses')+'</button>';
+  else if(sv.status==='nohouse') h+='<p class="hint">Found the address but not the building on the map. Use Street View and the satellite view.</p>';
   else if(sv.status==='nogeo') h+='<p class="hint warn-txt">Couldn’t find that address on the map. Check it, or pick it from the postcode list.</p>';
   else if(sv.status==='err') h+='<p class="hint warn-txt">Couldn’t reach the map data right now. Use the links below, or try again.</p>';
   h+=propLinks(sv,addr);
@@ -2141,7 +2180,7 @@ function propFormHtml(f){
   var addr=String(f.address||'').trim(), sv=f.survey;
   if(!addr&&!sv) return '';
   var h='<section class="panel prop" aria-label="The property"><div class="prop-h"><h2 class="list-t">The property</h2>';
-  if(sv&&sv.status!=='busy') h+='<button type="button" class="mini" data-act="propcheck">'+(sv.addr&&sv.addr!==addr?'Check this address':'Check again')+'</button>';
+  if(sv&&sv.status!=='busy') h+=(sv.status==='ok'&&!(sv.addr&&sv.addr!==addr)?'<button type="button" class="mini" data-act="proprepick">Wrong building?</button>':'<button type="button" class="mini" data-act="propcheck">'+(sv.addr&&sv.addr!==addr?'Check this address':'Check again')+'</button>');
   h+='</div>';
   if(!sv) h+='<p class="hint">Get a plan, the sizes, side and back access, and anything to watch, from free map and planning data.</p><button type="button" class="btn btn-primary btn-left" data-act="propcheck">Check this property</button>';
   else if(sv.status==='busy') h+='<p class="hint" role="status">Checking the property…</p>';
@@ -2529,8 +2568,14 @@ var ACT={
   pcpick:function(b){var f=S.form,r=f&&f.pcRes;if(!r)return;var a=r.list[+b.dataset.i];if(!a)return;f.address=a.full;if(!String(f.site||'').trim())f.site=a.label;r.collapsed=true;f.geo=a.lat!=null?{lat:a.lat,lon:a.lon,addr:a.full}:null;propCheck(f);},
   pcstreet:function(b){var f=S.form,r=f&&f.pcRes;if(!r)return;var x=r.streets[+b.dataset.i];if(!x)return;f.address=' '+x+', '+(r.town?r.town+' ':'')+r.pc;r.collapsed=true;f.geo=null;f.survey=null;render(true);var el=document.getElementById('f-address');if(el){el.focus();try{el.setSelectionRange(0,0);}catch(_){}}toast('Now put the house number in at the start');},
   pcagain:function(){var r=S.form&&S.form.pcRes;if(r){r.collapsed=false;render(true);}},
-  sugpick:function(b){var f=S.form,a=SUG.items[+b.dataset.i];if(!f||!a)return;f.address=a.full;if(!String(f.site||'').trim())f.site=a.label;SUG.items=[];SUG.seq++;f.geo=a.lat!=null?{lat:a.lat,lon:a.lon,addr:a.full}:null;propCheck(f);},
+  sugpick:function(b){var f=S.form,a=SUG.items[+b.dataset.i];if(!f||!a)return;var num=a.exact?null:(String(SUG.q||'').match(/^\s*(\d+[a-zA-Z]?)\s+\S/)||[])[1],full=(num?num+' ':'')+a.full,label=(num?num+' ':'')+a.label;f.address=full;if(!String(f.site||'').trim())f.site=label;SUG.items=[];SUG.seq++;f.geo=a.lat!=null?{lat:a.lat,lon:a.lon,addr:full,approx:!a.exact}:null;propCheck(f);},
   propcheck:function(){if(S.form)propCheck(S.form);},
+  pickzoom:function(){var sv=S.form&&S.form.survey;if(sv&&sv.status==='pick'){sv.wide=!sv.wide;render(true);}},
+  proprepick:function(){var f=S.form;if(!f)return;if(PICK&&PICK.form===f&&PICK.sv&&PICK.sv.status==='pick'&&PICK.sv.addr===String(f.address||'').trim()){f.survey=PICK.sv;render(true);}else propCheck(f,true);},
+  prophouse:function(b){var f=S.form,sv=f&&f.survey;if(!sv||sv.status!=='pick'||!PICK||PICK.form!==f)return;var it=sv.items[+b.dataset.i];if(!it)return;
+    var geo={lat:it.lat,lon:it.lon,addr:sv.addr};f.geo=geo;f.survey={status:'busy',addr:sv.addr};render(true);
+    var s2=buildSurvey(PICK.ov,geo);
+    (s2.status==='ok'?propExtras(s2):Promise.resolve()).then(function(){if(S.form!==f)return;f.survey=s2;render();});},
   mark:function(b){var f=S.form;if(!f)return;f.marks=f.marks||{};var k=b.dataset.id;if(f.marks[k])delete f.marks[k];else f.marks[k]=true;render(true);},
   gangrm:function(b,id){var f=S.form;if(!f)return;var i=f.crew.indexOf(id);if(i>=0)f.crew.splice(i,1);if(f.chargeHand===id){f.chargeHand=null;f.chExplicit=false;}render(true);},
   vanrm:function(b,id){if(!twoTap('confirmVan',id))return;upd('vehicles/'+id,{removed:true,removedAt:Date.now()},'Vehicle removed');},
@@ -2725,6 +2770,7 @@ var ACT={
 
 document.addEventListener('click',function(e){
   var b=e.target.closest('[data-act]'); if(!b||b.disabled) return;
+  var ae=document.activeElement; if(ae&&ae!==b&&isTyping()){try{ae.blur();}catch(_){}}
   var fn=ACT[b.dataset.act]; if(fn){e.preventDefault();fn(b,b.dataset.id,e);}
 });
 document.addEventListener('keydown',function(e){if(e.key==='Escape'&&S.lb){S.lb=null;render(true);}});
