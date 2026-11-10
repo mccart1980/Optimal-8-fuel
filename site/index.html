@@ -554,6 +554,15 @@ textarea.input{min-height:84px;resize:vertical}
 @media (max-width:420px){.van-add{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}.van-add .btn{grid-column:1/-1}}
 .van-n{font:600 .92rem/1.2 var(--f-body);color:var(--muted)}
 .trow-n .van-n{margin-left:4px}
+/* Address finder set-up and test, update strip */
+.addrset{gap:10px}
+.atest{display:flex;flex-direction:column;gap:6px}
+.at-row{margin:0;padding:8px 12px;border-radius:8px;display:flex;flex-direction:column;gap:1px;font-size:.92rem;border-left:4px solid}
+.at-row span{color:var(--muted);font-size:.86rem;overflow-wrap:anywhere}
+.at-ok{background:var(--ok-bg);border-color:var(--ok)}
+.at-no{background:var(--short-bg);border-color:var(--short)}
+.bar-upd{padding-block:0 10px}
+.upd{appearance:none;border:0;width:100%;min-height:44px;border-radius:10px;background:var(--accent);color:var(--accent-ink);font:700 1rem/1.2 var(--f-body);cursor:pointer}
 /* Property check */
 .prop-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .prop{gap:12px}
@@ -989,6 +998,7 @@ async function flushCheck(k){
 function flushAll(){S.pending.forEach(function(_,k){flushCheck(k);});}
 document.addEventListener('visibilitychange',function(){if(document.visibilityState==='hidden') flushAll();});
 window.addEventListener('offline',function(){S.offline=true;render();});
+document.addEventListener('visibilitychange',function(){if(!document.hidden)checkUpdate(false);});
 window.addEventListener('online',function(){S.offline=false;flushAll();render();});
 S.offline=navigator.onLine===false;
 
@@ -1778,6 +1788,103 @@ function addGang(id){
   f.crew.push(id);
 }
 
+/* ---------- address service: Royal Mail data (Ideal Postcodes) when a key is set ---------- */
+var FCS_BUILD={v:'e5631499',at:'10 Nov, 02:42'};
+var ADDR_KEY_BUILT='';
+function addrKey(){var k='';try{k=(localStorage.getItem('fcs-addr-key')||'').trim();}catch(_){ }return k||ADDR_KEY_BUILT;}
+function titleCase(t){return String(t||'').toLowerCase().replace(/(^|[\s\-'])([a-z])/g,function(m,a,b){return a+b.toUpperCase();});}
+async function probe(url,ms){
+  var t=Date.now(), ctl=typeof AbortController!=='undefined'?new AbortController():null, tm=setTimeout(function(){if(ctl)ctl.abort();},ms||15000);
+  try{var r=await fetch(url,ctl?{signal:ctl.signal}:{}), txt=await r.text(), js=null; clearTimeout(tm); try{js=JSON.parse(txt);}catch(_){ }
+    return {ok:r.ok,status:r.status,ms:Date.now()-t,js:js,txt:txt.slice(0,90)};
+  }catch(e){clearTimeout(tm);return {ok:false,status:0,ms:Date.now()-t,err:e&&e.name==='AbortError'?'no answer in time':'blocked or no connection'};}
+}
+function ipcUrl(path){return 'https://api.ideal-postcodes.co.uk/v1/'+path+(path.indexOf('?')<0?'?':'&')+'api_key='+encodeURIComponent(addrKey());}
+function ipcProblem(p){
+  var c=p.js&&p.js.code;
+  if(c===4010) return 'The address service doesn’t recognise the key.';
+  if(c===4011) return 'The address service key isn’t allowed from this web address.';
+  if(c===4020) return 'The address service has run out of lookups.';
+  if(c===4021) return 'The address service has hit its daily limit.';
+  if(p.status===429) return 'The address service is busy. Try again in a minute.';
+  if(!p.status) return 'Couldn’t reach the address service ('+(p.err||'no connection')+').';
+  return '';
+}
+function pafItem(a){
+  var lines=[a.line_1,a.line_2,a.line_3].filter(function(x){return x&&String(x).trim();}), label=lines.join(', '), town=titleCase(a.post_town), pc=a.postcode||'';
+  var lat=typeof a.latitude==='number'?a.latitude:parseFloat(a.latitude), lon=typeof a.longitude==='number'?a.longitude:parseFloat(a.longitude);
+  return {label:label,full:label+(town?', '+town:'')+(pc?' '+pc:''),lat:isNaN(lat)?null:lat,lon:isNaN(lon)?null:lon,st:a.thoroughfare||'',n:parseInt(a.building_number,10)||0,hn:String(a.building_number||a.building_name||'')};
+}
+async function pafPostcode(raw){
+  var p=await probe(ipcUrl('postcodes/'+raw),12000);
+  if(p.ok&&p.js&&Array.isArray(p.js.result)&&p.js.result.length){
+    var list=p.js.result.map(pafItem), seen={};
+    list.forEach(function(a){if(a.lat!=null)seen[a.lat+','+a.lon]=1;});
+    var exact=Object.keys(seen).length>1;
+    list.forEach(function(a){a.exact=exact;});
+    return {res:{status:'ok',pc:p.js.result[0].postcode||fmtPc(raw),list:list,streets:[],town:titleCase(p.js.result[0].post_town),near:false,paf:true}};
+  }
+  if(p.status===404) return {res:{status:'nf',pc:fmtPc(raw)}};
+  return {note:ipcProblem(p)||'The address service didn’t answer.'};
+}
+async function addrTest(){
+  var el=document.getElementById('at-pc'), raw=normPc(el&&el.value)||'SS67AA';
+  var T=S.addrTest={busy:true,rows:[],pc:fmtPc(raw)}; render(true);
+  var add=function(ok,n,d){T.rows.push({ok:ok,n:n,d:d});render();};
+  add(true,'App version',FCS_BUILD.v+(FCS_BUILD.at?' · '+FCS_BUILD.at:'')+(S.standalone?' · home-screen version':' · Claude version'));
+  var p=await probe('https://api.postcodes.io/postcodes/'+raw,10000), loc=p.ok&&p.js&&p.js.result&&p.js.result.latitude!=null?p.js.result:null;
+  add(!!loc,'Postcode location',loc?'found '+loc.postcode+' · '+p.ms+'ms':(p.status===404?'that postcode doesn’t exist':(p.err||'error '+p.status)));
+  if(addrKey()){p=await probe(ipcUrl('postcodes/'+raw),12000);var n=p.ok&&p.js&&Array.isArray(p.js.result)?p.js.result.length:0;add(n>0,'Royal Mail addresses',n?n+' addresses · '+p.ms+'ms':(p.status===404?'no addresses at that postcode':(ipcProblem(p)||'error '+p.status+' '+((p.js&&p.js.message)||''))));}
+  else add(false,'Royal Mail addresses','no key set, so the app uses the free map');
+  if(loc){
+    var L=loc.latitude+','+loc.longitude, q='[out:json][timeout:20];nwr["addr:housenumber"](around:180,'+L+');out center 400;way["highway"]["name"](around:130,'+L+');out tags;';
+    for(var i=0;i<OVERPASS.length;i++){
+      p=await probe(OVERPASS[i]+'?data='+encodeURIComponent(q),20000);
+      var els=p.js&&p.js.elements, nums=0, rds={};
+      (els||[]).forEach(function(e){var t=e.tags||{};if(t['addr:housenumber'])nums++;else if(t.highway&&t.name)rds[t.name]=1;});
+      add(!!els,'Free map, server '+(i+1),els?nums+' house numbers, '+Object.keys(rds).length+' roads · '+p.ms+'ms':(p.err||'error '+p.status+' '+(p.txt||'')));
+    }
+    p=await probe(OVERPASS[0]+'?data='+encodeURIComponent('[out:json][timeout:20];way["building"](around:80,'+L+');out ids;'),20000);
+    var nb=p.js&&p.js.elements?p.js.elements.length:-1;
+    add(nb>0,'Building outlines',nb>=0?nb+' buildings within 80m · '+p.ms+'ms':(p.err||'error '+p.status));
+    p=await probe('https://www.planning.data.gov.uk/entity.json?dataset=conservation-area&limit=1&longitude='+loc.longitude+'&latitude='+loc.latitude,12000);
+    add(p.ok,'Planning data',p.ok?'answered · '+p.ms+'ms':(p.err||'error '+p.status));
+  }
+  var pu='https://photon.komoot.io/api/?q='+encodeURIComponent('High Street Rayleigh')+'&limit=5&lang=en&lat=51.586&lon=0.604&bbox=-8.7,49.8,1.9,60.9';
+  p=await probe(pu+'&layer=house&layer=street',10000);
+  add(p.ok,'Typed suggestions',p.ok?((p.js&&p.js.features||[]).length+' results · '+p.ms+'ms'):(p.err||'error '+p.status+' '+(p.txt||'')));
+  if(!p.ok){p=await probe(pu,10000);add(p.ok,'Typed suggestions, plain',p.ok?((p.js&&p.js.features||[]).length+' results · '+p.ms+'ms'):(p.err||'error '+p.status+' '+(p.txt||'')));}
+  T.busy=false; render();
+}
+function addrSetHtml(){
+  var k=addrKey(), T=S.addrTest, h='<section class="panel addrset"><h2 class="list-t">Address finder</h2>';
+  h+='<p class="hint">'+(k?'Using Royal Mail addresses. Every house in a postcode is listed.':'Using the free map. It knows the roads but not most house numbers. A Royal Mail address service fixes that: paste its key below.')+'</p>';
+  if(k) h+='<div class="trow"><div class="trow-n"><span class="pname">Key ending '+esc(k.slice(-4))+'</span><span class="tagx">'+(ADDR_KEY_BUILT&&k===ADDR_KEY_BUILT?'Built in':'On this phone')+'</span></div>'+(ADDR_KEY_BUILT&&k===ADDR_KEY_BUILT?'':'<div class="trow-acts"><button type="button" class="mini mini-danger" data-act="addrkeyclear">Remove</button></div>')+'</div>';
+  else h+='<form class="row" data-form="addrkey"><input id="ak-in" class="input" placeholder="Paste the key (starts ak_)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Address service key"><button class="btn btn-primary" type="submit">Save</button></form>';
+  h+='<div class="row pc-row"><input id="at-pc" class="input pc-in" placeholder="Postcode to test" value="'+esc(T&&T.pc||'')+'" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Postcode to test"><button class="btn" type="button" data-act="addrtest"'+(T&&T.busy?' disabled':'')+'>'+(T&&T.busy?'Testing…':'Test it')+'</button></div>';
+  if(T&&T.rows.length) h+='<div class="atest">'+T.rows.map(function(r){return '<p class="at-row '+(r.ok?'at-ok':'at-no')+'"><b>'+(r.ok?'✓':'✗')+' '+esc(r.n)+'</b><span>'+esc(r.d)+'</span></p>';}).join('')+'</div>';
+  h+='<p class="hint">Version '+esc(FCS_BUILD.v)+(FCS_BUILD.at?' · '+esc(FCS_BUILD.at):'')+'</p>';
+  if(S.standalone) h+='<button type="button" class="btn btn-left" data-act="checkupdate">Check for an update</button>';
+  return h+'</section>';
+}
+function checkUpdate(manual){
+  if(!S.standalone) return;
+  fetch('version.txt?t='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():Promise.reject();}).then(function(t){
+    t=String(t).trim();
+    if(t&&t.length<40&&t!==FCS_BUILD.v){S.updateReady=t;render();}
+    else if(manual) toast('You’ve got the latest version');
+  }).catch(function(){if(manual)toast('Couldn’t check. No signal?');});
+}
+async function doUpdate(){
+  toast('Updating…');
+  try{
+    if(window.caches){var ks=await caches.keys();await Promise.all(ks.map(function(k){return caches.delete(k);}));}
+    try{await fetch('./',{cache:'reload'});}catch(_){ }
+    var reg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(reg) await reg.update();
+  }catch(_){ }
+  location.reload();
+}
+
 /* ---------- address: postcode list and type-ahead ---------- */
 var OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
 var STREET_T={motorway:0,trunk:1,primary:1,secondary:1,tertiary:1,unclassified:1,residential:1,living_street:1,road:1,pedestrian:1};
@@ -1793,7 +1900,8 @@ async function pcFind(){
   var f=S.form; if(!f) return; var raw=normPc(f.pc);
   if(raw.length<5||raw.length>7){toast('Type the whole postcode, e.g. SS6 7AA');return;}
   f.pcRes={status:'busy',pc:fmtPc(raw)}; render(true);
-  var res;
+  var res, note='';
+  if(addrKey()){var pa=await pafPostcode(raw);if(pa.res){if(S.form!==f)return;f.pcRes=pa.res;render();if(pa.res.status==='nf'){var e0=document.getElementById('f-address');if(e0)e0.focus();}return;}note=pa.note||'';}
   try{
     var js=null;
     try{js=await getJSON('https://api.postcodes.io/postcodes/'+raw,10000);}catch(e){if(!(e&&e.status===404))throw e;}
@@ -1806,6 +1914,7 @@ async function pcFind(){
     }
   }catch(e){res={status:'err',pc:fmtPc(raw)};}
   if(S.form!==f) return;
+  if(note) res.note=note;
   f.pcRes=res; render();
   if(res.status==='nf'||res.status==='err'||(res.status==='ok'&&!res.list.length&&!res.streets.length)){var el=document.getElementById('f-address');if(el)el.focus();}
 }
@@ -1835,6 +1944,7 @@ function buildPc(ov,pc,p){
 function addrHtml(f){
   var r=f.pcRes||null, busy=!!r&&r.status==='busy', h='<div class="field"><label class="label" for="f-pc">Address</label>';
   h+='<div class="row pc-row"><input id="f-pc" class="input pc-in" data-f="pc" value="'+esc(f.pc||'')+'" placeholder="Postcode" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search" aria-label="Postcode"><button class="btn btn-primary" type="button" data-act="pcfind"'+(busy?' disabled':'')+'>'+(busy?'Finding…':'Find')+'</button></div>';
+  if(r&&r.note&&!busy) h+='<p class="hint warn-txt">'+esc(r.note)+' Using the free map instead.</p>';
   if(r&&!r.collapsed&&!busy){
     var sb=function(){return '<div class="chips">'+r.streets.map(function(x,i){return '<button type="button" class="seg" data-act="pcstreet" data-i="'+i+'">'+esc(x)+'</button>';}).join('')+'</div>';};
     if(r.status==='ok'&&r.list.length){
@@ -1856,6 +1966,15 @@ function addrSuggest(q){
   if(q.length<4||SUG.off){SUG.items=[];SUG.seq++;box.innerHTML='';return;}
   SUG.t=setTimeout(function(){
     var my=++SUG.seq;
+    if(addrKey()&&!SUG.pafOff){
+      probe(ipcUrl('autocomplete/addresses?query='+encodeURIComponent(q)+'&limit=8&bias_lonlat=0.604,51.586,50000'),8000).then(function(p){
+        if(my!==SUG.seq) return;
+        var hits=p.ok&&p.js&&p.js.result&&p.js.result.hits;
+        if(Array.isArray(hits)){SUG.q=q;SUG.items=hits.slice(0,7).map(function(x){return {label:x.suggestion,sub:'',id:x.id,paf:true};});paintSugg();}
+        else{SUG.pafOff=true;addrSuggest(q);}
+      });
+      return;
+    }
     var pu='https://photon.komoot.io/api/?q='+encodeURIComponent(q)+'&limit=10&lang=en&lat=51.586&lon=0.604&bbox=-8.7,49.8,1.9,60.9';
     getJSON(pu+'&layer=house&layer=street',8000).catch(function(){return getJSON(pu,8000);}).then(function(js){
       if(my!==SUG.seq) return; SUG.q=q;
@@ -2358,6 +2477,7 @@ function teamHtml(){
   var fl=fleet();
   h+=fl.length?'<div class="list">'+fl.map(function(v){var e=esc(v.__id);return '<div class="trow"><div class="trow-n"><span class="plate">'+esc(String(v.reg).toUpperCase())+'</span>'+(v.name?'<span class="van-n">'+esc(v.name)+'</span>':'')+'</div>'+(manage?'<div class="trow-acts"><button class="mini mini-danger" type="button" data-act="vanrm" data-id="'+e+'">'+(S.confirmVan===v.__id?'Tap again to remove':'Remove')+'</button></div>':'')+'</div>';}).join('')+'</div>':'<p class="muted">No vehicles yet.</p>';
   h+='</section>';
+  if(manage) h+=addrSetHtml();
   h+='<section class="howto"><h2 class="list-t">Getting everyone on the app</h2><ol>'+
     '<li>Tap Share on this app and invite everyone by email as an <b>Editor</b>. Editor is needed for photos. Don’t turn on a public link.</li>'+
     '<li>The first time each person logs on, they tap their name once so the app knows who they are. After that they see the jobs they’re on and their days off. Their name shows <b>Logged on</b> here once they have.</li>'+
@@ -2392,7 +2512,7 @@ function render(force){
   if(!force&&isTyping()){S.deferred=true;return;}
   S.deferred=false;
   if(S.phase==='nodb'||(S.phase==='ready'&&S.got.jobs)) hideSplash();
-  $bar.innerHTML=barHtml()+(S.offline?'<div class="bar-in bar-off"><div class="offline" role="status">No signal. Keep the app open and your ticks will save when the signal’s back.</div></div>':'');
+  $bar.innerHTML=barHtml()+(S.updateReady?'<div class="bar-in bar-upd"><button type="button" class="upd" data-act="doupdate">New version ready. Tap to update.</button></div>':'')+(S.offline?'<div class="bar-in bar-off"><div class="offline" role="status">No signal. Keep the app open and your ticks will save when the signal’s back.</div></div>':'');
   var items=navItems(), v=curView(), showNav=items.length>1&&v!=='job'&&v!=='form';
   $nav.hidden=!showNav;
   document.body.classList.toggle('has-nav',showNav);
@@ -2565,11 +2685,17 @@ var ACT={
   mode:function(b){S.mode=b.dataset.v;render(true);},
   save:function(){saveForm();},
   pcfind:function(){pcFind();},
-  pcpick:function(b){var f=S.form,r=f&&f.pcRes;if(!r)return;var a=r.list[+b.dataset.i];if(!a)return;f.address=a.full;if(!String(f.site||'').trim())f.site=a.label;r.collapsed=true;f.geo=a.lat!=null?{lat:a.lat,lon:a.lon,addr:a.full}:null;propCheck(f);},
+  pcpick:function(b){var f=S.form,r=f&&f.pcRes;if(!r)return;var a=r.list[+b.dataset.i];if(!a)return;f.address=a.full;if(!String(f.site||'').trim())f.site=a.label;r.collapsed=true;f.geo=a.lat!=null?{lat:a.lat,lon:a.lon,addr:a.full,approx:a.exact===false}:null;propCheck(f);},
   pcstreet:function(b){var f=S.form,r=f&&f.pcRes;if(!r)return;var x=r.streets[+b.dataset.i];if(!x)return;f.address=' '+x+', '+(r.town?r.town+' ':'')+r.pc;r.collapsed=true;f.geo=null;f.survey=null;render(true);var el=document.getElementById('f-address');if(el){el.focus();try{el.setSelectionRange(0,0);}catch(_){}}toast('Now put the house number in at the start');},
   pcagain:function(){var r=S.form&&S.form.pcRes;if(r){r.collapsed=false;render(true);}},
-  sugpick:function(b){var f=S.form,a=SUG.items[+b.dataset.i];if(!f||!a)return;var num=a.exact?null:(String(SUG.q||'').match(/^\s*(\d+[a-zA-Z]?)\s+\S/)||[])[1],full=(num?num+' ':'')+a.full,label=(num?num+' ':'')+a.label;f.address=full;if(!String(f.site||'').trim())f.site=label;SUG.items=[];SUG.seq++;f.geo=a.lat!=null?{lat:a.lat,lon:a.lon,addr:full,approx:!a.exact}:null;propCheck(f);},
+  sugpick:function(b){var f=S.form,a=SUG.items[+b.dataset.i];if(!f||!a)return;
+    if(a.paf){SUG.items=[];SUG.seq++;paintSugg();toast('Getting the address…');probe(ipcUrl('autocomplete/addresses/'+encodeURIComponent(a.id)+'/gbr'),10000).then(function(p){if(S.form!==f)return;var r=p.ok&&p.js&&p.js.result;if(!r||!r.line_1){toast(ipcProblem(p)||'Couldn’t get that address. Type it in.');return;}var it=pafItem(r);f.address=it.full;if(!String(f.site||'').trim())f.site=it.label;f.geo=it.lat!=null?{lat:it.lat,lon:it.lon,addr:it.full,approx:true}:null;propCheck(f);});return;}
+    var num=a.exact?null:(String(SUG.q||'').match(/^\s*(\d+[a-zA-Z]?)\s+\S/)||[])[1],full=(num?num+' ':'')+a.full,label=(num?num+' ':'')+a.label;f.address=full;if(!String(f.site||'').trim())f.site=label;SUG.items=[];SUG.seq++;f.geo=a.lat!=null?{lat:a.lat,lon:a.lon,addr:full,approx:!a.exact}:null;propCheck(f);},
   propcheck:function(){if(S.form)propCheck(S.form);},
+  addrtest:function(){addrTest();},
+  addrkeyclear:function(){if(!twoTap('confirmKey','x'))return;try{localStorage.removeItem('fcs-addr-key');}catch(_){ }SUG.pafOff=false;toast('Key removed');render(true);},
+  checkupdate:function(){checkUpdate(true);},
+  doupdate:function(){doUpdate();},
   pickzoom:function(){var sv=S.form&&S.form.survey;if(sv&&sv.status==='pick'){sv.wide=!sv.wide;render(true);}},
   proprepick:function(){var f=S.form;if(!f)return;if(PICK&&PICK.form===f&&PICK.sv&&PICK.sv.status==='pick'&&PICK.sv.addr===String(f.address||'').trim()){f.survey=PICK.sv;render(true);}else propCheck(f,true);},
   prophouse:function(b){var f=S.form,sv=f&&f.survey;if(!sv||sv.status!=='pick'||!PICK||PICK.form!==f)return;var it=sv.items[+b.dataset.i];if(!it)return;
@@ -2779,6 +2905,7 @@ document.addEventListener('mousedown',function(e){if(e.target&&e.target.closest&
 document.addEventListener('submit',function(e){
   if(e.target&&e.target.dataset&&e.target.dataset.form==='addcrew'){e.preventDefault();addCrew();}
   if(e.target&&e.target.dataset&&e.target.dataset.form==='addvan'){e.preventDefault();addVan();}
+  if(e.target&&e.target.dataset&&e.target.dataset.form==='addrkey'){e.preventDefault();var ki=document.getElementById('ak-in'),kv=(ki?ki.value:'').trim();if(!/^ak_[A-Za-z0-9_]{6,}$/.test(kv)){toast('That doesn’t look like a key. It starts ak_');return;}try{localStorage.setItem('fcs-addr-key',kv);}catch(_){toast('Couldn’t save it on this phone');return;}SUG.pafOff=false;SUG.off=false;toast('Key saved. Tap Test it.');render(true);}
 });
 $main.addEventListener('input',function(e){
   var t=e.target, d=t.dataset||{};
@@ -2838,7 +2965,7 @@ $main.addEventListener('keydown',function(e){
 async function boot(){
   render(true);
   var cl=window.claude;
-  if(!cl||typeof cl.use!=='function'){S.phase='ready';S.standalone=true;S.got.jobs=S.got.people=S.got.crew=true;enterDemo(false);render(true);return;}
+  if(!cl||typeof cl.use!=='function'){S.phase='ready';S.standalone=true;S.got.jobs=S.got.people=S.got.crew=true;enterDemo(false);render(true);checkUpdate(false);return;}
   var db=null,user=null,assets=null;
   try{var r=await Promise.all([cl.use('db'),cl.use('user'),cl.use('assets')]);db=r[0];user=r[1];assets=r[2];}catch(_){}
   S.user=user; S.assets=assets||null;
