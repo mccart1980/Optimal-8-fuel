@@ -1,7 +1,7 @@
 {
   "name": "FCS Load Check",
   "short_name": "Load Check",
-  "description": "Load sheets, crews, vehicles and holidays for First Choice Scaffolding.",
+  "description": "Load sheets, crews, lorries, job photos and holidays for First Choice Scaffolding.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
