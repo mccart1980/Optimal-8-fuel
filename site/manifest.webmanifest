@@ -1,13 +1,13 @@
 {
   "name": "FCS Load Check",
   "short_name": "Load Check",
-  "description": "First Choice Scaffolding load check: the boss sends the load and crew, the yard and charge hand tick it off.",
+  "description": "Load sheets, crews, vehicles and holidays for First Choice Scaffolding.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#393564",
-  "theme_color": "#393564",
+  "theme_color": "#2E2A5A",
   "icons": [
     {
       "src": "icons/icon-192.png",
