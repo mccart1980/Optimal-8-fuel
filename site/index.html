@@ -24,7 +24,7 @@
   --bar:#2E2A5A; --brand:#2E2A5A; --brand2:#413C7A; --on-brand:#FFFFFF; --brand-soft:#ECEBF7; --brand-ink:#2E2A5A;
   --go:#2E8B2B; --on-go:#FFFFFF; --go-soft:#E5F4E3; --go-ink:#1F6B1D;
   --warn:#9A5B00; --warn-soft:#FFF2D9; --bad:#C0271F; --bad-soft:#FDE9E7; --on-bad:#FFFFFF;
-  --plate:#F7C800; --plate-ink:#111111; --av:#FFFFFF; --av-ink:#2E2A5A; --glass:rgba(255,255,255,.14);
+  --plate:#F7C800; --plate-ink:#111111; --c-job:#2E2A5A; --c-insp:#0F766E; --c-off:#A21CAF; --c-wk:#C2410C; --on-mk:#FFFFFF; --av:#FFFFFF; --av-ink:#2E2A5A; --glass:rgba(255,255,255,.14);
   --photo-ink:#FFFFFF; --photo-mark:#7BFF6A; --photo-fill:rgba(123,255,106,.2); --photo-shade:rgba(12,12,28,.76); --photo-ground:#1B2230;
   --lb:#0A0A14; --scrim:rgba(10,10,25,.5); --toast:#17172B; --on-toast:#FFFFFF; --splash:#393564; --splash-ink:#8FD483; --lift:rgba(0,0,0,.14);
   --shadow:0 1px 2px rgba(23,23,43,.06),0 4px 14px rgba(23,23,43,.06);
@@ -37,7 +37,7 @@
   --bar:#1F1D40; --brand:#514BB0; --brand2:#6F69D0; --on-brand:#FFFFFF; --brand-soft:#252447; --brand-ink:#CFCBF7;
   --go:#4FB847; --on-go:#0B1F0A; --go-soft:#16301A; --go-ink:#8BDD84;
   --warn:#F0BE55; --warn-soft:#33290F; --bad:#FF7B70; --bad-soft:#3A1917; --on-bad:#1F0907;
-  --toast:#F2F2F7; --on-toast:#17172B; --lift:rgba(0,0,0,.5);
+  --toast:#F2F2F7; --on-toast:#17172B; --lift:rgba(0,0,0,.5); --c-job:#9D97FA; --c-insp:#2DD4BF; --c-off:#E879F9; --c-wk:#FB923C; --on-mk:#12121F;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
   color-scheme:dark;
 }}
@@ -46,7 +46,7 @@
   --bar:#1F1D40; --brand:#514BB0; --brand2:#6F69D0; --on-brand:#FFFFFF; --brand-soft:#252447; --brand-ink:#CFCBF7;
   --go:#4FB847; --on-go:#0B1F0A; --go-soft:#16301A; --go-ink:#8BDD84;
   --warn:#F0BE55; --warn-soft:#33290F; --bad:#FF7B70; --bad-soft:#3A1917; --on-bad:#1F0907;
-  --toast:#F2F2F7; --on-toast:#17172B; --lift:rgba(0,0,0,.5);
+  --toast:#F2F2F7; --on-toast:#17172B; --lift:rgba(0,0,0,.5); --c-job:#9D97FA; --c-insp:#2DD4BF; --c-off:#E879F9; --c-wk:#FB923C; --on-mk:#12121F;
   --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
   color-scheme:dark;
 }
@@ -75,6 +75,15 @@ h1,h2,h3,p,dl{margin:0}
 .who span{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .who.plain{background:none;padding:0}
 .av{width:30px;height:30px;border-radius:50%;background:var(--av);color:var(--av-ink);display:grid;place-items:center;font-size:.72rem;font-weight:700;flex:none;letter-spacing:.02em}
+.coach{background:var(--plate);color:var(--plate-ink)}
+.coach-in{max-width:600px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 12px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:8px}
+.coach-t{display:flex;flex-direction:column;line-height:1.3}
+.coach-t small{font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;opacity:.75}
+.coach-t b{font-size:1.04rem}
+.coach-t span{font-size:.9rem}
+.coach-b{display:flex;align-items:center;gap:14px}
+.coach .btn{background:var(--plate-ink);color:var(--plate);min-height:40px}
+.coach .link{color:var(--plate-ink)}
 .upd{appearance:none;border:0;display:block;width:100%;background:var(--go);color:var(--on-go);font-weight:700;padding:11px 16px;text-align:center}
 main{max-width:600px;margin:0 auto;padding-top:18px;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px;animation:pagein .2s ease both}
 main.has-foot{padding-bottom:calc(124px + env(safe-area-inset-bottom,0px))}
@@ -128,6 +137,8 @@ button.li{appearance:none;border-left:0;border-right:0;border-bottom:0;backgroun
 .btn[disabled]{opacity:.45;pointer-events:none}
 .btns{display:flex;gap:10px}
 .btns .btn{flex:1}
+.btns.fit{flex-wrap:wrap}
+.btns.fit .btn{flex:1 1 auto;white-space:nowrap}
 .link{appearance:none;border:0;background:none;padding:6px 0;color:var(--brand-ink);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .link.bad{color:var(--bad)}
 .acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -165,8 +176,26 @@ button.li{appearance:none;border-left:0;border-right:0;border-bottom:0;backgroun
 .need{background:var(--card);border-radius:var(--r);box-shadow:var(--shadow);padding:14px 16px;display:flex;flex-direction:column;gap:10px;border-left:4px solid var(--warn);text-align:left}
 .need.bad{border-left-color:var(--bad)}
 .need.pay{border-left-color:var(--go)}
+.need.insp{border-left-color:var(--c-insp)}
+.need.wk{border-left-color:var(--c-wk)}
+.wk-r{display:flex;align-items:center;gap:10px;justify-content:space-between}
+.wk-r .btn{flex:none}
 button.need{appearance:none;border-top:0;border-right:0;border-bottom:0;width:100%}
 .need b{font-weight:700}
+.run{display:flex;flex-direction:column;gap:8px;padding:2px 0 2px 12px;border-left:3px solid var(--brand2)}
+.run-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+.run-h b{font-weight:700}
+.run-add{margin-left:auto;padding:4px 0}
+.ty,.seq{display:inline-flex;align-items:center;height:22px;padding:0 8px;border-radius:6px;font-size:.74rem;font-weight:700;white-space:nowrap}
+.ty.erect{background:var(--go-soft);color:var(--go-ink)}
+.ty.alter{background:var(--warn-soft);color:var(--warn)}
+.ty.strike{background:var(--bad-soft);color:var(--bad)}
+.seq{background:var(--brand-soft);color:var(--brand-ink)}
+.tags{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.seq-n{margin-left:auto;display:flex;gap:6px}
+.seq-b{appearance:none;border:0;background:var(--bg);width:36px;height:36px;border-radius:10px;display:grid;place-items:center;color:var(--ink);padding:0}
+.seq-b svg{width:16px;height:16px}
+.seq-b[disabled]{opacity:.35;pointer-events:none}
 .srch{position:relative}
 .srch svg{position:absolute;left:14px;top:50%;width:20px;height:20px;margin-top:-10px;color:var(--ink3);pointer-events:none}
 .srch .in{padding-left:44px}
@@ -197,6 +226,8 @@ button.need{appearance:none;border-top:0;border-right:0;border-bottom:0;width:10
 .note b{display:block;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:var(--brand-ink);margin-bottom:3px}
 .note.know{background:var(--warn-soft)}
 .note.know b{color:var(--warn)}
+.note.bad{background:var(--bad-soft)}
+.note.bad b{color:var(--bad)}
 .size{display:flex;flex-direction:column;gap:2px;background:var(--go-soft);border-radius:12px;padding:11px 14px}
 .size b{font-weight:700;color:var(--go-ink)}
 .size span{font-size:.86rem;color:var(--ink2)}
@@ -309,8 +340,34 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .cal-nav svg{width:18px;height:18px}
 .cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
 .cal-d{font-size:.68rem;font-weight:700;color:var(--ink3);text-align:center;letter-spacing:.06em;text-transform:uppercase;padding:4px 0}
-.day{appearance:none;border:0;background:none;min-height:54px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:3px;padding:6px 0 4px;font-weight:600;font-size:.95rem;color:var(--ink);min-width:0}
+.day{appearance:none;border:0;background:none;min-height:50px;border-radius:11px;display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:2px;padding:5px 0 3px;font-weight:600;font-size:.95rem;color:var(--ink);min-width:0}
 .day.out{color:var(--ink3);opacity:.45}
+.mks{display:flex;flex-wrap:wrap;gap:3px;justify-content:center;max-width:46px}
+.mk{min-width:19px;height:17px;padding:0 5px;border-radius:9px;font-size:.66rem;font-weight:700;display:grid;place-items:center;line-height:1;color:var(--on-mk)}
+.mk.jobs{background:var(--c-job)}
+.mk.jobs.fin{background:var(--go);color:var(--on-go)}
+.mk.insp{background:var(--c-insp);border-radius:3px}
+.mk.off{background:var(--c-off)}
+.mk.wk{background:var(--c-wk);border-radius:3px}
+.mk.bad{background:var(--bad);color:var(--on-bad)}
+.mk.plan{background:none;box-shadow:inset 0 0 0 1.5px currentColor}
+.mk.insp.plan{color:var(--c-insp)}
+.mk.off.plan{color:var(--c-off)}
+.keys{display:flex;flex-wrap:wrap;gap:8px}
+.key{appearance:none;border:1.5px solid var(--line);background:var(--card);border-radius:999px;min-height:38px;padding:0 13px;font-weight:600;font-size:.88rem;display:inline-flex;align-items:center;gap:7px;color:var(--ink2)}
+.key[aria-pressed="true"]{border-color:var(--brand2);color:var(--ink);box-shadow:inset 0 0 0 1px var(--brand2)}
+.kd{width:12px;height:12px;border-radius:50%;display:inline-block;flex:none}
+.kd.jobs{background:var(--c-job);width:16px;border-radius:6px}
+.kd.insp{background:var(--c-insp);border-radius:3px}
+.kd.off{background:var(--c-off)}
+.kd.wk{background:var(--c-wk);border-radius:3px}
+.sh-g .kd{margin-right:7px;vertical-align:-1px}
+.kd.bad{background:var(--bad);border-radius:4px}
+.kd.fin{background:var(--go);width:16px;border-radius:6px}
+.kd.plan{background:none;box-shadow:inset 0 0 0 1.5px var(--ink3)}
+.cal-k{display:flex;flex-wrap:wrap;gap:6px 14px;padding-top:10px;border-top:1px solid var(--line);font-size:.8rem;color:var(--ink2)}
+.cal-k span{display:inline-flex;align-items:center;gap:6px}
+.sh-g + .li{border-top:0}
 .day.today{background:var(--brand-soft);color:var(--brand-ink)}
 .day[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--brand2)}
 .day .dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:100%}
@@ -328,6 +385,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .scrim{position:fixed;left:0;top:0;right:0;bottom:0;z-index:40;background:var(--scrim);display:flex;align-items:flex-end;justify-content:center;animation:fadein .18s ease both}
 .sheet{background:var(--card);width:100%;max-width:600px;border-radius:20px 20px 0 0;padding-top:10px;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));max-height:88vh;overflow-y:auto;display:flex;flex-direction:column;gap:14px;box-shadow:0 -8px 30px var(--lift);animation:sheetin .22s ease both}
 .sheet::before{content:"";width:40px;height:4px;border-radius:2px;background:var(--line);margin:0 auto 4px;flex:none}
+.sheet > .btn.go:last-child{position:sticky;bottom:0;flex:none;box-shadow:0 0 0 12px var(--card),0 44px 0 12px var(--card)}   /* the main button of a long sheet stays in view */
 .sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px}
 .sheet-h b{font-size:1.15rem;font-weight:700}
 .pick{appearance:none;border:0;background:none;width:100%;text-align:left;display:flex;align-items:center;gap:12px;padding:10px 4px;min-height:56px;border-top:1px solid var(--line)}
@@ -339,6 +397,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .pick-t small{color:var(--ink2);font-size:.84rem}
 #toast{position:fixed;left:50%;top:calc(70px + env(safe-area-inset-top,0px));transform:translate(-50%,-12px);z-index:80;background:var(--toast);color:var(--on-toast);padding:11px 16px;border-radius:12px;font-weight:600;font-size:.94rem;max-width:calc(100vw - 32px);opacity:0;pointer-events:none;transition:opacity .18s ease,transform .18s ease;box-shadow:0 8px 24px var(--lift);text-align:center}
 #toast.on{opacity:1;transform:translate(-50%,0)}
+#toast.low{top:auto;bottom:calc(112px + env(safe-area-inset-bottom,0px))}
 #splash{position:fixed;left:0;top:0;right:0;bottom:0;z-index:100;background:var(--splash);display:grid;place-items:center;transition:opacity .35s ease,visibility 0s linear .35s}
 #splash.out{opacity:0;visibility:hidden;pointer-events:none}
 #splash img{width:150px;height:150px;display:block}
@@ -361,9 +420,9 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'454cf4ec',at:'20 Nov, 21:25'};
+var FCS_BUILD={v:'c11b22b9',at:'21 Nov, 06:19'};
 var ADDR_KEY_BUILT='';
-var COMPANY='First Choice Scaffolding', APP='Load Check';
+var COMPANY='First Choice Scaffolding', APP='Load Check', VER='4';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
 var $app=document.getElementById('app'), $toast=document.getElementById('toast');
 
@@ -381,10 +440,11 @@ var LOADS=[['full','Full'],['three','¾'],['half','Half'],['quarter','¼'],['emp
 var LOADNAME={full:'Full load',three:'Three-quarter load',half:'Half load',quarter:'Quarter load',empty:'Empty'};
 var ALLSTD=[]; STD.forEach(function(g){g[1].forEach(function(x){ALLSTD.push(x[0]);});});
 var TYPES=['Detached','Semi','Terraced','Bungalow','Flats','Other'], STOREYS=['1','2','3','4+'];
+var KINDS=[['erect','Erect'],['alter','Alter'],['strike','Strike']], KINDNAME={erect:'Erect',alter:'Alter',strike:'Strike'};
 
 var S={phase:'loading',standalone:false,db:null,assets:null,me:null,owner:false,viewAs:null,tab:'jobs',page:null,form:null,sheet:null,lb:null,
-  jobs:new Map(),crew:new Map(),people:new Map(),vans:new Map(),off:new Map(),ychk:new Map(),cchk:new Map(),extras:new Map(),photos:new Map(),places:new Map(),bosses:[],got:{},
-  pend:{},month:null,day:null,calMode:'jobs',confirm:null,deferred:false,updateReady:null,addrTest:null,earlier:false,q:'',self:null,open:{},jz:null,satFail:false,nav:true,busy:''};
+  jobs:new Map(),crew:new Map(),people:new Map(),vans:new Map(),off:new Map(),ychk:new Map(),cchk:new Map(),extras:new Map(),photos:new Map(),places:new Map(),scafs:new Map(),insps:new Map(),wkdays:new Map(),wknames:new Map(),bosses:[],got:{},
+  world:null,demo:null,net:false,pend:{},month:null,day:null,calMode:'all',confirm:null,deferred:false,updateReady:null,addrTest:null,earlier:false,q:'',self:null,open:{},jz:null,satFail:false,nav:true,busy:''};
 
 /* ---------- small helpers ---------- */
 function esc(v){return String(v==null?'':v).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];});}
@@ -393,6 +453,8 @@ function dstr(d){return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDat
 function today(o){var d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()+(o||0));return dstr(d);}
 function pdate(s){var p=String(s).split('-');return new Date(+p[0],+p[1]-1,+p[2],12);}
 function daysTo(s){return Math.round((pdate(s)-pdate(today(0)))/864e5);}
+function addDays(s,n){var d=pdate(s);d.setDate(d.getDate()+n);return dstr(d);}
+function tsDay(t){return dstr(new Date(t));}
 var DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'], MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], MONL=['January','February','March','April','May','June','July','August','September','October','November','December'];
 function fshort(s){var d=pdate(s);return DOW[d.getDay()]+' '+d.getDate()+' '+MON[d.getMonth()];}
 function fday(s){var n=daysTo(s);return n===0?'Today':(n===1?'Tomorrow':(n===-1?'Yesterday':fshort(s)));}
@@ -405,7 +467,7 @@ function r1(n){return Math.round(n*10)/10;}
 function fm(n){return String(r1(n))+' m';}
 function fft(n){return Math.round(n*3.28084)+' ft';}
 function uid(p){return p+Date.now().toString(36)+Math.random().toString(36).slice(2,7);}
-function toast(m){$toast.textContent=m;$toast.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){$toast.classList.remove('on');},2800);}
+function toast(m){$toast.textContent=m;$toast.classList.toggle('low',!!S.demo);$toast.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(function(){$toast.classList.remove('on');},2800);}
 function two(key){if(S.confirm===key){S.confirm=null;return true;}S.confirm=key;render(true);clearTimeout(two.t);two.t=setTimeout(function(){if(S.confirm===key){S.confirm=null;render();}},4000);return false;}
 function fail(e){toast((e&&e.code==='not_writer')||(e&&e.code==='not_granted')?'You can look but not change things here.':'That didn’t save. Check your signal and try again.');}
 async function probe(url,ms){
@@ -434,7 +496,9 @@ var IC={
   cam:SVG+'1.9"><path d="M4 8h3l1.5-2.500h7L17 8h3a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><circle cx="12" cy="13" r="3.4"/></svg>',
   truck:SVG+'1.9"><path d="M2.5 6.5h11v9.500h-11zM13.5 10h4l3 3v3h-7"/><circle cx="7" cy="17.5" r="1.8"/><circle cx="17" cy="17.5" r="1.8"/></svg>',
   flag:SVG+'2"><path d="M5 21V4M5 4.5h12l-2.500 4 2.500 4H5"/></svg>',
-  search:SVG+'2"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>'
+  search:SVG+'2"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
+  play:SVG+'2"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5.500 3.500-5.500 3.500z"/></svg>',
+  shield:SVG+'1.9"><path d="M12 3l7 3v5.500c0 4.300-3 7.600-7 9.500-4-1.900-7-5.200-7-9.500V6l7-3z"/><path d="M9 12l2.200 2.200L15.200 10"/></svg>'
 };
 
 /* ---------- people ---------- */
@@ -442,11 +506,12 @@ function crewList(){return Array.from(S.crew.values()).filter(function(c){return
 function nameOf(id){var c=S.crew.get(id);return c&&c.name?c.name:'Someone';}
 function firstOf(id){return nameOf(id).trim().split(/\s+/)[0];}
 function initials(n){var p=String(n||'').trim().split(/\s+/);return ((p[0]||'?')[0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase();}
+function local(){return S.standalone||!!S.demo;}   // data kept on this phone, where you can be anyone
 function myCrew(){
-  if(S.standalone){return S.viewAs&&S.crew.has(S.viewAs)&&!S.crew.get(S.viewAs).removed?S.viewAs:null;}
+  if(local()){return S.viewAs&&S.crew.has(S.viewAs)&&!S.crew.get(S.viewAs).removed?S.viewAs:null;}
   var p=S.people.get(S.me), c=p&&p.crewId; return c&&S.crew.has(c)&&!S.crew.get(c).removed?c:null;
 }
-function isBoss(){var c=myCrew();if(c&&S.bosses.indexOf(c)>=0)return true;return !S.standalone&&S.owner&&!S.bosses.some(function(b){return S.crew.has(b)&&!S.crew.get(b).removed;});}
+function isBoss(){var c=myCrew();if(c&&S.bosses.indexOf(c)>=0)return true;return !local()&&S.owner&&!S.bosses.some(function(b){return S.crew.has(b)&&!S.crew.get(b).removed;});}
 function isYard(){var c=myCrew(),o=c&&S.crew.get(c);return !!(o&&o.yard);}
 function bossFirst(){for(var i=0;i<S.bosses.length;i++){if(S.crew.has(S.bosses[i])&&!S.crew.get(S.bosses[i]).removed)return firstOf(S.bosses[i]);}return 'the boss';}
 function roleOf(id){var c=S.crew.get(id)||{};return S.bosses.indexOf(id)>=0?'Boss':(c.yard?'Yard':'Staff');}
@@ -497,7 +562,12 @@ function flushTicks(stage,id){
 }
 function jobsOn(person,date,except){return jobList().filter(function(j){return j.id!==except&&j.date===date&&(j.crew||[]).indexOf(person)>=0;});}
 function vanOn(reg,date,except){return jobList().filter(function(j){return j.id!==except&&j.date===date&&String(j.vehicle||'').toUpperCase()===String(reg).toUpperCase();});}
+function runKey(j){return j.date+'|'+String(j.vehicle||'').toUpperCase()+'|'+(j.ch||'');}
+function bySeq(a,b){return (a.seq||0)-(b.seq||0)||(a.createdAt||0)-(b.createdAt||0);}
+function runOf(j){var k=runKey(j);return jobList().filter(function(o){return runKey(o)===k;}).sort(bySeq);}   // the jobs one gang has on one lorry that day, in order
+function runPos(j){var r=runOf(j),i=0;r.forEach(function(o,k){if(o.id===j.id)i=k;});return {i:i,n:r.length,list:r};}
 function extrasOf(id){return Array.from(S.extras.values()).filter(function(x){return x.job===id&&x.text;}).sort(function(a,b){return (a.at||0)-(b.at||0);});}
+function photosBy(key,val){return Array.from(S.photos.values()).filter(function(p){return p[key]===val;}).sort(function(a,b){return (a.at||0)-(b.at||0);});}
 function photosOf(id,kind,extra){return Array.from(S.photos.values()).filter(function(p){return p.job===id&&(!kind||p.kind===kind)&&(extra===undefined||p.extra===extra);}).sort(function(a,b){return (a.at||0)-(b.at||0);});}
 function toCharge(){var ok={};jobList().forEach(function(j){ok[j.id]=1;});return Array.from(S.extras.values()).filter(function(x){return x.text&&ok[x.job]&&!(x.charged&&x.charged.at);}).sort(function(a,b){return (b.at||0)-(a.at||0);});}
 function placeKey(a){return String(a||'').toLowerCase().replace(/[^a-z0-9]+/g,'').slice(0,90);}
@@ -585,9 +655,8 @@ function toBlob(c,q){return new Promise(function(res){try{c.toBlob(function(b){r
 async function addPhoto(file,meta){
   var L=await loadImg(file), id=uid('p'), doc=Object.assign({by:myCrew()||'',at:Date.now()},meta);
   try{
-    if(S.standalone){
-      var full=drawTo(L.im,1600).toDataURL('image/jpeg',0.8), th=drawTo(L.im,420).toDataURL('image/jpeg',0.72);
-      PH.thumb.set(id,th); await phPut('t:'+id,th); await phPut('f:'+id,full);
+    if(local()){
+      await keepPhoto(id,drawTo(L.im,420).toDataURL('image/jpeg',0.72),drawTo(L.im,1600).toDataURL('image/jpeg',0.8));
     }else{
       if(!S.assets) throw {code:'not_granted'};
       var blob=await toBlob(drawTo(L.im,1600),0.8); if(!blob) throw new Error('no picture');
@@ -597,33 +666,109 @@ async function addPhoto(file,meta){
   }finally{try{URL.revokeObjectURL(L.url);}catch(_){ }}
   return id;
 }
+function keepPhoto(id,th,full){ // demo photos live in memory only and go when the demo ends
+  PH.thumb.set(id,th);
+  if(S.demo){PH.mem.set('t:'+id,th);PH.mem.set('f:'+id,full);S.demo.photos.push(id);return Promise.resolve();}
+  return phPut('t:'+id,th).then(function(){return phPut('f:'+id,full);});
+}
 async function delPhoto(p){
   await S.db.doc('photos/'+p.id).delete();
-  if(S.standalone){PH.thumb.delete(p.id);phDel('t:'+p.id);phDel('f:'+p.id);}
+  if(local()){PH.thumb.delete(p.id);if(S.demo){PH.mem.delete('t:'+p.id);PH.mem.delete('f:'+p.id);}else{phDel('t:'+p.id);phDel('f:'+p.id);}}
   else if(S.assets&&p.asset){try{await S.assets.delete(p.asset);}catch(_){ }}
 }
-function photoSrc(p){return S.standalone?(PH.thumb.get(p.id)||''):(p.url||(p.asset?'/_blob/'+p.asset:''));}
+function photoSrc(p){return local()?(PH.thumb.get(p.id)||''):(p.url||(p.asset?'/_blob/'+p.asset:''));}
 function photoImg(p){var s=photoSrc(p);return '<img alt="" loading="lazy" data-ph="'+esc(p.id)+'"'+(s?' src="'+esc(s)+'"':'')+'>';}
 function fillThumbs(){
-  if(!S.standalone) return;
+  if(!local()) return;
   Array.prototype.forEach.call($app.querySelectorAll('img[data-ph]:not([src])'),function(im){
     var id=im.getAttribute('data-ph'); if(PH.wait[id]||PH.none[id]) return; PH.wait[id]=1;
     phGet('t:'+id).then(function(v){delete PH.wait[id];if(!v){PH.none[id]=1;return;}PH.thumb.set(id,v);Array.prototype.forEach.call($app.querySelectorAll('img[data-ph="'+id+'"]'),function(x){x.src=v;});});
   });
 }
 
+/* ---------- standing scaffolds and their inspections ---------- */
+function scafList(){return Array.from(S.scafs.values()).filter(function(s){return s.address&&s.upAt&&!s.downAt;}).sort(function(a,b){var x=dueOf(a),y=dueOf(b);return x<y?-1:(x>y?1:0);});}
+function inspOf(pk){return Array.from(S.insps.values()).filter(function(i){return i.pk===pk;}).sort(function(a,b){return (b.at||0)-(a.at||0);});}
+function lastInsp(s){var l=inspOf(s.id).filter(function(i){return i.at>=s.upAt;});return l[0]||null;}
+function isUnsafe(s){var l=lastInsp(s);return !!l&&l.result==='bad';}
+function dueOf(s){ // the day its next inspection is due: before first use, then every 7 days, again after an alteration, and straight away if the last one found it not safe
+  var l=lastInsp(s), due=l?(l.result==='bad'?tsDay(l.at):addDays(tsDay(l.at),7)):(s.paperAt?addDays(s.paperAt,7):tsDay(s.upAt));   // paperAt: last inspected on paper, before it was put in the app
+  if(s.redoAt&&(!l||l.at<s.redoAt)){var r=tsDay(s.redoAt);if(r<due)due=r;}
+  return due;
+}
+function canInspect(s){var me=myCrew();return isBoss()||(!!me&&me===s.inspector);}
+function myScafs(){var me=myCrew(),boss=isBoss();return scafList().filter(function(s){return s.inspect!==false&&(boss||(!!me&&s.inspector===me));});}
+function inspDue(){var t0=today(0);return myScafs().filter(function(s){return dueOf(s)<=t0;});}
+function inspDays(s,to){var t0=today(0),due=dueOf(s),first=due<t0?t0:due,out=[{d:first,late:due<t0?due:''}],d=addDays(first,7);while(d<=to&&out.length<10){out.push({d:d,plan:true});d=addDays(d,7);}return out;}
+function unsafeScafs(){return myScafs().filter(isUnsafe);}
+function dueWords(s){if(isUnsafe(s))return 'Not safe to use';var n=daysTo(dueOf(s));return n<0?'Overdue by '+plural(-n,'day'):(n===0?'Due today':(n===1?'Due tomorrow':'Due '+fshort(dueOf(s))));}
+async function scafOnFinish(j){ // an erect puts a scaffold on the register, an alter makes it due again, a strike takes it off
+  var pk=j.pk||placeKey(j.address), k=j.kind||'', cur=S.scafs.get(pk), now=Date.now(); if(!pk||!k) return;
+  try{
+    if(k==='strike'){if(cur&&!cur.downAt)await S.db.doc('scaffolds/'+pk).update({downAt:now,downJob:j.id});return;}
+    if(cur&&!cur.downAt){await S.db.doc('scaffolds/'+pk).update({redoAt:now});return;}
+    await S.db.doc('scaffolds/'+pk).set({pk:pk,address:j.address,lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,upAt:now,upJob:j.id,inspector:j.ch||'',inspect:true,redoAt:0,downAt:null,downJob:'',customer:(cur&&cur.customer)||'',desc:(cur&&cur.desc)||''});
+  }catch(_){ }
+}
+async function scafOnUndo(j){
+  var pk=j.pk||placeKey(j.address), cur=S.scafs.get(pk); if(!cur) return;
+  try{
+    if(j.kind==='strike'&&cur.downJob===j.id) await S.db.doc('scaffolds/'+pk).update({downAt:null,downJob:''});
+    else if(j.kind!=='strike'&&cur.upJob===j.id&&!lastInsp(cur)) await S.db.doc('scaffolds/'+pk).delete();
+    else if(j.kind==='alter'&&cur.upJob!==j.id&&cur.redoAt) await S.db.doc('scaffolds/'+pk).update({redoAt:0});
+  }catch(_){ }
+}
+
+/* ---------- weekend work: the boss asks, staff put their names down, the boss picks ---------- */
+function isWkend(ds){var g=pdate(ds).getDay();return g===0||g===6;}
+function wkDay(ds){var w=S.wkdays.get(ds);return w&&!w.closed?w:null;}
+function wkNames(ds){return Array.from(S.wknames.values()).filter(function(n){return n.date===ds&&n.person&&S.crew.has(n.person)&&!S.crew.get(n.person).removed;}).sort(function(a,b){return (a.at||0)-(b.at||0);});}
+function wkMine(ds){var c=myCrew();return c?(S.wknames.get(ds+'_'+c)||null):null;}
+function wkPicked(ds,id){var n=S.wknames.get(ds+'_'+id);return !!(n&&n.picked);}
+function wkOpenDays(){var t0=today(0);return Array.from(S.wkdays.values()).filter(function(w){return w.date&&w.date>=t0&&!w.closed;}).sort(function(a,b){return a.date<b.date?-1:1;});}
+function wkOffDays(){var t0=today(0);return Array.from(S.wkdays.values()).filter(function(w){return w.date&&w.date>=t0&&w.closed&&wkMine(w.date);}).sort(function(a,b){return a.date<b.date?-1:1;});}   // called off after I put my name down
+function wkHidden(){try{return JSON.parse(localStorage.getItem('fcs-wk-hide')||'[]');}catch(_){return [];}}
+
+/* ---------- the demo: a throwaway copy of the staff and lorries, with no jobs ---------- */
+function demoSeed(){
+  var crew={}, vans={}, bosses=S.bosses.filter(function(b){return S.crew.has(b)&&!S.crew.get(b).removed;}), names=['Charge hand','Labourer'], n=0;
+  crewList().forEach(function(c){crew[c.id]={name:c.name,yard:!!c.yard};});
+  fleet().forEach(function(v){vans[v.id]={reg:v.reg,name:v.name||''};});
+  if(!bosses.length){crew.d_boss={name:'Gerry Fuller'};bosses=['d_boss'];}
+  if(!Object.keys(crew).some(function(k){return crew[k].yard;})) crew.d_yard={name:'Yard',yard:true};
+  while(Object.keys(crew).filter(function(k){return !crew[k].yard&&bosses.indexOf(k)<0;}).length<2){crew['d_s'+n]={name:names[n]||('Scaffolder '+(n+1))};n++;}
+  if(!Object.keys(vans).length) vans.d_v={reg:'LORRY 1'};
+  return {crew:crew,settings:{roles:{bosses:bosses}},vehicles:vans,jobs:{},people:{},daysoff:{},yardchecks:{},checks:{},extras:{},photos:{},places:{},scaffolds:{},inspections:{},wkdays:{},wknames:{}};
+}
+function demoPicture(){
+  var c=document.createElement('canvas'); c.width=800; c.height=600; var x=c.getContext('2d'), g=x.createLinearGradient(0,0,0,600), i;
+  g.addColorStop(0,'#9cc7ee'); g.addColorStop(1,'#dcebf7'); x.fillStyle=g; x.fillRect(0,0,800,600);
+  x.fillStyle='#7c8a78'; x.fillRect(0,470,800,130); x.fillStyle='#a86a50'; x.fillRect(220,190,360,280);
+  x.fillStyle='#5f4b44'; x.beginPath(); x.moveTo(190,195); x.lineTo(400,80); x.lineTo(610,195); x.fill();
+  x.fillStyle='#d9e6ee'; [[270,240],[450,240],[270,360],[450,360]].forEach(function(w){x.fillRect(w[0],w[1],80,70);});
+  x.strokeStyle='#b4b9c1'; x.lineWidth=7; for(i=0;i<6;i++){x.beginPath();x.moveTo(170+i*92,470);x.lineTo(170+i*92,150);x.stroke();}
+  [420,310,200].forEach(function(y){x.beginPath();x.moveTo(170,y);x.lineTo(630,y);x.stroke();x.fillStyle='#d6b262';x.fillRect(170,y+5,460,13);});
+  x.fillStyle='rgba(20,20,40,.78)'; x.fillRect(0,0,800,56); x.fillStyle='#fff'; x.font='bold 26px sans-serif'; x.fillText('Demo photo',20,37);
+  var t=document.createElement('canvas'); t.width=420; t.height=315; t.getContext('2d').drawImage(c,0,0,420,315);
+  return {full:c.toDataURL('image/jpeg',0.8),th:t.toDataURL('image/jpeg',0.72)};
+}
+
 /* ---------- storage: the shared one inside Claude, or one kept on this phone ---------- */
-var KEY={jobs:'jobs',crew:'crew',people:'people',vehicles:'vans',daysoff:'off',yardchecks:'ychk',checks:'cchk',extras:'extras',photos:'photos',places:'places'};
-function subscribe(db){
+var KEY={jobs:'jobs',crew:'crew',people:'people',vehicles:'vans',daysoff:'off',yardchecks:'ychk',checks:'cchk',extras:'extras',photos:'photos',places:'places',scaffolds:'scafs',inspections:'insps',wkdays:'wkdays',wknames:'wknames'};
+// A "world" is one store and everything read from it. The real one and the demo one never mix.
+function attach(db){
+  var w={db:db,maps:{},got:{},bosses:[]};
   Object.keys(KEY).concat(['settings']).forEach(function(c){
     db.collection(c).onSnapshot(function(snap){
       var m=new Map(); snap.docs.forEach(function(d){m.set(d.id,Object.assign({},d.data(),{id:d.id}));});
-      if(c==='settings'){var r=m.get('roles');S.bosses=(r&&r.bosses)||[];} else S[KEY[c]]=m;
-      S.got[c]=true; render();
+      if(c==='settings'){var r=m.get('roles');w.bosses=(r&&r.bosses)||[];} else w.maps[KEY[c]]=m;
+      w.got[c]=true; if(S.world===w){useWorld(w);render();}
     },function(){});
   });
+  return w;
 }
-function LocalDb(seed,changed){
+function useWorld(w){S.world=w;S.db=w.db;S.got=w.got;S.bosses=w.bosses;Object.keys(KEY).forEach(function(c){S[KEY[c]]=w.maps[KEY[c]]||new Map();});}
+function LocalDb(seed,changed,sync){
   var data=JSON.parse(JSON.stringify(seed)), subs=[], cp=function(v){return JSON.parse(JSON.stringify(v));};
   function snap(c){var o=data[c]||{};return {docs:Object.keys(o).map(function(id){var v=cp(o[id]);return {id:id,data:function(){return v;}};})};}
   function emit(c){subs.forEach(function(s){if(s.c===c)s.cb(snap(c));});if(changed)changed();}
@@ -633,7 +778,7 @@ function LocalDb(seed,changed){
     update:async function(v){data[c]=data[c]||{};data[c][id]=data[c][id]||{};merge(data[c][id],cp(v));emit(c);},
     delete:async function(){if(data[c])delete data[c][id];emit(c);}};}
   return {dump:function(){return cp(data);},doc:doc,collection:function(c){return {
-    onSnapshot:function(cb){subs.push({c:c,cb:cb});setTimeout(function(){cb(snap(c));},0);return function(){};},
+    onSnapshot:function(cb){subs.push({c:c,cb:cb});if(sync)cb(snap(c));else setTimeout(function(){cb(snap(c));},0);return function(){};},
     add:async function(v){var id=uid('n');await doc(c+'/'+id).set(v);return {id:id};}};}};
 }
 var LKEY='fcs2-data-1', saveLT=null;
@@ -646,15 +791,15 @@ function seed(){
     jobs:{},yardchecks:{},checks:{},people:{},extras:{},photos:{},places:{}};
 }
 function saveLocal(){
-  if(!S.standalone||!S.db||!S.db.dump) return;
-  clearTimeout(saveLT); saveLT=setTimeout(function(){try{localStorage.setItem(LKEY,JSON.stringify({data:S.db.dump(),viewAs:S.viewAs}));}catch(_){ }},200);
+  if(!S.standalone||S.demo||!S.world||!S.world.db.dump) return;
+  var db=S.world.db, who=S.viewAs;
+  clearTimeout(saveLT); saveLT=setTimeout(function(){if(S.demo)return;try{localStorage.setItem(LKEY,JSON.stringify({data:db.dump(),viewAs:who}));}catch(_){ }},200);
 }
 function startLocal(fresh){
   var saved=null; if(!fresh){try{saved=JSON.parse(localStorage.getItem(LKEY)||'null');}catch(_){ }} else {try{localStorage.removeItem(LKEY);}catch(_){ }phClear();}
-  S.standalone=true; S.pend={}; S.got={};
-  S.db=LocalDb(saved&&saved.data?saved.data:seed(),saveLocal);
+  S.standalone=true; S.net=true; S.pend={}; S.demo=null;
   S.viewAs=(saved&&saved.viewAs)||'c_gerry'; S.phase='ready';
-  subscribe(S.db);
+  useWorld(attach(LocalDb(saved&&saved.data?saved.data:seed(),saveLocal,true)));
 }
 async function boot(){
   render(true);
@@ -664,7 +809,7 @@ async function boot(){
   try{var r=await Promise.all([cl.use('db'),cl.use('user'),cl.use('assets')]);db=r[0];user=r[1];assets=r[2];}catch(_){ }
   if(user){try{var me=await user.me();S.me=me.id||null;S.owner=!!me.isOwner;}catch(_){ }}
   if(!db){S.phase='nodb';render(true);return;}
-  S.db=db; S.assets=assets; S.phase='ready'; subscribe(db); render(true);
+  S.assets=assets; S.phase='ready'; useWorld(attach(db)); render(true);
 }
 
 /* ---------- address finder ---------- */
@@ -730,7 +875,7 @@ function suggest(q){
 
 /* ---------- the property: aerial picture, the house outline and its size ---------- */
 var SAT={W:360,H:270,S:1.4,ZMIN:16,ZMAX:20}, TILES='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/';
-function canSat(){return S.standalone;}   // pictures and map lookups are blocked inside Claude's own viewer
+function canSat(){return S.net;}   // pictures and map lookups are blocked inside Claude's own viewer
 function blankProp(){return {type:'',storeys:'',note:'',ring:'',w:0,d:0,run:0,area:0,ax:0,front:false};}
 function clearSize(p){p.ring='';p.w=0;p.d=0;p.run=0;p.area=0;p.ax=0;p.front=false;}
 function sizeText(p){return p.front?'About '+fm(p.w)+' wide × '+fm(p.d)+' deep':'About '+fm(p.w)+' × '+fm(p.d);}
@@ -834,16 +979,16 @@ function propHtml(f){
 function tabName(){return isBoss()?'Jobs':(isYard()?'Loads':'My jobs');}
 function jobsBadge(){
   var t0=today(0), t1=today(1);
-  if(isBoss()) return jobList().filter(function(j){return j.date>=t0&&!(j.left&&j.left.at)&&missingOf(j).length;}).length+toCharge().length;
+  if(isBoss()) return jobList().filter(function(j){return j.date>=t0&&!(j.left&&j.left.at)&&missingOf(j).length;}).length+toCharge().length+inspDue().length;
   if(isYard()) return jobList().filter(function(j){return j.date>=t0&&j.date<=t1&&statusOf(j)==='toload';}).length;
-  var c=myCrew(); return jobList().filter(function(j){return j.date>=t0&&j.date<=t1&&j.ch===c&&statusOf(j)!=='done';}).length;
+  var c=myCrew(); return jobList().filter(function(j){return j.date>=t0&&j.date<=t1&&j.ch===c&&statusOf(j)!=='done';}).length+inspDue().length;
 }
 function barHtml(){
-  var back=!!S.page, title=back?(S.page.k==='job'?'Job sheet':(S.form&&S.form.id?'Change job':'New job')):(S.tab==='jobs'?tabName():(S.tab==='cal'?'Calendar':'Set-up')), c=myCrew();
+  var back=!!S.page, pk=back&&S.page.k, title=back?(pk==='job'?'Job sheet':(pk==='scaf'?'Scaffold record':(S.form&&S.form.id?'Change job':'New job'))):(S.tab==='jobs'?tabName():(S.tab==='cal'?'Calendar':'Set-up')), c=myCrew();
   var h='<header class="bar"><div class="bar-in">'+(back?'<button class="bar-back" data-a="back" aria-label="Back">'+IC.back+'</button>':'<img class="bar-logo" src="'+LOGO+'" alt="">');
   h+='<div class="bar-t"><small>'+esc(COMPANY)+'</small><b>'+esc(title)+'</b></div>';
-  if(!back&&c) h+=S.standalone?'<button class="who" data-a="who" aria-label="Viewing as '+esc(nameOf(c))+'. Change person"><span class="av">'+esc(initials(nameOf(c)))+'</span><span>'+esc(firstOf(c))+'</span>'+IC.down+'</button>':'<div class="who plain" title="'+esc(nameOf(c))+'"><span class="av">'+esc(initials(nameOf(c)))+'</span></div>';
-  return h+'</div>'+(S.updateReady?'<button class="upd" data-a="doupdate">New version ready. Tap to update.</button>':'')+'</header>';
+  if(!back&&c) h+=S.standalone&&!S.demo?'<button class="who" data-a="who" aria-label="Viewing as '+esc(nameOf(c))+'. Change person"><span class="av">'+esc(initials(nameOf(c)))+'</span><span>'+esc(firstOf(c))+'</span>'+IC.down+'</button>':'<div class="who plain" title="'+esc(nameOf(c))+'"><span class="av">'+esc(initials(nameOf(c)))+'</span></div>';
+  return h+'</div>'+coachHtml()+(S.updateReady&&!S.demo?'<button class="upd" data-a="doupdate">New version ready. Tap to update.</button>':'')+'</header>';
 }
 function navHtml(){
   var tabs=[['jobs',tabName(),IC.jobs,jobsBadge()],['cal','Calendar',IC.cal,isBoss()?pendingOff().length:0]];
@@ -860,7 +1005,9 @@ function pillOf(j){
   return st==='checked'?'<span class="pill p-checked"><i></i>Checked</span>':(st==='loaded'?'<span class="pill p-loaded"><i></i>Loaded</span>':'<span class="pill p-toload"><i></i>To load</span>');
 }
 function crewLine(j){var ids=(j.crew||[]).slice().sort(function(a,b){return (b===j.ch)-(a===j.ch);});return ids.map(firstOf).join(', ');}
-function jobCard(j){
+function kindTag(j){return j.kind&&KINDNAME[j.kind]?'<span class="ty '+j.kind+'">'+KINDNAME[j.kind]+'</span>':'';}
+function jobCard(j,pos){
+  pos=pos||runPos(j);
   var y=j.yard&&j.yard.at, c=j.chk&&j.chk.at, l=j.left&&j.left.at, d=j.done&&j.done.at, ex=extrasOf(j.id).length, ph=photosOf(j.id,'finish').length, m=missingOf(j), bits=[];
   if(l) bits.push('<span>Left <b>'+clock(j.left.at)+'</b></span>');
   if(d) bits.push('<span>Finished <b>'+clock(j.done.at)+'</b></span>');
@@ -868,7 +1015,7 @@ function jobCard(j){
   if(ex) bits.push('<span>'+plural(ex,'extra')+'</span>');
   if(ph) bits.push('<span>'+plural(ph,'photo')+'</span>');
   return '<button class="job" data-a="open" data-id="'+esc(j.id)+'"><div class="job-top"><span class="job-a">'+esc(j.address)+'</span>'+pillOf(j)+'</div>'+
-    '<div class="job-m">'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'')+'<span>'+esc(LOADNAME[j.load]||'')+'</span><span>'+esc(crewLine(j))+'</span></div>'+
+    '<div class="job-m">'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'')+kindTag(j)+(pos.n>1?'<span class="seq">'+(pos.i+1)+' of '+pos.n+'</span>':'')+'<span>'+esc(LOADNAME[j.load]||'')+'</span><span>'+esc(crewLine(j))+'</span></div>'+
     (bits.length?'<div class="job-s">'+bits.join('')+'</div>':'')+
     '<div class="steps" aria-hidden="true"><i class="on"></i><i class="'+(y?((j.yard.missing||[]).length?'bad':'on'):'')+'"></i><i class="'+(c?((j.chk.missing||[]).length?'bad':'on'):'')+'"></i><i class="'+(l?'on':'')+'"></i><i class="'+(d?'on':'')+'"></i></div></button>';
 }
@@ -876,8 +1023,28 @@ function offAsk(o){return '<div class="need"><div><b>'+esc(nameOf(o.person))+'</
 function needsHtml(){
   var t0=today(0), h=pendingOff().map(offAsk).join('');
   jobList().filter(function(j){return j.date>=t0&&!(j.left&&j.left.at)&&missingOf(j).length;}).forEach(function(j){var m=missingOf(j);h+='<button class="need bad" data-a="open" data-id="'+esc(j.id)+'"><div><b>'+plural(m.length,'item')+' missing</b> on '+esc(j.address)+'</div><span class="small muted">'+esc(m.map(itemName).join(', '))+'</span></button>';});
+  h+=inspCards();
+  wkOpenDays().forEach(function(w){var n=wkNames(w.date),k=n.filter(function(x){return x.picked;}).length;h+='<button class="need wk" data-a="wkgo" data-v="'+w.date+'"><div><b>Weekend work</b> on '+esc(fshort(w.date))+'</div><span class="small muted">'+(n.length?plural(n.length,'name')+' down, '+k+' picked. Tap to pick your crew.':'Nobody has put their name down yet.')+'</span></button>';});
   toCharge().slice(0,6).forEach(function(x){var j=S.jobs.get(x.job);h+='<div class="need pay"><div><b>Extra work</b> at '+esc(j.address)+'</div><span>'+esc(x.text)+'</span><span class="small muted">'+(x.who?'Asked for by '+esc(x.who)+' · ':'')+esc(firstOf(x.by))+', '+esc(ftime(x.at))+'</span><div class="btns"><button class="btn go sm" data-a="charged" data-id="'+esc(x.id)+'">Mark as charged</button><button class="btn line sm" data-a="open" data-id="'+esc(j.id)+'">Open job</button></div></div>';});
   return h;
+}
+function inspCards(){ // inspections that are due, for the boss and for whoever is down to inspect
+  var h='';
+  var btns=function(s){return '<div class="btns fit"><button class="btn go sm" data-a="inspnew" data-id="'+esc(s.id)+'">Record inspection</button><button class="btn line sm" data-a="scaf" data-id="'+esc(s.id)+'">Open record</button></div>';};
+  unsafeScafs().forEach(function(s){var l=lastInsp(s);h+='<div class="need bad"><div><b>Not safe to use:</b> '+esc(s.address)+'</div><span class="small muted">'+esc(l.found||'Defects found')+' · '+esc(firstOf(l.by))+', '+esc(ftime(l.at))+'. Inspect it again once it’s put right.</span>'+btns(s)+'</div>';});
+  inspDue().filter(function(s){return !isUnsafe(s);}).forEach(function(s){var late=daysTo(dueOf(s))<0;h+='<div class="need '+(late?'bad':'insp')+'"><div><b>Inspection '+(late?'overdue':'due today')+'</b> at '+esc(s.address)+'</div><span class="small muted">'+esc(dueWords(s))+(s.inspector?' · '+esc(firstOf(s.inspector))+' to inspect':'')+'</span>'+btns(s)+'</div>';});
+  return h;
+}
+function wkRow(w){
+  var m=wkMine(w.date);
+  return '<div class="wk-r"><div class="li-t"><b>'+esc(fshort(w.date))+'</b><small>'+(m?(m.picked?'You’re working. '+esc(bossFirst())+' picked you.':'Your name is down. Waiting for '+esc(bossFirst())+'.'):'Voluntary')+'</small></div><button class="btn sm '+(m?'line':'go')+'" data-a="wkname" data-v="'+w.date+'">'+(m?'Take my name off':'Put my name down')+'</button></div>';
+}
+function wkCard(){ // tells staff that weekend work is going
+  var hide=wkHidden(), days=wkOpenDays().filter(function(w){return hide.indexOf(w.date)<0||wkMine(w.date);}), off=wkOffDays(); if((!days.length&&!off.length)||!myCrew()) return '';
+  var note=days.map(function(w){return w.note;}).filter(Boolean)[0];
+  return '<div class="need wk"><div><b>'+(days.length?'Weekend work is going':'Weekend work is off')+'</b></div><span class="small muted">'+(days.length?esc(bossFirst())+' is asking who wants it.'+(note?' '+esc(note):''):esc(bossFirst())+' has called it off.')+'</span>'+days.map(wkRow).join('')+
+    off.map(function(w){return '<div class="wk-r"><div class="li-t"><b>'+esc(fshort(w.date))+'</b><small>Called off. No work that day.</small></div><span class="pill p-bad">Off</span></div>';}).join('')+
+    (days.some(function(w){return !wkMine(w.date);})?'<button class="link small" data-a="wkhide" style="align-self:flex-start;padding:0">Not for me</button>':'')+'</div>';
 }
 function jobListHtml(){
   var boss=isBoss(), yard=isYard(), t0=today(0), all=visJobs(), h='', q=String(S.q||'').trim().toLowerCase();
@@ -888,13 +1055,18 @@ function jobListHtml(){
   }
   var up=all.filter(function(j){return j.date>=t0;}).sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.createdAt||0)-(b.createdAt||0));});
   if(!up.length){
-    h+='<div class="card empty">'+IC.box+'<b>'+(boss?'No jobs yet':(yard?'Nothing to load':'No jobs for you yet'))+'</b><span>'+(boss?'Tap New job to send a load sheet to the yard.':(yard?'When '+esc(bossFirst())+' sends a job, the load sheet shows here.':'When '+esc(bossFirst())+' puts you on a job, it shows here.'))+'</span></div>';
+    h+='<div class="card empty">'+IC.box+'<b>'+(boss?'No jobs yet':(yard?'Nothing to load':'No jobs for you yet'))+'</b><span>'+(boss?'Tap New job to send a load sheet to the yard. Or watch a job go all the way through first.':(yard?'When '+esc(bossFirst())+' sends a job, the load sheet shows here.':'When '+esc(bossFirst())+' puts you on a job, it shows here.'))+'</span>'+(boss&&!S.demo?'<button class="btn soft sm" data-a="demo" style="margin-top:8px">'+IC.play+'Show me how it works</button>':'')+'</div>';
   }else{
     var days=[]; up.forEach(function(j){if(!days.length||days[days.length-1].d!==j.date)days.push({d:j.date,l:[]});days[days.length-1].l.push(j);});
     days.forEach(function(g){
       var n=g.l.length, out=g.l.filter(function(j){return j.left&&j.left.at;}).length, lo=g.l.filter(function(j){return j.yard&&j.yard.at;}).length, sum='';
       if((boss||yard)&&n>1) sum=g.d===t0?out+' of '+n+' left the yard':lo+' of '+n+' loaded';
-      h+='<div class="sec"><div class="sec-h"><span class="lab">'+esc(fwhen(g.d))+'</span>'+(sum?'<span class="small muted">'+sum+'</span>':'')+'</div>'+g.l.map(jobCard).join('')+'</div>';
+      var runs=[], at={}; g.l.forEach(function(j){var k=runKey(j);if(at[k]==null){at[k]=runs.length;runs.push([]);}runs[at[k]].push(j);});
+      h+='<div class="sec"><div class="sec-h"><span class="lab">'+esc(fwhen(g.d))+'</span>'+(sum?'<span class="small muted">'+sum+'</span>':'')+'</div>'+runs.map(function(r){
+        var full=runOf(r[0]).length, f=r.sort(bySeq)[0];
+        if(full<2) return jobCard(f);
+        return '<div class="run"><div class="run-h">'+(f.vehicle?'<span class="plate">'+esc(f.vehicle)+'</span>':'')+'<b>'+esc(f.ch?firstOf(f.ch)+'’s gang':'Gang')+'</b><span class="small muted">'+full+' jobs that day</span>'+(boss&&!S.demo?'<button class="link small run-add" data-a="another" data-id="'+esc(r[r.length-1].id)+'">Add a job</button>':'')+'</div>'+r.map(function(j){return jobCard(j);}).join('')+'</div>';
+      }).join('')+'</div>';
     });
   }
   var past=all.filter(function(j){return j.date<t0;}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,30);
@@ -906,7 +1078,7 @@ function jobsTab(){
   if(isBoss()){
     h+='<button class="btn" data-a="new">'+IC.plus+'New job</button>'+needsHtml();
     if(jobList().length>=3) h+='<div class="srch">'+IC.search+'<input id="q" class="in" type="text" inputmode="search" placeholder="Find a job by address, lorry or name" value="'+esc(S.q)+'" autocomplete="off" enterkeyhint="search" aria-label="Find a job"></div>'; else S.q='';
-  }else S.q='';
+  }else{S.q='';h+=inspCards()+wkCard();}
   return h+'<div id="joblist" class="sec" style="gap:16px">'+jobListHtml()+'</div>';
 }
 
@@ -916,7 +1088,9 @@ function heroHtml(j){
   var p=j.prop||{}, gang=(j.crew||[]).filter(function(x){return x!==j.ch;}), v=fleet().filter(function(x){return String(x.reg).toUpperCase()===String(j.vehicle).toUpperCase();})[0];
   var yardOnly=isYard()&&!isBoss()&&!onJob(j), ring=ringOf(p.ring), house=houseText(p), h='<section class="card flush">';
   if(canSat()&&j.lat!=null&&!S.satFail&&!yardOnly) h+=satHtml({lat:j.lat,lon:j.lon,z:jobZ(j),ring:ring,ax:p.ax,w:p.w,d:p.d,pick:false,pin:!!j.exact});
+  var pos=runPos(j), pv=pos.list[pos.i-1], nx=pos.list[pos.i+1];
   h+='<div class="hero-b"><div class="card-h"><span class="lab">'+esc(fwhen(j.date))+'</span>'+pillOf(j)+'</div><h2 class="hero-a">'+esc(j.address)+'</h2>';
+  if(j.kind||pos.n>1) h+='<div class="tags">'+kindTag(j)+(pos.n>1?'<span class="seq">Job '+(pos.i+1)+' of '+pos.n+' for this gang</span><span class="seq-n"><button class="seq-b" data-a="open" data-id="'+esc(pv?pv.id:'')+'" aria-label="The job before"'+(pv?'':' disabled')+'>'+IC.prev+'</button><button class="seq-b" data-a="open" data-id="'+esc(nx?nx.id:'')+'" aria-label="The job after"'+(nx?'':' disabled')+'>'+IC.next+'</button></span>':'')+'</div>';
   if(!yardOnly) h+=actsHtml(j,true);
   h+='<dl class="kv"><dt>Lorry</dt><dd>'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span> ':'')+'<span>'+esc((v&&v.name?v.name+' · ':'')+(LOADNAME[j.load]||''))+'</span></dd><dt>Charge hand</dt><dd>'+esc(j.ch?nameOf(j.ch):'Not set')+'</dd>'+(gang.length?'<dt>Gang</dt><dd>'+esc(gang.map(nameOf).join(', '))+'</dd>':'');
   if(house&&!yardOnly) h+='<dt>House</dt><dd>'+esc(house)+'</dd>';
@@ -950,8 +1124,8 @@ function sheetRows(j,stage,t){
     return '<div class="sh-g"><span>'+title+'</span>'+(extra||'')+'</div>'+list.map(function(r){var v=t[r.id]||'';
       return '<button class="ck '+(v==='ok'?'ok':(v==='no'?'no':''))+(live?'':' ro')+'"'+(live?' data-a="tick" data-s="'+stage+'" data-id="'+esc(j.id)+'" data-i="'+r.id+'"':' tabindex="-1"')+' aria-label="'+esc(r.name)+(r.qty?' times '+r.qty:'')+(v==='ok'?', on':(v==='no'?', missing':', not ticked'))+'"><span class="ck-b">'+(v==='no'?IC.no:IC.ok)+'</span><span class="ck-n">'+esc(r.name)+'</span>'+(v==='no'?'<span class="ck-s">Missing</span>':'')+(r.qty?'<span class="ck-q">× '+r.qty+'</span>':'')+'</button>';}).join('');
   };
-  var stdLeft=rows.some(function(r){return r.sec==='std'&&!t[r.id];});
-  return sec('extra','Forgotten items')+sec('always','Always on the lorry')+sec('std','Tube, boards and fittings',live&&stdLeft?'<button class="link small" data-a="allon" data-s="'+stage+'" data-id="'+esc(j.id)+'" style="padding:0;text-transform:none;letter-spacing:0">Tick all of these</button>':'');
+  var left=function(k){return rows.some(function(r){return r.sec===k&&!t[r.id];});}, all=function(k){return '<button class="link small" data-a="allon" data-k="'+k+'" data-s="'+stage+'" data-id="'+esc(j.id)+'" style="padding:0;text-transform:none;letter-spacing:0">Tick all of these</button>';};
+  return sec('extra','Forgotten items')+sec('always','Always on the lorry',live&&left('always')&&runPos(j).i>0?all('always'):'')+sec('std','Tube, boards and fittings',live&&left('std')?all('std'):'');
 }
 function sheetHtml(j,stage){
   var rows=rowsOf(j), t=ticksOf(stage,j.id), done=rows.filter(function(r){return t[r.id];}).length;
@@ -982,19 +1156,30 @@ function historyHtml(j){
   return '<section class="card flush"><div class="sh-h"><div><b class="t">Been here before</b><div class="small muted">Other jobs at this address.</div></div></div><div class="list">'+list.map(function(o){var n=photosOf(o.id,'finish').length;
     return '<button class="li" data-a="open" data-id="'+esc(o.id)+'"><div class="li-t"><b>'+esc(fshort(o.date))+(o.date.slice(0,4)!==today(0).slice(0,4)?' '+o.date.slice(0,4):'')+'</b><small>'+esc(LOADNAME[o.load]||'')+' · '+esc(crewLine(o))+(n?' · '+plural(n,'photo'):'')+'</small></div>'+pillOf(o)+'</button>';}).join('')+'</div></section>';
 }
+function nextCard(j){ // when a gang has more jobs that day, point at the next one
+  var pos=runPos(j), nx=pos.list.slice(pos.i+1).filter(function(o){return statusOf(o)!=='done';})[0];
+  if(statusOf(j)!=='done'||!nx||!(onJob(j)||isBoss())) return '';
+  return '<button class="need pay" data-a="open" data-id="'+esc(nx.id)+'"><div><b>Next job:</b> '+esc(nx.address)+'</div><span class="small muted">Tap to open it.</span></button>';
+}
+function scafCard(j){
+  var s=S.scafs.get(j.pk||placeKey(j.address)); if(!s||s.downAt||!s.upAt||!canInspect(s)||statusOf(j)!=='done') return '';
+  var due=daysTo(dueOf(s)), on=s.inspect!==false;
+  return '<section class="card"><div class="card-h"><span class="lab">Scaffold record</span><span class="pill '+(!on?'p-loaded':(due<0||isUnsafe(s)?'p-bad':(due===0?'p-toload':'p-checked')))+'">'+(on?esc(dueWords(s)):'Not inspected by us')+'</span></div><p class="hint">Standing since '+esc(fshort(tsDay(s.upAt)))+'. Inspect it before first use, then every 7 days until it comes down.</p><div class="btns fit">'+(on?'<button class="btn go sm" data-a="inspnew" data-id="'+esc(s.id)+'">Record inspection</button>':'')+'<button class="btn line sm" data-a="scaf" data-id="'+esc(s.id)+'">Open record</button></div></section>';
+}
 function jobPage(j){
-  var stage=stageFor(j), boss=isBoss(), st=statusOf(j), h=heroHtml(j), site=siteHtml(j), track=trackHtml(j);
+  var stage=stageFor(j), boss=isBoss(), st=statusOf(j), h=nextCard(j)+heroHtml(j), site=siteHtml(j), track=trackHtml(j), pos=runPos(j), id=esc(j.id);
   if(stage) h+=sheetHtml(j,stage)+track+site;
-  else if(boss&&!isCh(j)) h+=track+site+sheetFold(j);
-  else if(st==='out'||st==='done') h+=site+track+sheetFold(j);
+  else if(boss&&!isCh(j)) h+=track+site+scafCard(j)+sheetFold(j);
+  else if(st==='out'||st==='done') h+=site+scafCard(j)+track+sheetFold(j);
   else h+=track+site+sheetFold(j);
   h+=historyHtml(j);
+  if(boss&&!S.demo) h+='<button class="btn soft sm" data-a="another" data-id="'+id+'" style="width:100%">'+IC.plus+'Add another job for this gang</button>'+(pos.n>1?'<div class="btns"><button class="btn line sm" data-a="seqmove" data-d="-1" data-id="'+id+'"'+(pos.i===0?' disabled':'')+'>Do it earlier</button><button class="btn line sm" data-a="seqmove" data-d="1" data-id="'+id+'"'+(pos.i===pos.n-1?' disabled':'')+'>Do it later</button></div>':'');
   if(boss) h+='<button class="btn soft sm" data-a="share" data-id="'+esc(j.id)+'" style="width:100%">'+IC.send+'Send this job as a message</button><div class="btns"><button class="btn line sm" data-a="edit" data-id="'+esc(j.id)+'">Change job</button><button class="btn danger sm" data-a="del" data-id="'+esc(j.id)+'">'+(S.confirm==='del'+j.id?'Tap again to delete':'Delete job')+'</button></div>';
   return h;
 }
 function shareText(j){ // the whole job as plain words, for WhatsApp or a text
   var rows=rowsOf(j), gang=(j.crew||[]).filter(function(x){return x!==j.ch;}), p=j.prop||{}, pick=function(k){return rows.filter(function(r){return r.sec===k;});};
-  var L=[COMPANY.toUpperCase(),fshort(j.date)+' · '+j.address,'Lorry: '+(j.vehicle||'not set')+' · '+(LOADNAME[j.load]||''),'Charge hand: '+(j.ch?nameOf(j.ch):'not set')];
+  var L=[COMPANY.toUpperCase(),fshort(j.date)+' · '+(j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]+' · ':'')+j.address,'Lorry: '+(j.vehicle||'not set')+' · '+(LOADNAME[j.load]||''),'Charge hand: '+(j.ch?nameOf(j.ch):'not set')];
   if(gang.length) L.push('Gang: '+gang.map(nameOf).join(', '));
   if(pick('extra').length){L.push('','FORGOTTEN ITEMS');pick('extra').forEach(function(r){L.push('- '+r.name+' x '+r.qty);});}
   L.push('','ALWAYS ON THE LORRY',pick('always').map(function(r){return r.name;}).join(', '));
@@ -1012,21 +1197,269 @@ function jobFoot(j){
     return wrap((left?'<span class="foot-note">'+plural(left,'item')+' left to tick</span>':'')+'<button class="btn go" data-a="confirm" data-s="'+stage+'" data-id="'+id+'"'+(left?' disabled':'')+'>'+IC.ok+(stage==='yard'?'Confirm loaded':'Confirm checked')+(no?' · '+no+' missing':'')+'</button>');
   }
   if(!canStep(j)) return '';
-  if(st==='checked') return wrap('<span class="foot-note">Tap as you pull out. It saves the time for '+esc(bossFirst())+'.</span><button class="btn go" data-a="leave" data-id="'+id+'">'+IC.truck+'Leaving the yard</button>');
+  var chk=runOf(j).filter(function(o){return statusOf(o)==='checked';}).length;
+  if(st==='checked') return wrap('<span class="foot-note">'+(chk>1?'Tap as you pull out. It covers all '+chk+' checked jobs on this lorry.':'Tap as you pull out. It saves the time for '+esc(bossFirst())+'.')+'</span><button class="btn go" data-a="leave" data-id="'+id+'">'+IC.truck+'Leaving the yard</button>');
   if(st==='out'){var n=photosOf(j.id,'finish').length;return wrap((n?'':'<span class="foot-note">Add a finish photo first</span>')+'<button class="btn go" data-a="finish" data-id="'+id+'"'+(n?'':' disabled')+'>'+IC.flag+'Job finished</button>');}
   return '';
 }
 
+/* ---------- calendar: one grid, a colour key, and everything on the day you tap ---------- */
+var CATS=[['all','All'],['jobs','Jobs'],['insp','Inspections'],['off','Time off'],['wk','Weekend work']];
+function calData(from,to){ // what falls on each day, by kind
+  var me=myCrew(), boss=isBoss(), J={}, O={}, I={}, W={};
+  visJobs().forEach(function(j){(J[j.date]=J[j.date]||[]).push(j);});
+  offList().filter(function(o){return o.status==='approved'||boss||o.person===me;}).forEach(function(o){var d=o.from<from?from:o.from,n=0;while(d<=o.to&&d<=to&&n<80){(O[d]=O[d]||[]).push(o);d=addDays(d,1);n++;}});
+  myScafs().forEach(function(s){var bad=isUnsafe(s);inspDays(s,to).forEach(function(x){if(x.d>=from)(I[x.d]=I[x.d]||[]).push({s:s,late:x.late,plan:x.plan,bad:bad&&!x.plan});});});
+  wkOpenDays().forEach(function(w){W[w.date]=w;});
+  return {J:J,O:O,I:I,W:W};
+}
+function calJobRow(j){
+  var p=runPos(j);
+  return '<button class="li" data-a="open" data-id="'+esc(j.id)+'">'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'')+'<div class="li-t"><b>'+esc(j.line||j.address)+'</b><small>'+esc([j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]:'',crewLine(j),p.n>1?'job '+(p.i+1)+' of '+p.n:''].filter(Boolean).join(' · '))+'</small></div>'+pillOf(j)+'</button>';
+}
+function byLorry(a,b){var x=String(a.vehicle||''),y=String(b.vehicle||'');return x<y?-1:(x>y?1:bySeq(a,b));}
+function wkBlock(ds){ // one weekend day: names down, and who the boss has picked
+  var w=wkDay(ds), boss=isBoss(), names=wkNames(ds), h=''; if(!w) return '';
+  if(w.note) h+='<p class="tip" style="padding-top:10px">'+esc(w.note)+'</p>';
+  if(boss){
+    var has={}; names.forEach(function(n){has[n.person]=1;});
+    var rest=crewList().filter(function(c){return !has[c.id]&&S.bosses.indexOf(c.id)<0;}), picked=names.filter(function(n){return n.picked;});
+    h+=names.length?'<div class="list">'+names.map(function(n){return '<div class="li"><span class="av soft">'+esc(initials(nameOf(n.person)))+'</span><div class="li-t"><b>'+esc(nameOf(n.person))+'</b><small>'+(n.byBoss?'Added by you':'Put their name down '+esc(ftime(n.at)))+'</small></div><button class="chip" data-a="wkpick" data-id="'+esc(n.id)+'" aria-pressed="'+!!n.picked+'">'+(n.picked?'Picked':'Pick')+'</button></div>';}).join('')+'</div>':'<p class="tip" style="padding-top:10px">Nobody has put their name down yet.</p>';
+    h+='<div class="dayx"><p><b>Crew list for the day:</b> '+(picked.length?esc(picked.map(function(n){return firstOf(n.person);}).join(', ')):'nobody picked yet')+'</p><p>Only the people you pick can be put on a job that day.</p>'+
+      (rest.length?'<select class="in" data-wkadd="'+ds+'" aria-label="Add someone yourself" style="margin-top:8px"><option value="">Add someone yourself</option>'+rest.map(function(c){return '<option value="'+esc(c.id)+'">'+esc(c.name)+'</option>';}).join('')+'</select>':'')+
+      '<button class="link small bad" data-a="wkclose" data-v="'+ds+'" style="align-self:flex-start">'+(S.confirm==='wk'+ds?'Tap again to call it off':'Call this day off')+'</button></div>';
+  }else{
+    h+='<div style="padding:12px 16px">'+wkRow(w)+'</div>'+(names.length?'<p class="tip">Names down: '+esc(names.map(function(n){return firstOf(n.person);}).join(', '))+'.</p>':'');
+  }
+  return h;
+}
+function dayCard(sel,D,mode){
+  var boss=isBoss(), t0=today(0), show=function(k){return mode==='all'||mode===k;}, dj=(D.J[sel]||[]).slice().sort(byLorry), di=D.I[sel]||[], dof=D.O[sel]||[], dw=D.W[sel], bits=[], h='';
+  if(show('jobs')) bits.push(dj.length?plural(dj.length,'job'):'No jobs');
+  if(show('insp')&&di.length) bits.push(plural(di.length,'inspection'));
+  if(show('off')&&dof.length) bits.push(dof.length+' off');
+  if(show('wk')&&dw) bits.push('weekend work');
+  h+='<section class="card flush"><div class="sh-h"><div><b class="t">'+esc(fwhen(sel))+'</b><div class="small muted">'+esc((bits.join(' · ')||'Nothing on').replace(/^./,function(c){return c.toUpperCase();}))+'</div></div>'+(boss&&sel>=t0?'<button class="btn sm" data-a="newon" data-v="'+sel+'">'+IC.plus+'New job</button>':'')+'</div>';
+  if(show('jobs')&&dj.length) h+='<div class="sh-g"><span><i class="kd jobs"></i>Jobs</span></div><div class="list">'+dj.map(calJobRow).join('')+'</div>';
+  if(show('insp')&&di.length) h+='<div class="sh-g"><span><i class="kd insp"></i>Inspections</span></div><div class="list">'+di.map(function(x){var s=x.s;return '<button class="li" data-a="scaf" data-id="'+esc(s.id)+'"><div class="li-t"><b>'+esc(s.address)+'</b><small>'+(s.inspector?esc(firstOf(s.inspector))+' to inspect':'Nobody down to inspect')+(x.bad?' · inspect again once it’s put right':(x.late?' · was due '+esc(fshort(x.late)):''))+'</small></div><span class="pill '+(x.late||x.bad?'p-bad':(x.plan?'p-loaded':'p-toload'))+'">'+(x.bad?'Not safe':(x.late?'Overdue':(x.plan?'Planned':'Due')))+'</span></button>';}).join('')+'</div>';
+  if(show('off')&&dof.length) h+='<div class="sh-g"><span><i class="kd off"></i>Time off</span></div><div class="list">'+dof.map(offRow).join('')+'</div>';
+  if(show('wk')&&dw) h+='<div class="sh-g"><span><i class="kd wk"></i>Weekend work</span></div>'+wkBlock(sel);
+  if(boss&&show('jobs')&&sel>=t0){
+    var busy={}, used={}; dj.forEach(function(j){(j.crew||[]).forEach(function(c){busy[c]=1;});used[String(j.vehicle||'').toUpperCase()]=1;});
+    var pool=crewList().filter(function(c){return !c.yard&&S.bosses.indexOf(c.id)<0&&!offOn(c.id,sel)&&(!dw||wkPicked(sel,c.id));}), free=pool.filter(function(c){return !busy[c.id];}).map(function(c){return firstOf(c.id);}), fl=fleet().map(function(v){return String(v.reg).toUpperCase();}).filter(function(r){return !used[r];});
+    h+='<div class="dayx"><p><b>'+(dw?'Picked and free:':'Free:')+'</b> '+(free.length?esc(free.join(', ')):'nobody')+'</p><p><b>Lorries free:</b> '+(fl.length?esc(fl.join(', ')):'none')+'</p></div>';
+  }
+  return h+'</section>';
+}
+function agendaHtml(){ // the next jobs, in order
+  var t0=today(0), up=visJobs().filter(function(j){return j.date>=t0;}).sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:byLorry(a,b));}).slice(0,14), last='', h=''; if(!up.length) return '';
+  h='<section class="card flush"><div class="sh-h"><div><b class="t">Jobs coming up</b><div class="small muted">'+(up.length===1?'The next job.':'The next '+up.length+' jobs, in order.')+'</div></div></div>';
+  up.forEach(function(j){if(j.date!==last){h+='<div class="sh-g"><span>'+esc(fwhen(j.date))+'</span></div>';last=j.date;}h+=calJobRow(j);});
+  return h+'</section>';
+}
+function scafPill(s){var on=s.inspect!==false, n=daysTo(dueOf(s)), bad=on&&isUnsafe(s);return '<span class="pill '+(!on?'p-loaded':(n<0||bad?'p-bad':(n===0?'p-toload':'p-checked')))+'">'+(on?esc(bad?'Not safe':(n<0?'Overdue':(n===0?'Due today':fshort(dueOf(s))))):'Not ours')+'</span>';}
+function registerHtml(){
+  var list=isBoss()?scafList():myScafs();
+  return '<section class="card flush"><div class="sh-h"><div><b class="t">Standing scaffolds</b><div class="small muted">'+(list.length?plural(list.length,'scaffold')+' up. Each shows when its next inspection is due.':'None on the record yet. When an Erect job is finished, the scaffold goes on here.')+'</div></div></div>'+
+    (list.length?'<div class="list" style="border-top:1px solid var(--line)">'+list.map(function(s){var wk=Math.floor((Date.now()-s.upAt)/6048e5);
+      return '<button class="li" data-a="scaf" data-id="'+esc(s.id)+'"><div class="li-t"><b>'+esc(s.address)+'</b><small>Up since '+esc(fshort(tsDay(s.upAt)))+' · week '+(wk+1)+(s.inspector&&s.inspect!==false?' · '+esc(firstOf(s.inspector))+' inspects':'')+'</small></div>'+scafPill(s)+'</button>';}).join('')+'</div>':'')+
+    (isBoss()?'<div style="padding:12px 16px 16px;border-top:1px solid var(--line)"><button class="btn soft sm" data-a="scafnew" style="width:100%">'+IC.plus+'Add a scaffold that’s already up</button></div>':'')+'</section>';
+}
+function calHtml(){
+  var me=myCrew(), boss=isBoss(), t0=today(0), m=S.month||t0.slice(0,7), y=+m.slice(0,4), mo=+m.slice(5,7)-1, first=new Date(y,mo,1,12), lead=(first.getDay()+6)%7, dim=new Date(y,mo+1,0).getDate(), cells=Math.ceil((lead+dim)/7)*7, sel=S.day||t0;
+  var D=calData(dstr(new Date(y,mo,1-lead,12)),dstr(new Date(y,mo,cells-lead,12))), cats=CATS.filter(function(c){return c[0]!=='insp'||boss||myScafs().length;});
+  var mode=cats.some(function(c){return c[0]===S.calMode;})?S.calMode:'all', show=function(k){return mode==='all'||mode===k;}, np=boss?pendingOff().length:0, h='';
+  h+='<div class="keys" role="group" aria-label="What the calendar shows">'+cats.map(function(c){return '<button type="button" class="key" data-a="calmode" data-v="'+c[0]+'" aria-pressed="'+(mode===c[0])+'">'+(c[0]==='all'?'':'<i class="kd '+c[0]+'"></i>')+c[1]+(c[0]==='off'&&np?' ('+np+')':'')+'</button>';}).join('')+'</div>';
+  if(boss&&show('off')) h+=pendingOff().map(offAsk).join('');
+  h+='<section class="card"><div class="cal-h"><button class="cal-nav" data-a="month" data-d="-1" aria-label="Previous month">'+IC.prev+'</button><b>'+MONL[mo]+' '+y+'</b><button class="cal-nav" data-a="month" data-d="1" aria-label="Next month">'+IC.next+'</button></div><div class="cal">'+['M','T','W','T','F','S','S'].map(function(d){return '<span class="cal-d">'+d+'</span>';}).join('');
+  for(var i=0;i<cells;i++){
+    var d=new Date(y,mo,1-lead+i,12), ds=dstr(d), dj=D.J[ds], di=D.I[ds], dof=D.O[ds], dw=D.W[ds], mk='', say=[];
+    if(show('jobs')&&dj){mk+='<span class="mk jobs'+(dj.some(function(j){return missingOf(j).length&&!(j.left&&j.left.at);})?' bad':(dj.every(function(j){return j.done&&j.done.at;})?' fin':''))+'">'+dj.length+'</span>';say.push(plural(dj.length,'job'));}
+    if(show('insp')&&di){mk+='<span class="mk insp'+(di.some(function(x){return x.late||x.bad;})?' bad':(di.every(function(x){return x.plan;})?' plan':''))+'">'+di.length+'</span>';say.push(plural(di.length,'inspection'));}
+    if(show('off')&&dof){
+      if(mode==='off') mk+=dof.slice(0,2).map(function(o){return '<span class="mk off'+(o.status==='pending'?' plan':'')+'">'+esc(initials(nameOf(o.person)))+'</span>';}).join('')+(dof.length>2?'<span class="mk off">+'+(dof.length-2)+'</span>':'');
+      else mk+='<span class="mk off'+(dof.every(function(o){return o.status==='pending';})?' plan':'')+'">'+dof.length+'</span>';
+      say.push(dof.length+' off');
+    }
+    if(show('wk')&&dw){mk+='<span class="mk wk">W</span>';say.push('weekend work');}
+    h+='<button class="day'+(d.getMonth()!==mo?' out':'')+(ds===t0?' today':'')+'" data-a="day" data-v="'+ds+'" aria-pressed="'+(ds===sel)+'" aria-label="'+esc(fshort(ds)+(say.length?', '+say.join(', '):''))+'"><span>'+d.getDate()+'</span>'+(mk?'<span class="mks">'+mk+'</span>':'')+'</button>';
+  }
+  var K={all:[['bad','Red: needs sorting'],['fin','Green: jobs all finished'],['plan','Outline: planned or waiting']],jobs:[['bad','Red: something missing'],['fin','Green: all finished']],insp:[['bad','Red: overdue or not safe'],['plan','Outline: planned ahead']],off:[['plan','Outline: waiting for a yes']]}[mode]||[];
+  h+='</div>'+(K.length?'<div class="cal-k">'+K.map(function(k){return '<span><i class="kd '+k[0]+'"></i>'+k[1]+'</span>';}).join('')+'</div>':'')+'</section>'+dayCard(sel,D,mode);
+  if(mode==='wk'){
+    var days=wkOpenDays().filter(function(w){return w.date!==sel;});
+    days.forEach(function(w){h+='<section class="card flush"><div class="sh-h"><div><b class="t">'+esc(fshort(w.date))+'</b><div class="small muted">Weekend work</div></div></div>'+wkBlock(w.date)+'</section>';});
+    if(!wkOpenDays().length) h+='<div class="card empty">'+IC.cal+'<b>No weekend work going</b><span>'+(boss?'Tap the button below when there is some. Staff are told, and can put their names down for the Saturday, the Sunday or both.':'When '+esc(bossFirst())+' has weekend work, it shows here and on your jobs screen.')+'</span></div>';
+  }
+  if(mode==='insp') h+=registerHtml();
+  if(mode==='off'){
+    var next=offList().filter(function(o){return o.to>=t0&&(o.status==='approved'||boss||o.person===me);}).sort(function(a,b){return a.from<b.from?-1:1;}).slice(0,12);
+    if(next.length) h+='<section class="card flush"><div class="sh-h"><b class="t">Time off coming up</b></div><div class="list">'+next.map(offRow).join('')+'</div></section>';
+  }
+  if(show('jobs')) h+=agendaHtml();
+  var acts=[];
+  if((mode==='all'||mode==='off')&&(me||boss)) acts.push('<button class="btn '+(mode==='off'?'':'line ')+'sm" data-a="offnew">'+IC.plus+(boss?'Book time off':'Ask for time off')+'</button>');
+  if((mode==='all'||mode==='wk')&&boss) acts.push('<button class="btn '+(mode==='wk'?'':'line ')+'sm" data-a="wknew">'+IC.plus+'Ask for weekend volunteers</button>');
+  return h+(acts.length?'<div class="btns" style="flex-wrap:wrap">'+acts.join('')+'</div>':'');
+}
+
+/* ---------- one standing scaffold: its details and its inspection record ---------- */
+function inspRow(i){
+  var ph=photosBy('insp',i.id);
+  return '<div class="xr"><div class="xr-f"><b>'+esc(fshort(tsDay(i.at)))+', '+clock(i.at)+'</b><span class="pill '+(i.result==='bad'?'p-bad':'p-checked')+'"><i></i>'+(i.result==='bad'?'Not safe':'Safe to use')+'</span></div><div class="xr-m">Inspected by '+esc(nameOf(i.by))+(i.pos?', '+esc(i.pos):'')+'</div>'+
+    (i.found?'<div><span class="lab">Found</span><br>'+esc(i.found)+'</div>':'')+(i.done?'<div><span class="lab">Done about it</span><br>'+esc(i.done)+'</div>':'')+(i.todo?'<div><span class="lab">Still to do</span><br>'+esc(i.todo)+'</div>':'')+(ph.length?galHtml(ph,'in-row'):'')+'<button class="link small" data-a="inspshare" data-id="'+esc(i.id)+'" style="align-self:flex-start;padding:2px 0">Send this report as a message</button></div>';
+}
+function inspText(i){ // one inspection as plain words, with the details the regulations ask a report to hold
+  var s=S.scafs.get(i.pk)||{}, d=new Date(i.at);
+  return [COMPANY.toUpperCase(),'SCAFFOLD INSPECTION REPORT','',
+    'Inspected for: '+(s.customer||'not filled in'),
+    'Where: '+(i.address||s.address||''),
+    'Scaffold: '+(s.desc||'not filled in'),
+    'Date and time: '+fshort(tsDay(i.at))+' '+d.getFullYear()+', '+clock(i.at),
+    'Result: '+(i.result==='bad'?'NOT SAFE TO USE':'Safe to use'),
+    'Found: '+(i.found||'Nothing that could be a risk'),
+    'Done about it: '+(i.done||(i.found?'Nothing recorded':'Nothing needed')),
+    'Still to do: '+(i.todo||'Nothing'),
+    'Inspected by: '+nameOf(i.by)+(i.pos?', '+i.pos:'')].join('\n');
+}
+function scafPage(s){
+  var boss=isBoss(), up=!s.downAt, on=s.inspect!==false, list=inspOf(s.id), last=lastInsp(s), id=esc(s.id), staff=crewList().filter(function(c){return !c.yard;}), jobs=jobList().filter(function(j){return (j.pk||placeKey(j.address))===s.id;}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,8);
+  var h='<section class="card"><div class="card-h"><span class="lab">'+(up?'Standing since '+esc(fshort(tsDay(s.upAt))):'Came down '+esc(fshort(tsDay(s.downAt))))+'</span>'+(up?scafPill(s):'<span class="pill p-loaded">Down</span>')+'</div><h2 class="hero-a">'+esc(s.address)+'</h2>'+
+    (up&&last&&last.result==='bad'?'<div class="note bad"><b>Not safe to use</b>'+esc(last.found||'Defects found')+(last.todo?'. Still to do: '+esc(last.todo):'')+'</div>':'')+
+    (up&&s.paperAt&&!last?'<p class="hint">Last inspected '+esc(fshort(s.paperAt))+', before it was put in the app.</p>':'')+
+    (up&&on?'<p class="sub">'+(isUnsafe(s)?'Inspect it again once it’s put right, and record it here. Until then it shows as not safe.':esc(dueWords(s))+'. Inspect before first use, then every 7 days until it comes down, and again after bad weather or an alteration.')+'</p>':'')+actsHtml(s,true)+
+    (up&&on&&canInspect(s)?'<button class="btn go" data-a="inspnew" data-id="'+id+'">'+IC.shield+'Record an inspection</button>':'')+'</section>';
+  h+='<section class="card"><span class="lab">For the report</span>';
+  if(boss&&up) h+='<div class="fld"><label for="sc-insp">Who inspects it</label><select id="sc-insp" class="in" data-sc="inspector" data-id="'+id+'"><option value="">Nobody yet</option>'+staff.map(function(c){return '<option value="'+esc(c.id)+'"'+(c.id===s.inspector?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div>'+
+    '<div class="fld"><label for="sc-cust">Who it is inspected for</label><input id="sc-cust" class="in" data-sc="customer" data-id="'+id+'" value="'+esc(s.customer||'')+'" placeholder="Customer’s name and address" autocomplete="off"></div>'+
+    '<div class="fld"><label for="sc-desc">What the scaffold is</label><input id="sc-desc" class="in" data-sc="desc" data-id="'+id+'" value="'+esc(s.desc||'')+'" placeholder="e.g. Front and side, three lifts" autocomplete="off"></div>';
+  else h+='<dl class="kv"><dt>Inspector</dt><dd>'+esc(s.inspector?nameOf(s.inspector):'Nobody yet')+'</dd>'+(s.customer?'<dt>For</dt><dd>'+esc(s.customer)+'</dd>':'')+(s.desc?'<dt>Scaffold</dt><dd>'+esc(s.desc)+'</dd>':'')+'</dl>';
+  h+='</section><section class="card flush"><div class="sh-h"><div><b class="t">Inspection record</b><div class="small muted">'+(list.length?plural(list.length,'inspection')+', newest first.':'Nothing recorded yet.')+'</div></div></div>'+list.map(inspRow).join('')+'</section>';
+  if(jobs.length) h+='<section class="card flush"><div class="sh-h"><b class="t">Jobs at this address</b></div><div class="list">'+jobs.map(function(j){return '<button class="li" data-a="open" data-id="'+esc(j.id)+'"><div class="li-t"><b>'+esc(fshort(j.date))+'</b><small>'+esc([j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]:'',crewLine(j)].filter(Boolean).join(' · '))+'</small></div>'+pillOf(j)+'</button>';}).join('')+'</div></section>';
+  if(boss&&up) h+='<div class="btns fit"><button class="btn line sm" data-a="scafins" data-id="'+id+'">'+(on?'Not ours to inspect':'It is ours to inspect')+'</button><button class="btn danger sm" data-a="scafdown" data-id="'+id+'">'+(S.confirm==='down'+s.id?'Tap again: it’s down':'Scaffold is down')+'</button></div>';
+  return h;
+}
+function scafSheet(s){
+  var staff=crewList().filter(function(c){return !c.yard;}), t0=today(0);
+  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="Scaffold already up" data-stop="1"><div class="sheet-h"><b>Scaffold already up</b><button class="link" data-a="closesheet">Close</button></div>'+
+    '<p class="hint">For a scaffold that went up before you had the app. New ones go on by themselves when an Erect job is finished.</p>'+
+    '<div class="fld"><label for="sn-addr">Address</label><input id="sn-addr" class="in" data-o="addr" value="'+esc(s.addr)+'" placeholder="House number, road, town and postcode" autocomplete="off" spellcheck="false"></div>'+
+    '<div class="fld"><label for="sn-up">Day it went up</label><input id="sn-up" class="in" type="date" data-o="up" value="'+esc(s.up)+'" max="'+t0+'"></div>'+
+    '<div class="fld"><label for="sn-last">Last inspected on (leave empty if it hasn’t been)</label><input id="sn-last" class="in" type="date" data-o="last" value="'+esc(s.last)+'" max="'+t0+'"></div>'+
+    '<div class="fld"><label for="sn-who">Who inspects it</label><select id="sn-who" class="in" data-o="who"><option value="">Nobody yet</option>'+staff.map(function(c){return '<option value="'+esc(c.id)+'"'+(c.id===s.who?' selected':'')+'>'+esc(c.name)+'</option>';}).join('')+'</select></div>'+
+    (s.err?'<p class="err" role="alert">'+esc(s.err)+'</p>':'')+'<button class="btn go" data-a="scafsave">Put it on the record</button></div></div>';
+}
+function pickerHtml(s,kind){ // optional photos inside a sheet
+  return '<div class="fld"><span class="fl">Photos (optional)</span>'+(s.files.length?'<div class="gal in-row">'+s.files.map(function(x){return '<div class="th"><img src="'+esc(x.u)+'" alt=""></div>';}).join('')+'</div>':'')+
+    '<label class="btn soft sm" style="align-self:flex-start">'+IC.cam+(s.files.length?'Add another':'Add a photo')+'<input class="vh" type="file" accept="image/*" multiple data-pick="'+kind+'" aria-label="Add a photo"></label></div>';
+}
+function inspSheet(s){
+  var sc=S.scafs.get(s.pk)||{};
+  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="Inspection" data-stop="1"><div class="sheet-h"><b>Inspection</b><button class="link" data-a="closesheet">Close</button></div><p class="hint">'+esc(sc.address||'')+'</p>'+
+    '<div class="fld"><span class="fl">Result</span><div class="seg"><button type="button" data-a="inspres" data-v="ok" aria-pressed="'+(s.result==='ok')+'">Safe to use</button><button type="button" data-a="inspres" data-v="bad" aria-pressed="'+(s.result==='bad')+'">Not safe</button></div></div>'+
+    '<div class="fld"><label for="i-found">Anything found that could be a risk</label><textarea id="i-found" class="in" data-o="found" placeholder="Leave empty if nothing was found">'+esc(s.found)+'</textarea></div>'+
+    '<div class="fld"><label for="i-done">What was done about it</label><input id="i-done" class="in" data-o="done" value="'+esc(s.done)+'" autocomplete="off"></div>'+
+    '<div class="fld"><label for="i-todo">Anything still to do</label><input id="i-todo" class="in" data-o="todo" value="'+esc(s.todo)+'" autocomplete="off"></div>'+
+    '<div class="fld"><label for="i-pos">Your position</label><input id="i-pos" class="in" data-o="pos" value="'+esc(s.pos)+'" placeholder="e.g. Charge hand, advanced scaffolder" autocomplete="off" autocapitalize="sentences" maxlength="60"></div>'+pickerHtml(s,'insp')+
+    '<p class="hint">Saved with your name, position, date and time.</p>'+(s.err?'<p class="err" role="alert">'+esc(s.err)+'</p>':'')+'<button class="btn go" data-a="inspsave"'+(S.busy?' disabled':'')+'>'+(S.busy?'Saving…':'Save the inspection')+'</button></div></div>';
+}
+function wkLabel(sat){var a=pdate(sat),b=pdate(addDays(sat,1));return a.getMonth()===b.getMonth()?a.getDate()+'–'+b.getDate()+' '+MON[a.getMonth()]:a.getDate()+' '+MON[a.getMonth()]+'–'+b.getDate()+' '+MON[b.getMonth()];}
+function wkStart(){var t=today(0),g=pdate(t).getDay();return addDays(t,g===0?6:6-g);}   // the first Saturday with weekend days still to come; today counts if it is a Saturday
+function wkSheet(s){
+  var first=wkStart(), sats=[0,1,2,3].map(function(i){return addDays(first,7*i);}); if(sats.indexOf(s.sat)<0){sats.pop();sats.unshift(s.sat);}
+  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="Weekend work" data-stop="1"><div class="sheet-h"><b>Weekend work</b><button class="link" data-a="closesheet">Close</button></div>'+
+    '<div class="fld"><span class="fl">Which weekend</span><div class="chips">'+sats.map(function(x){return '<button type="button" class="chip" data-a="wksat" data-v="'+x+'" aria-pressed="'+(s.sat===x)+'">'+wkLabel(x)+'</button>';}).join('')+'</div></div>'+
+    '<div class="fld"><span class="fl">Which days</span><div class="chips"><button type="button" class="chip" data-a="wkd" data-v="d6" aria-pressed="'+!!s.d6+'">Saturday</button><button type="button" class="chip" data-a="wkd" data-v="d0" aria-pressed="'+!!s.d0+'">Sunday</button></div></div>'+
+    '<div class="fld"><label for="w-note">What the work is (optional)</label><input id="w-note" class="in" data-o="note" value="'+esc(s.note)+'" placeholder="e.g. Strike at the school" autocomplete="off"></div>'+
+    '<p class="hint">Staff see it on their phones and put their names down. You pick who you want. Only the people you pick can be put on a job that day.</p>'+
+    (s.err?'<p class="err" role="alert">'+esc(s.err)+'</p>':'')+'<button class="btn go" data-a="wksave">Ask for volunteers</button></div></div>';
+}
+function sentSheet(s){
+  var j=S.jobs.get(s.job), pos=j?runPos(j):{i:0,n:1};
+  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="Sent to the yard" data-stop="1"><div class="sheet-h"><b>Sent to the yard</b><button class="link" data-a="closesheet">Close</button></div>'+
+    (j?'<p class="sub">'+esc(j.address)+'</p>':'')+'<p class="hint">'+(j&&pos.n>1?'That is job '+(pos.i+1)+' of '+pos.n+' that day for '+esc(firstOf(j.ch))+'’s gang on '+esc(j.vehicle)+'.':'Got more for the same gang that day? Add them now. They are numbered in the order you add them.')+'</p>'+
+    '<button class="btn soft" data-a="another" data-id="'+esc(s.job)+'">'+IC.plus+'Add another job for this gang</button><button class="btn go" data-a="closesheet">Done</button></div></div>';
+}
+
+/* ---------- the demo: one job, seen by each person in turn, on throwaway data ---------- */
+function demoText(d){
+  var j=d.job&&S.jobs.get(d.job), ch=j&&j.ch?firstOf(j.ch):'the charge hand', boss=firstOf(d.boss);
+  return [null,
+    {who:'You are '+boss,what:'Put a job on. It needs an address, a lorry and a charge hand. Then tap Send to the yard.',btn:'Fill it in for me'},
+    {who:'You are the yard',what:'This is what the yard sees. Tick the load, then tap Confirm loaded.',btn:'Do it for me'},
+    {who:'You are '+ch+', the charge hand',what:'Check the load and confirm. Then tap Leaving the yard.',btn:'Do it for me'},
+    {who:'You are '+(d.gang?firstOf(d.gang):'one of the gang')+', in the gang',what:'He sees the job and the house. He can’t change anything.',btn:'Next'},
+    {who:'You are '+ch+' again, on the job',what:'Add a finish photo, then tap Job finished.',btn:'Do it for me'},
+    {who:'You are '+boss+' again',what:'The job shows finished, with the times and the photo. The scaffold is now on the calendar for its inspections.',btn:''}][d.step];
+}
+function coachHtml(){
+  var d=S.demo; if(!d) return ''; var T=demoText(d);
+  return '<div class="coach"><div class="coach-in"><div class="coach-t"><small>Demo · step '+d.step+' of 6 · nothing here is saved</small><b>'+esc(T.who)+'</b><span>'+esc(T.what)+'</span></div><div class="coach-b">'+(T.btn?'<button class="btn sm" data-a="demonext">'+esc(T.btn)+'</button>':'')+'<button class="'+(T.btn?'link small':'btn sm')+'" data-a="demoend">End demo</button></div></div></div>';
+}
+function demoStart(){
+  if(S.demo) return;
+  var w=attach(LocalDb(demoSeed(),null,true)), boss=S.bosses.filter(function(b){return S.crew.has(b)&&!S.crew.get(b).removed;})[0]||'d_boss';
+  S.demo={step:1,job:null,gang:null,boss:boss,yard:null,photos:[],back:{world:S.world,viewAs:S.viewAs}};
+  S.sheet=null; S.lb=null; S.pend={}; S.self=null; S.q=''; S.calMode='all'; S.month=null; S.day=null;
+  useWorld(w); S.viewAs=boss;
+  S.demo.yard=(crewList().filter(function(c){return c.yard;})[0]||{}).id||null;
+  var f=blankForm(); f.date=today(0); f.dmode='today'; S.form=f; S.page={k:'form'}; S.tab='jobs'; S.nav=true; window.scrollTo(0,0); render(true);
+}
+function demoEnd(){
+  var d=S.demo; if(!d) return;
+  d.photos.forEach(function(id){PH.thumb.delete(id);PH.mem.delete('t:'+id);PH.mem.delete('f:'+id);});
+  S.demo=null; S.viewAs=d.back.viewAs; useWorld(d.back.world);
+  S.page=null; S.form=null; S.sheet=null; S.lb=null; S.pend={}; S.self=null; S.tab='jobs'; S.calMode='all'; S.month=null; S.day=null; S.nav=true; window.scrollTo(0,0); render(true);
+  toast('Demo over. Nothing from it was kept.');
+}
+function demoGo(n){
+  var d=S.demo, j=d.job&&S.jobs.get(d.job); if(!j){d.step=1;render(true);return;}
+  d.gang=(j.crew||[]).filter(function(x){return x!==j.ch;})[0]||null;
+  if(n===4&&!d.gang) n=5;
+  d.step=n; S.viewAs=n===2?d.yard:(n===3||n===5?j.ch:(n===4?d.gang:d.boss));
+  S.sheet=null; S.lb=null; S.form=null; S.self=null; S.page={k:'job',id:j.id}; S.nav=true; window.scrollTo(0,0); render(true);
+}
+async function demoAuto(){ // "Do it for me": carry out the step exactly as that person would
+  var d=S.demo; if(!d||S.busy) return; var n=d.step, j=d.job&&S.jobs.get(d.job), now=Date.now(), all={};
+  S.busy='demo';
+  try{
+    if(n===1){
+      var staff=crewList().filter(function(c){return !c.yard&&S.bosses.indexOf(c.id)<0;}), v=fleet()[0], addr='12 Sample Street, Rayleigh';
+      var ref=await S.db.collection('jobs').add({v:2,kind:'erect',seq:1,date:today(0),address:addr,line:addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(addr),prop:Object.assign(blankProp(),{type:'Semi',storeys:'2',note:'Side gate on the left.'}),vehicle:String(v.reg).toUpperCase(),load:'full',std:ALLSTD.slice(),extra:{bm4:2,rpw:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id,notes:'Scaffold the front for new windows.',createdAt:now,createdBy:d.boss,yard:null,chk:null,left:null,done:null});
+      d.job=ref.id; S.busy=''; demoGo(2); return;
+    }
+    if(!j){S.busy='';return;}
+    rowsOf(j).forEach(function(r){all[r.id]='ok';});
+    if(n===2){
+      if(!(j.yard&&j.yard.at)){await S.db.doc('yardchecks/'+j.id).set({ticks:all,at:now,by:d.yard||''});await S.db.doc('jobs/'+j.id).update({yard:{at:now,by:d.yard||'',missing:[]}});}
+      S.busy=''; demoGo(3); return;
+    }
+    if(n===3){
+      if(!(j.chk&&j.chk.at)){await S.db.doc('checks/'+j.id).set({ticks:all,at:now,by:j.ch});await S.db.doc('jobs/'+j.id).update({chk:{at:now,by:j.ch,missing:[]}});}
+      if(!(j.left&&j.left.at)) await S.db.doc('jobs/'+j.id).update({left:{at:now,by:j.ch,typed:false}});
+      S.busy=''; demoGo(4); return;
+    }
+    if(n===4){S.busy='';demoGo(5);return;}
+    if(n===5){
+      if(!photosOf(j.id,'finish').length){var pic=demoPicture(), pid=uid('p');await keepPhoto(pid,pic.th,pic.full);await S.db.doc('photos/'+pid).set({job:j.id,kind:'finish',by:j.ch,at:now});}
+      if(!(j.done&&j.done.at)){await S.db.doc('jobs/'+j.id).update({done:{at:now,by:j.ch}});await scafOnFinish(S.jobs.get(j.id)||j);}
+      S.busy=''; demoGo(6); return;
+    }
+  }catch(e){fail(e);}
+  S.busy='';
+}
+
 /* ---------- job sheet form ---------- */
-function blankForm(){return {id:null,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],load:'full',std:ALLSTD.slice(),stdOpen:false,extra:{},open:{},notes:'',err:''};}
-function formFrom(j){var n=daysTo(j.date);return {id:j.id,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),load:j.load||'full',std:(j.std||[]).slice(),stdOpen:false,extra:Object.assign({},j.extra||{}),open:{},notes:j.notes||'',err:''};}
+var DAYL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],load:'full',std:ALLSTD.slice(),stdOpen:false,extra:{},open:{},notes:'',err:''};}
+function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),load:j.load||'full',std:(j.std||[]).slice(),stdOpen:false,extra:Object.assign({},j.extra||{}),open:{},notes:j.notes||'',err:''};}
 function staffOpt(id,f,sel){
-  var off=offOn(id,f.date), busy=jobsOn(id,f.date,f.id);
-  return '<option value="'+esc(id)+'"'+(sel?' selected':'')+(off&&!sel?' disabled':'')+'>'+esc(nameOf(id)+(off?' (off: '+(off.reason||'time off').toLowerCase()+')':(busy.length?' (on another job)':'')))+'</option>';
+  var off=offOn(id,f.date), busy=jobsOn(id,f.date,f.id), out=!!wkDay(f.date)&&!wkPicked(f.date,id)&&S.bosses.indexOf(id)<0;
+  return '<option value="'+esc(id)+'"'+(sel?' selected':'')+((off||out)&&!sel?' disabled':'')+'>'+esc(nameOf(id)+(off?' (off: '+(off.reason||'time off').toLowerCase()+')':(out?' (not picked for '+DAYL[pdate(f.date).getDay()]+')':(busy.length?' ('+plural(busy.length,'job')+' that day)':''))))+'</option>';
 }
 function formHtml(f){
   var r=f.pcRes, staff=crewList().filter(function(c){return !c.yard;}).map(function(c){return c.id;}), fl=fleet(), h='';
-  h+='<section class="card"><span class="lab">When</span><div class="seg">'+[['today','Today'],['tom','Tomorrow'],['pick','Other day']].map(function(x){return '<button type="button" data-a="dmode" data-v="'+x[0]+'" aria-pressed="'+(f.dmode===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
+  h+='<section class="card"><span class="lab">What and when</span><div class="seg" role="group" aria-label="Type of job">'+KINDS.map(function(x){return '<button type="button" data-a="kind" data-v="'+x[0]+'" aria-pressed="'+(f.kind===x[0])+'">'+x[1]+'</button>';}).join('')+'</div><div class="seg" role="group" aria-label="Which day">'+[['today','Today'],['tom','Tomorrow'],['pick','Other day']].map(function(x){return '<button type="button" data-a="dmode" data-v="'+x[0]+'" aria-pressed="'+(f.dmode===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
     (f.dmode==='pick'?'<input id="f-date" class="in" type="date" data-c="date" value="'+esc(f.date)+'" min="'+today(0)+'" aria-label="Date">':'<span class="hint">'+esc(fshort(f.date))+'</span>')+'</section>';
   h+='<section class="card"><span class="lab">Where</span>';
   if(canSat()) h+='<div class="fld"><label for="f-pc">Postcode</label><div class="rowf"><input id="f-pc" class="in pc" data-f="pc" value="'+esc(f.pc)+'" placeholder="e.g. SS6 7AA" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search"><button type="button" class="btn" data-a="findpc"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'Finding…':'Find')+'</button></div></div>';
@@ -1040,8 +1473,11 @@ function formHtml(f){
     (f.tail?'<div><span class="tag">'+esc(f.tail)+'</span> <button type="button" class="link small" data-a="cleartail">Remove</button></div>':'')+'</div></section>';
   h+=propHtml(f);
   h+='<section class="card"><span class="lab">Lorry and crew</span><div class="fld"><label for="f-van">Lorry</label>';
-  h+=fl.length?'<select id="f-van" class="in" data-c="vehicle"><option value="">Pick a lorry</option>'+fl.map(function(v){var reg=String(v.reg).toUpperCase(),u=vanOn(reg,f.date,f.id);return '<option value="'+esc(reg)+'"'+(reg===String(f.vehicle).toUpperCase()?' selected':'')+'>'+esc(reg+(v.name?' · '+v.name:'')+(u.length?' (on another job)':''))+'</option>';}).join('')+'</select>':'<p class="hint">No lorries yet. Add them in Set-up.</p>';
+  h+=fl.length?'<select id="f-van" class="in" data-c="vehicle"><option value="">Pick a lorry</option>'+fl.map(function(v){var reg=String(v.reg).toUpperCase(),u=vanOn(reg,f.date,f.id);return '<option value="'+esc(reg)+'"'+(reg===String(f.vehicle).toUpperCase()?' selected':'')+'>'+esc(reg+(v.name?' · '+v.name:'')+(u.length?' ('+plural(u.length,'job')+' that day)':''))+'</option>';}).join('')+'</select>':'<p class="hint">No lorries yet. Add them in Set-up.</p>';
   h+='</div><div class="fld"><label for="f-ch">Charge hand</label>'+(staff.length?'<select id="f-ch" class="in" data-c="ch"><option value="">Pick the charge hand</option>'+staff.map(function(id){return staffOpt(id,f,id===f.ch);}).join('')+'</select>':'<p class="hint">No staff yet. Add them in Set-up.</p>')+'</div>';
+  var mates=f.vehicle&&f.ch?jobList().filter(function(o){return o.id!==f.id&&o.date===f.date&&o.ch===f.ch&&String(o.vehicle||'').toUpperCase()===String(f.vehicle).toUpperCase();}).length:0;
+  if(mates) h+='<p class="hint">'+esc(firstOf(f.ch))+'’s gang already has '+plural(mates,'job')+' on '+esc(f.vehicle)+' that day. This will be job '+(mates+1)+'.</p>';
+  if(isWkend(f.date)) h+=wkDay(f.date)?'<p class="hint">'+DAYL[pdate(f.date).getDay()]+' is weekend work. Only the people you picked can go on the job.</p>':'<div class="card-h"><span class="hint">'+DAYL[pdate(f.date).getDay()]+' is voluntary. You can ask who wants it first.</span><button type="button" class="link small" data-a="wknew" data-v="'+esc(f.date)+'">Ask</button></div>';
   var left=staff.filter(function(id){return id!==f.ch&&f.gang.indexOf(id)<0;});
   h+='<div class="fld"><label for="f-gang">Gang</label>'+(f.gang.length?'<div class="chips">'+f.gang.map(function(id){return '<button type="button" class="chip" data-a="gangrm" data-id="'+esc(id)+'" aria-label="Take '+esc(nameOf(id))+' off">'+esc(nameOf(id))+'<span class="x" aria-hidden="true">×</span></button>';}).join('')+'</div>':'')+
     (left.length?'<select id="f-gang" class="in" data-c="gang"><option value="">'+(f.gang.length?'Add someone else':'Add someone to the gang')+'</option>'+left.map(function(id){return staffOpt(id,f,false);}).join('')+'</select>':'')+'</div></section>';
@@ -1062,71 +1498,33 @@ function formHtml(f){
 }
 function formFoot(f){return '<div class="foot"><div class="foot-in">'+(f.err?'<span class="err" role="alert" style="text-align:center">'+esc(f.err)+'</span>':'')+'<button class="btn go" data-a="save">'+IC.send+(f.id?'Save changes':'Send to the yard')+'</button></div></div>';}
 async function saveJob(){
-  var f=S.form; if(!f) return; var addr=fullAddr(f), crew=(f.ch?[f.ch]:[]).concat(f.gang.filter(function(x){return x!==f.ch;})), offs=crew.filter(function(id){return offOn(id,f.date);});
-  f.err=!addr?'Put the address in.':(!f.vehicle?'Pick the lorry.':(!f.ch?'Pick the charge hand.':(offs.length?nameOf(offs[0])+' is off that day.':'')));
+  var f=S.form; if(!f) return; var addr=fullAddr(f), crew=(f.ch?[f.ch]:[]).concat(f.gang.filter(function(x){return x!==f.ch;})), offs=crew.filter(function(id){return offOn(id,f.date);}), outs=wkDay(f.date)?crew.filter(function(id){return !wkPicked(f.date,id)&&S.bosses.indexOf(id)<0;}):[];
+  f.err=!addr?'Put the address in.':(!f.vehicle?'Pick the lorry.':(!f.ch?'Pick the charge hand.':(offs.length?nameOf(offs[0])+' is off that day.':(outs.length?nameOf(outs[0])+' isn’t picked for that '+DAYL[pdate(f.date).getDay()]+'.':''))));
   if(f.err){render(true);return;}
   var extra={}; Object.keys(f.extra).forEach(function(k){if(f.extra[k]>0)extra[k]=f.extra[k];});
   var p=f.prop, prop={type:p.type||'',storeys:p.storeys||'',note:String(p.note||'').trim(),ring:p.ring||'',w:p.w||0,d:p.d||0,run:p.run||0,area:p.area||0,ax:p.ax||0,front:!!p.front}, pk=placeKey(addr);
-  var body={v:2,date:f.date,address:addr,line:String(f.line).trim(),tail:String(f.tail||'').trim(),lat:f.lat,lon:f.lon,exact:!!f.exact,pk:pk,prop:prop,vehicle:f.vehicle,load:f.load,std:f.load==='empty'?[]:f.std.slice(),extra:extra,crew:crew,ch:f.ch,notes:String(f.notes).trim()};
+  var seq=jobList().filter(function(o){return o.id!==f.id&&o.date===f.date&&o.ch===f.ch&&String(o.vehicle||'').toUpperCase()===String(f.vehicle).toUpperCase();}).reduce(function(m,o){return Math.max(m,o.seq||0);},0)+1;
+  var body={v:2,kind:f.kind||'erect',date:f.date,address:addr,line:String(f.line).trim(),tail:String(f.tail||'').trim(),lat:f.lat,lon:f.lon,exact:!!f.exact,pk:pk,prop:prop,vehicle:f.vehicle,load:f.load,std:f.load==='empty'?[]:f.std.slice(),extra:extra,crew:crew,ch:f.ch,notes:String(f.notes).trim()};
   try{
     if(f.id){
       var old=S.jobs.get(f.id)||{}, sig=function(j){return JSON.stringify([(j.std||[]).slice().sort(),j.extra||{},j.load]);}, changed=sig(old)!==sig(body)&&!(old.left&&old.left.at);
       if(changed){body.yard=null;body.chk=null;}
+      if(runKey(old)!==runKey(body)) body.seq=seq;
       await S.db.doc('jobs/'+f.id).update(body);
       if(changed&&(old.yard||old.chk)){try{await S.db.doc('yardchecks/'+f.id).set({ticks:{}});await S.db.doc('checks/'+f.id).set({ticks:{}});}catch(_){ }toast('Saved. The load changed, so it needs loading again.');}else toast('Saved');
       S.page={k:'job',id:f.id};
     }else{
-      body.createdAt=Date.now(); body.createdBy=myCrew()||''; body.yard=null; body.chk=null; body.left=null; body.done=null;
-      await S.db.collection('jobs').add(body);
-      toast('Sent to the yard'); S.page=null; S.tab='jobs';
+      body.seq=seq; body.createdAt=Date.now(); body.createdBy=myCrew()||''; body.yard=null; body.chk=null; body.left=null; body.done=null;
+      var ref=await S.db.collection('jobs').add(body);
+      if(S.demo&&S.demo.step===1){S.demo.job=ref.id;S.form=null;demoGo(2);return;}
+      S.page=null; S.tab='jobs'; if(S.demo) toast('Sent to the yard'); else S.sheet={k:'sent',job:ref.id};
     }
     if(pk){try{await S.db.doc('places/'+pk).set(Object.assign({address:addr,lat:f.lat,lon:f.lon,exact:!!f.exact,at:Date.now(),by:myCrew()||''},prop));}catch(_){ }}
     S.form=null; S.nav=true; window.scrollTo(0,0); render(true);
   }catch(e){fail(e);}
 }
 
-/* ---------- calendar: booked jobs, and holidays ---------- */
-function calHtml(){
-  var me=myCrew(), boss=isBoss(), mode=S.calMode==='off'?'off':'jobs', m=S.month||today(0).slice(0,7), y=+m.slice(0,4), mo=+m.slice(5,7)-1, first=new Date(y,mo,1,12), lead=(first.getDay()+6)%7, dim=new Date(y,mo+1,0).getDate(), cells=Math.ceil((lead+dim)/7)*7, t0=today(0), sel=S.day||t0, offs=offList(), jobs=visJobs(), np=boss?pendingOff().length:0, h='';
-  var see=function(o){return o.status==='approved'||boss||o.person===me;};
-  h+='<div class="seg" role="group" aria-label="Which calendar">'+[['jobs','Jobs'],['off','Holidays'+(np?' ('+np+')':'')]].map(function(x){return '<button type="button" data-a="calmode" data-v="'+x[0]+'" aria-pressed="'+(mode===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>';
-  if(mode==='off'){
-    if(boss) h+=pendingOff().map(offAsk).join('');
-    if(me||boss) h+='<button class="btn" data-a="offnew">'+IC.plus+(boss?'Book time off':'Ask for time off')+'</button>';
-  }
-  h+='<section class="card"><div class="cal-h"><button class="cal-nav" data-a="month" data-d="-1" aria-label="Previous month">'+IC.prev+'</button><b>'+MONL[mo]+' '+y+'</b><button class="cal-nav" data-a="month" data-d="1" aria-label="Next month">'+IC.next+'</button></div><div class="cal">'+['M','T','W','T','F','S','S'].map(function(d){return '<span class="cal-d">'+d+'</span>';}).join('');
-  for(var i=0;i<cells;i++){
-    var d=new Date(y,mo,1-lead+i,12), ds=dstr(d), out=d.getMonth()!==mo, mark='', say='';
-    if(mode==='jobs'){
-      var dj=jobs.filter(function(j){return j.date===ds;});
-      if(dj.length){var bad=dj.some(function(j){return missingOf(j).length&&!(j.left&&j.left.at);}), fin=dj.every(function(j){return j.done&&j.done.at;});mark='<span class="jn'+(bad?' bad':(fin?' ok':''))+'">'+dj.length+'</span>';say=', '+plural(dj.length,'job');}
-    }else{
-      var who=offs.filter(function(o){return o.from<=ds&&o.to>=ds&&see(o);});
-      if(who.length){mark='<span class="dots">'+who.slice(0,2).map(function(o){return '<span class="dot'+(o.status==='pending'?' pend':'')+'">'+esc(initials(nameOf(o.person)))+'</span>';}).join('')+(who.length>2?'<span class="dot">+'+(who.length-2)+'</span>':'')+'</span>';say=', '+who.length+' off';}
-    }
-    h+='<button class="day'+(out?' out':'')+(ds===t0?' today':'')+'" data-a="day" data-v="'+ds+'" aria-pressed="'+(ds===sel)+'" aria-label="'+esc(fshort(ds))+say+'"><span>'+d.getDate()+'</span>'+mark+'</button>';
-  }
-  h+='</div></section>';
-  var on=offs.filter(function(o){return o.from<=sel&&o.to>=sel&&see(o);});
-  if(mode==='jobs'){
-    var day=jobs.filter(function(j){return j.date===sel;}).sort(function(a,b){return (a.createdAt||0)-(b.createdAt||0);}), lines=[], offOk=on.filter(function(o){return o.status==='approved';});
-    h+='<section class="card flush"><div class="sh-h"><div><b class="t">'+esc(fwhen(sel))+'</b><div class="small muted">'+(day.length?plural(day.length,'job')+' booked':'No jobs booked')+'</div></div>'+(boss&&sel>=t0?'<button class="btn sm" data-a="newon" data-v="'+sel+'">'+IC.plus+'New job</button>':'')+'</div>';
-    if(day.length) h+='<div class="list" style="border-top:1px solid var(--line)">'+day.map(function(j){return '<button class="li" data-a="open" data-id="'+esc(j.id)+'">'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'')+'<div class="li-t"><b>'+esc(j.line||j.address)+'</b><small>'+esc(crewLine(j))+'</small></div>'+pillOf(j)+'</button>';}).join('')+'</div>';
-    if(offOk.length) lines.push('<b>Off:</b> '+esc(offOk.map(function(o){return firstOf(o.person)+' ('+String(o.reason||'time off').toLowerCase()+')';}).join(', ')));
-    if(boss){
-      var busy={}, used={}; day.forEach(function(j){(j.crew||[]).forEach(function(c){busy[c]=1;});used[String(j.vehicle||'').toUpperCase()]=1;});
-      var free=crewList().filter(function(c){return !c.yard&&S.bosses.indexOf(c.id)<0&&!busy[c.id]&&!offOn(c.id,sel);}).map(function(c){return firstOf(c.id);}), fl=fleet().map(function(v){return String(v.reg).toUpperCase();}).filter(function(r){return !used[r];});
-      lines.push('<b>Free:</b> '+(free.length?esc(free.join(', ')):'nobody')); lines.push('<b>Lorries free:</b> '+(fl.length?esc(fl.join(', ')):'none'));
-    }
-    if(lines.length) h+='<div class="dayx">'+lines.map(function(l){return '<p>'+l+'</p>';}).join('')+'</div>';
-    h+='</section>';
-  }else{
-    h+='<section class="card flush"><div class="sh-h"><b class="t">'+esc(fwhen(sel))+'</b></div>'+(on.length?'<div class="list">'+on.map(offRow).join('')+'</div>':'<p class="tip">Nobody is off.</p>')+'</section>';
-    var next=offs.filter(function(o){return o.to>=t0&&see(o);}).sort(function(a,b){return a.from<b.from?-1:1;}).slice(0,12);
-    if(next.length) h+='<section class="card flush"><div class="sh-h"><b class="t">Coming up</b></div><div class="list">'+next.map(offRow).join('')+'</div></section>';
-  }
-  return h;
-}
+/* ---------- time off ---------- */
 function offRow(o){
   var mine=o.person===myCrew(), boss=isBoss(), can=(mine||boss)&&o.to>=today(0);
   return '<div class="li who-row"><span class="av">'+esc(initials(nameOf(o.person)))+'</span><div class="li-t"><b>'+esc(nameOf(o.person))+'</b><small>'+esc(frange(o.from,o.to))+' · '+esc(o.reason||'Time off')+'</small></div>'+(o.status==='pending'?'<span class="pill p-toload">Waiting</span>':'')+(can?'<button class="link small bad" data-a="offdel" data-id="'+esc(o.id)+'">'+(S.confirm==='off'+o.id?'Sure?':'Cancel')+'</button>':'')+'</div>';
@@ -1171,7 +1569,8 @@ function setHtml(){
     (k?'<div class="card-h"><span class="tag">Key ending '+esc(k.slice(-4))+'</span>'+(ADDR_KEY_BUILT&&k===ADDR_KEY_BUILT?'':'<button class="link small bad" data-a="keydel">'+(S.confirm==='key'?'Sure?':'Remove')+'</button>')+'</div>':'<form class="rowf" data-form="addrkey"><input id="k-in" class="in" placeholder="Paste the key (starts ak_)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Address key"><button class="btn" type="submit">Save</button></form>')+
     '<div class="rowf"><input id="t-pc" class="in pc" placeholder="Postcode to test" value="'+esc(T&&T.pc||'')+'" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Postcode to test"><button class="btn line" type="button" data-a="addrtest"'+(T&&T.busy?' disabled':'')+'>'+(T&&T.busy?'Testing…':'Test')+'</button></div>'+
     (T&&T.rows.length?'<div class="at">'+T.rows.map(function(r){return '<p class="'+(r.ok?'y':'n')+'"><b>'+(r.ok?'✓ ':'✗ ')+esc(r.n)+'</b><span>'+esc(r.d)+'</span></p>';}).join('')+'</div>':'')+'</section>';
-  h+='<section class="card"><div class="card-h"><div><b>'+esc(APP)+'</b><div class="small muted">Version '+esc(FCS_BUILD.v)+(FCS_BUILD.at?' · '+esc(FCS_BUILD.at):'')+'</div></div>'+(S.standalone?'<button class="btn line sm" data-a="checkupdate">Check for update</button>':'')+'</div>'+
+  if(!S.demo) h+='<section class="card"><div class="card-h"><div><b style="font-size:1.08rem">Demo</b><div class="small muted">Watch one job go all the way through: you, the yard, the charge hand, the gang, then the finish. Nothing in it is saved.</div></div><button class="btn sm" data-a="demo">'+IC.play+'Run it</button></div></section>';
+  h+='<section class="card"><div class="card-h"><div><b>'+esc(APP)+'</b><div class="small muted">Version '+VER+(FCS_BUILD.v!=='dev'?' · '+esc(FCS_BUILD.v):'')+(FCS_BUILD.at?' · '+esc(FCS_BUILD.at):'')+'</div></div>'+(S.standalone?'<button class="btn line sm" data-a="checkupdate">Check for update</button>':'')+'</div>'+
     (S.standalone?'<p class="hint">This is the practice version. Everything, photos included, stays on this phone. Tap your name at the top to see the app as someone else.</p><button class="btn danger sm" data-a="reset" style="width:100%">'+(S.confirm==='reset'?'Tap again to wipe everything':'Start again from scratch')+'</button>':'<p class="hint">Share this app with each member of staff as an Editor. The first time they open it, they tap their name. The picture from above and the house measuring only work in the home-screen version.</p>')+'</section>';
   return h;
 }
@@ -1217,8 +1616,7 @@ function extraSheet(s){
   return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="Extra work" data-stop="1"><div class="sheet-h"><b>Extra work</b><button class="link" data-a="closesheet">Close</button></div>'+
     '<div class="fld"><label for="x-text">What was done</label><textarea id="x-text" class="in" data-o="text" placeholder="e.g. Extra lift on the back">'+esc(s.text)+'</textarea></div>'+
     '<div class="fld"><label for="x-who">Who asked for it (optional)</label><input id="x-who" class="in" data-o="who" value="'+esc(s.who)+'" placeholder="Customer or site manager" autocomplete="off" autocapitalize="words"></div>'+
-    '<div class="fld"><span class="fl">Photos (optional)</span>'+(s.files.length?'<div class="gal in-row">'+s.files.map(function(x){return '<div class="th"><img src="'+esc(x.u)+'" alt=""></div>';}).join('')+'</div>':'')+
-    '<label class="btn soft sm" style="align-self:flex-start">'+IC.cam+(s.files.length?'Add another':'Add a photo')+'<input class="vh" type="file" accept="image/*" multiple data-pick="extra" aria-label="Add a photo"></label></div>'+
+    pickerHtml(s,'extra')+
     '<p class="hint">'+esc(bossFirst())+' sees this straight away so it can be charged.</p>'+
     (s.err?'<p class="err" role="alert">'+esc(s.err)+'</p>':'')+'<button class="btn go" data-a="xsave"'+(S.busy?' disabled':'')+'>'+(S.busy?'Saving…':'Save')+'</button></div></div>';
 }
@@ -1227,21 +1625,25 @@ function timeSheet(s){
     '<div class="fld"><label for="tm-in">What time did the lorry leave?</label><input id="tm-in" class="in" type="time" data-o="val" value="'+esc(s.val)+'"></div><p class="hint">'+esc(bossFirst())+' can see when a time has been typed in.</p>'+
     (s.err?'<p class="err" role="alert">'+esc(s.err)+'</p>':'')+'<button class="btn go" data-a="timesave">Save the time</button></div></div>';
 }
-function textSheet(s){
-  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="Job as a message" data-stop="1"><div class="sheet-h"><b>Job as a message</b><button class="link" data-a="closesheet">Close</button></div>'+
-    '<p class="hint">Press and hold the words, choose Select All, then Copy. Paste it into WhatsApp or a text.</p><textarea id="sh-text" class="in" readonly style="min-height:260px;font-size:.9rem">'+esc(s.text)+'</textarea></div></div>';
+async function sendText(t,title){ // hand words to the phone's share sheet; failing that copy them; failing that show them to copy by hand
+  try{if(navigator.share){await navigator.share({text:t});return;}}catch(e){if(e&&e.name==='AbortError')return;}
+  try{await navigator.clipboard.writeText(t);toast('Copied. Paste it into WhatsApp, a text or an email.');}catch(_){S.sheet={k:'text',text:t,title:title};render(true);}
 }
-function sheetOpen(){var s=S.sheet;return !s?'':(s.k==='who'?whoSheet():(s.k==='extra'?extraSheet(s):(s.k==='time'?timeSheet(s):(s.k==='text'?textSheet(s):offSheet(s)))));}
+function textSheet(s){
+  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="'+esc(s.title||'Job as a message')+'" data-stop="1"><div class="sheet-h"><b>'+esc(s.title||'Job as a message')+'</b><button class="link" data-a="closesheet">Close</button></div>'+
+    '<p class="hint">Press and hold the words, choose Select All, then Copy. Paste it into WhatsApp, a text or an email.</p><textarea id="sh-text" class="in" readonly style="min-height:260px;font-size:.9rem">'+esc(s.text)+'</textarea></div></div>';
+}
+function sheetOpen(){var s=S.sheet, F={who:whoSheet,extra:extraSheet,time:timeSheet,text:textSheet,insp:inspSheet,wk:wkSheet,sent:sentSheet,scaf:scafSheet,off:offSheet};return !s?'':(F[s.k]||offSheet)(s);}
 function lbHtml(){
   var L=S.lb, p=L&&S.photos.get(L.ids[L.i]); if(!p){S.lb=null;return '';}
-  var j=S.jobs.get(p.job), can=!!j&&canSite(j), src=L.fullId===p.id&&L.full?L.full:photoSrc(p), many=L.ids.length>1;
-  return '<div class="lbx" role="dialog" aria-label="Photo"><div class="lbx-top"><span>'+(p.kind==='extra'?'Extra work':'Finish photo')+(many?' · '+(L.i+1)+' of '+L.ids.length:'')+'</span><button class="lbx-x" data-a="lbclose" aria-label="Close">'+IC.no+'</button></div>'+
+  var j=S.jobs.get(p.job), sc=p.kind==='insp'?S.scafs.get((S.insps.get(p.insp)||{}).pk):null, can=j?canSite(j):(isBoss()||p.by===myCrew()), src=L.fullId===p.id&&L.full?L.full:photoSrc(p), many=L.ids.length>1;
+  return '<div class="lbx" role="dialog" aria-label="Photo"><div class="lbx-top"><span>'+(p.kind==='extra'?'Extra work':(p.kind==='insp'?'Inspection photo':'Finish photo'))+(many?' · '+(L.i+1)+' of '+L.ids.length:'')+'</span><button class="lbx-x" data-a="lbclose" aria-label="Close">'+IC.no+'</button></div>'+
     '<div class="lbx-img" data-a="lbclose"><img id="lb-img" alt="" data-ph="'+esc(p.id)+'"'+(src?' src="'+esc(src)+'"':'')+'></div>'+
-    '<div class="lbx-bot"><span class="lbx-cap">'+esc(j?j.address:'')+'<br>'+esc(nameOf(p.by))+', '+esc(ftime(p.at))+'</span><div class="btns">'+
+    '<div class="lbx-bot"><span class="lbx-cap">'+esc(j?j.address:(sc?sc.address:''))+'<br>'+esc(nameOf(p.by))+', '+esc(ftime(p.at))+'</span><div class="btns">'+
     (many?'<button class="btn sm" data-a="lbmove" data-d="-1"'+(L.i<=0?' disabled':'')+'>Back</button>':'')+(can?'<button class="btn sm" data-a="phdel">'+(S.confirm==='ph'+p.id?'Tap again to remove':'Remove')+'</button>':'')+(many?'<button class="btn sm" data-a="lbmove" data-d="1"'+(L.i>=L.ids.length-1?' disabled':'')+'>Next</button>':'')+'</div></div></div>';
 }
 function loadFull(){
-  var L=S.lb, id=L&&L.ids[L.i]; if(!id||!S.standalone) return;
+  var L=S.lb, id=L&&L.ids[L.i]; if(!id||!local()) return;
   phGet('f:'+id).then(function(v){if(v&&S.lb&&S.lb.ids[S.lb.i]===id){S.lb.full=v;S.lb.fullId=id;render(true);}});
 }
 async function savePhotos(files,meta){
@@ -1286,17 +1688,18 @@ function render(force){
   S.deferred=false;
   var html='';
   if(S.phase==='nodb'){hideSplash();html=barHtml()+'<main><div class="card empty"><b>Open this from the link you were sent</b><span>'+esc(APP)+' needs you signed in to Claude to share jobs.</span></div></main>';}
-  else if(S.phase==='ready'&&S.got.jobs&&S.got.crew&&S.got.settings&&(S.standalone||S.got.people)){
+  else if(S.phase==='ready'&&S.got.jobs&&S.got.crew&&S.got.settings&&(local()||S.got.people)){
     hideSplash();
-    if(S.standalone&&!myCrew()){var b=S.bosses.filter(function(x){return S.crew.has(x)&&!S.crew.get(x).removed;})[0]||(crewList()[0]||{}).id;S.viewAs=b||null;}
+    if(local()&&!myCrew()){var b=S.bosses.filter(function(x){return S.crew.has(x)&&!S.crew.get(x).removed;})[0]||(crewList()[0]||{}).id;S.viewAs=b||null;}
     if(!isBoss()&&S.tab==='set') S.tab='jobs';
-    if(!S.standalone&&!myCrew()&&!S.owner) html=barHtml()+linkHtml();
+    if(!local()&&!myCrew()&&!S.owner) html=barHtml()+linkHtml();
     else{
       var j=S.page&&S.page.k==='job'?S.jobs.get(S.page.id):null;
       if(S.page&&S.page.k==='job'&&(!j||j.v!==2)){S.page=null;j=null;}
       if(S.page&&S.page.k==='form'&&!S.form) S.page=null;
-      var body=S.page?(S.page.k==='job'?jobPage(j):formHtml(S.form)):(S.tab==='jobs'?jobsTab():(S.tab==='cal'?calHtml():setHtml()));
-      var foot=S.page?(S.page.k==='job'?jobFoot(j):formFoot(S.form)):'';
+      var sc=S.page&&S.page.k==='scaf'?S.scafs.get(S.page.id):null; if(S.page&&S.page.k==='scaf'&&!sc) S.page=null;
+      var k=S.page&&S.page.k, body=k?(k==='job'?jobPage(j):(k==='scaf'?scafPage(sc):formHtml(S.form))):(S.tab==='jobs'?jobsTab():(S.tab==='cal'?calHtml():setHtml()));
+      var foot=k==='job'?jobFoot(j):(k==='form'?formFoot(S.form):'');
       html=barHtml()+'<main'+(foot?' class="has-foot"':'')+'>'+body+'</main>'+(S.page?foot:navHtml())+sheetOpen()+(S.lb?lbHtml():'');
     }
   }
@@ -1306,7 +1709,7 @@ function render(force){
   if(S.standalone) saveLocal();
 }
 function go(page){S.page=page;S.confirm=null;S.jz=null;S.satFail=false;SAT.ZMAX=20;S.lb=null;if(!page||page.id!==S.self)S.self=null;S.nav=true;window.scrollTo(0,0);render(true);}
-function dropSheet(){var s=S.sheet;if(s&&s.k==='extra')s.files.forEach(function(x){try{URL.revokeObjectURL(x.u);}catch(_){ }});S.sheet=null;}
+function dropSheet(){var s=S.sheet;if(s&&s.files)s.files.forEach(function(x){try{URL.revokeObjectURL(x.u);}catch(_){ }});S.sheet=null;}
 
 /* ---------- actions ---------- */
 var ACT={
@@ -1317,35 +1720,34 @@ var ACT={
   newon:function(b){var f=blankForm(),n=daysTo(b.dataset.v);f.date=b.dataset.v;f.dmode=n===0?'today':(n===1?'tom':'pick');S.form=f;go({k:'form'});},
   edit:function(b){var j=S.jobs.get(b.dataset.id);if(!j)return;S.form=formFrom(j);go({k:'form'});},
   del:async function(b){
-    var id=b.dataset.id;if(!two('del'+id))return;var ph=photosOf(id),ex=Array.from(S.extras.values()).filter(function(x){return x.job===id;});
-    try{await S.db.doc('jobs/'+id).delete();
+    var id=b.dataset.id;if(!two('del'+id))return;var ph=photosOf(id),ex=Array.from(S.extras.values()).filter(function(x){return x.job===id;}),was=S.jobs.get(id),sc=was&&S.scafs.get(was.pk||placeKey(was.address));
+    try{if(sc&&sc.upJob===id&&!lastInsp(sc))await S.db.doc('scaffolds/'+sc.id).delete();   // the scaffold this job put on the record goes with it, unless it has been inspected
+      await S.db.doc('jobs/'+id).delete();
       try{await S.db.doc('yardchecks/'+id).delete();await S.db.doc('checks/'+id).delete();for(var i=0;i<ph.length;i++)await delPhoto(ph[i]);for(var k=0;k<ex.length;k++)await S.db.doc('extras/'+ex[k].id).delete();}catch(_){ }
       toast('Job deleted');go(null);}catch(e){fail(e);}
   },
   earlier:function(){S.earlier=!S.earlier;render(true);},
   tick:function(b){var s=b.dataset.s,id=b.dataset.id,i=b.dataset.i,cur=ticksOf(s,id)[i]||'';setTick(s,id,i,cur===''?'ok':(cur==='ok'?'no':null));render(true);},
-  allon:function(b){var s=b.dataset.s,id=b.dataset.id,j=S.jobs.get(id);if(!j)return;var t=ticksOf(s,id);rowsOf(j).forEach(function(r){if(r.sec==='std'&&!t[r.id])setTick(s,id,r.id,'ok');});render(true);},
+  allon:function(b){var s=b.dataset.s,id=b.dataset.id,k=b.dataset.k||'std',j=S.jobs.get(id);if(!j)return;var t=ticksOf(s,id);rowsOf(j).forEach(function(r){if(r.sec===k&&!t[r.id])setTick(s,id,r.id,'ok');});render(true);},
   confirm:async function(b){
     var s=b.dataset.s,id=b.dataset.id,j=S.jobs.get(id);if(!j)return;
     var t=ticksOf(s,id), rows=rowsOf(j); if(rows.some(function(r){return !t[r.id];})){toast('Tick everything first');return;}
     var miss=rows.filter(function(r){return t[r.id]==='no';}).map(function(r){return r.id;}), patch={}; patch[s]={at:Date.now(),by:myCrew()||'',missing:miss};
-    try{await flushTicks(s,id);await S.db.doc('jobs/'+id).update(patch);toast(miss.length?'Confirmed. '+bossFirst()+' can see what’s missing.':(s==='yard'?'Loaded. '+bossFirst()+' and the charge hand can see it.':'Checked. '+bossFirst()+' can see it.'));window.scrollTo(0,0);render(true);}catch(e){fail(e);}
+    try{await flushTicks(s,id);await S.db.doc('jobs/'+id).update(patch);toast(miss.length?'Confirmed. '+bossFirst()+' can see what’s missing.':(s==='yard'?'Loaded. '+bossFirst()+' and the charge hand can see it.':'Checked. '+bossFirst()+' can see it.'));if(S.demo&&S.demo.step===2&&s==='yard'){demoGo(3);return;}window.scrollTo(0,0);render(true);}catch(e){fail(e);}
   },
-  undo:async function(b){var p={};p[b.dataset.s]=null;try{await S.db.doc('jobs/'+b.dataset.id).update(p);toast('Undone');render(true);}catch(e){fail(e);}},
+  undo:async function(b){var p={},j=S.jobs.get(b.dataset.id);p[b.dataset.s]=null;try{await S.db.doc('jobs/'+b.dataset.id).update(p);if(b.dataset.s==='done'&&j)await scafOnUndo(j);toast('Undone');render(true);}catch(e){fail(e);}},
   self:function(b){S.self=S.self===b.dataset.id?null:b.dataset.id;render(true);},
-  share:async function(b){
-    var j=S.jobs.get(b.dataset.id);if(!j)return;var t=shareText(j);
-    try{if(navigator.share){await navigator.share({text:t});return;}}catch(e){if(e&&e.name==='AbortError')return;}
-    try{await navigator.clipboard.writeText(t);toast('Copied. Paste it into WhatsApp or a text.');}catch(_){S.sheet={k:'text',text:t};render(true);}
-  },
+  share:function(b){var j=S.jobs.get(b.dataset.id);if(j)sendText(shareText(j),'Job as a message');},
+  inspshare:function(b){var i=S.insps.get(b.dataset.id);if(i)sendText(inspText(i),'Inspection report');},
   leave:async function(b){
-    var id=b.dataset.id,j=S.jobs.get(id);if(!j||!canStep(j)||statusOf(j)!=='checked')return;var now=Date.now();
-    try{await S.db.doc('jobs/'+id).update({left:{at:now,by:myCrew()||'',typed:false}});toast('Left the yard at '+clock(now)+'. '+bossFirst()+' can see it.');window.scrollTo(0,0);render(true);}catch(e){fail(e);}
+    var id=b.dataset.id,j=S.jobs.get(id);if(!j||!canStep(j)||statusOf(j)!=='checked')return;var now=Date.now(),set=runOf(j).filter(function(o){return statusOf(o)==='checked';});
+    try{for(var i=0;i<set.length;i++)await S.db.doc('jobs/'+set[i].id).update({left:{at:now,by:myCrew()||'',typed:false}});
+      toast('Left the yard at '+clock(now)+'. '+bossFirst()+' can see it.');if(S.demo&&S.demo.step===3){demoGo(4);return;}window.scrollTo(0,0);render(true);}catch(e){fail(e);}
   },
   finish:async function(b){
     var id=b.dataset.id,j=S.jobs.get(id);if(!j||!canStep(j)||statusOf(j)!=='out')return;
     if(!photosOf(id,'finish').length){toast('Add a finish photo first');return;}
-    try{await S.db.doc('jobs/'+id).update({done:{at:Date.now(),by:myCrew()||''}});toast('Job finished. '+bossFirst()+' can see the photos.');window.scrollTo(0,0);render(true);}catch(e){fail(e);}
+    try{await S.db.doc('jobs/'+id).update({done:{at:Date.now(),by:myCrew()||''}});await scafOnFinish(j);toast('Job finished. '+bossFirst()+' can see the photos.');if(S.demo&&S.demo.step===5){demoGo(6);return;}window.scrollTo(0,0);render(true);}catch(e){fail(e);}
   },
   timeopen:function(b){var j=S.jobs.get(b.dataset.id);if(!j||!j.left)return;S.sheet={k:'time',job:j.id,val:clock(j.left.at),err:''};render(true);},
   timesave:async function(){
@@ -1369,7 +1771,7 @@ var ACT={
   xdel:async function(b){var id=b.dataset.id,x=S.extras.get(id);if(!x||!two('x'+id))return;var ph=photosOf(x.job,'extra',id);try{await S.db.doc('extras/'+id).delete();for(var i=0;i<ph.length;i++){try{await delPhoto(ph[i]);}catch(_){ }}toast('Removed');}catch(e){fail(e);}},
   charged:async function(b){try{await S.db.doc('extras/'+b.dataset.id).update({charged:{at:Date.now(),by:myCrew()||''}});toast('Marked as charged');}catch(e){fail(e);}},
   uncharge:async function(b){try{await S.db.doc('extras/'+b.dataset.id).update({charged:null});toast('Back to not charged');}catch(e){fail(e);}},
-  lb:function(b){var p=S.photos.get(b.dataset.id);if(!p)return;var ids=photosOf(p.job,p.kind,p.kind==='extra'?p.extra:undefined).map(function(x){return x.id;});S.lb={ids:ids,i:Math.max(0,ids.indexOf(p.id)),full:'',fullId:''};S.confirm=null;render(true);loadFull();},
+  lb:function(b){var p=S.photos.get(b.dataset.id);if(!p)return;var ids=(p.kind==='insp'?photosBy('insp',p.insp):photosOf(p.job,p.kind,p.kind==='extra'?p.extra:undefined)).map(function(x){return x.id;});S.lb={ids:ids,i:Math.max(0,ids.indexOf(p.id)),full:'',fullId:''};S.confirm=null;render(true);loadFull();},
   lbmove:function(b){var L=S.lb;if(!L)return;L.i=Math.max(0,Math.min(L.ids.length-1,L.i+(+b.dataset.d)));L.full='';L.fullId='';S.confirm=null;render(true);loadFull();},
   lbclose:function(b,e){if(e&&e.target&&e.target.id==='lb-img')return;S.lb=null;S.confirm=null;render(true);},
   phdel:async function(){
@@ -1399,7 +1801,65 @@ var ACT={
   ptype:function(b){var p=S.form.prop;p.type=p.type===b.dataset.v?'':b.dataset.v;render(true);},
   pstoreys:function(b){var p=S.form.prop;p.storeys=p.storeys===b.dataset.v?'':b.dataset.v;render(true);},
   gangrm:function(b){var f=S.form,i=f.gang.indexOf(b.dataset.id);if(i>=0)f.gang.splice(i,1);render(true);},
-  load:function(b){var f=S.form;f.load=b.dataset.v;if(f.load!=='empty'&&!f.std.length)f.std=ALLSTD.slice();render(true);},
+  load:function(b){var f=S.form;f.load=b.dataset.v;f.loadSet=true;if(f.load!=='empty'&&!f.std.length)f.std=ALLSTD.slice();render(true);},
+  kind:function(b){var f=S.form;f.kind=b.dataset.v;if(!f.loadSet){f.load=f.kind==='strike'?'empty':'full';if(f.load!=='empty'&&!f.std.length)f.std=ALLSTD.slice();}render(true);},
+  another:function(b){
+    var j=S.jobs.get(b.dataset.id);if(!j){toast('Give it a second, then try again');return;}
+    var f=blankForm(),n=daysTo(j.date);f.date=j.date;f.dmode=n===0?'today':(n===1?'tom':'pick');f.vehicle=j.vehicle||'';f.ch=j.ch||'';f.gang=(j.crew||[]).filter(function(x){return x!==j.ch;});S.sheet=null;S.form=f;go({k:'form'});
+  },
+  seqmove:async function(b){
+    var j=S.jobs.get(b.dataset.id);if(!j)return;var pos=runPos(j),k=pos.i+(+b.dataset.d);if(k<0||k>=pos.n)return;
+    var ids=pos.list.map(function(o){return o.id;});ids.splice(pos.i,1);ids.splice(k,0,j.id);
+    try{for(var i=0;i<ids.length;i++){if((S.jobs.get(ids[i]).seq||0)!==i+1)await S.db.doc('jobs/'+ids[i]).update({seq:i+1});}toast('Now job '+(k+1)+' of '+pos.n);}catch(e){fail(e);}
+  },
+  scaf:function(b){go({k:'scaf',id:b.dataset.id});},
+  inspnew:function(b){var s=S.scafs.get(b.dataset.id);if(!s)return;S.sheet={k:'insp',pk:s.id,result:'ok',found:'',done:'',todo:'',pos:(S.crew.get(myCrew())||{}).pos||'',files:[],err:''};render(true);},
+  inspres:function(b){S.sheet.result=b.dataset.v;S.sheet.err='';render(true);},
+  inspsave:async function(){
+    var s=S.sheet;if(!s||s.k!=='insp'||S.busy)return;var sc=S.scafs.get(s.pk),found=String(s.found||'').trim();if(!sc)return;
+    if(s.result==='bad'&&!found){s.err='Say what was found.';render(true);return;}
+    var id=uid('i'),files=s.files.slice(),me=myCrew()||'',pos=String(s.pos||'').trim().slice(0,60);S.busy='i';render(true);
+    try{
+      await S.db.doc('inspections/'+id).set({pk:s.pk,address:sc.address,at:Date.now(),by:me,pos:pos,result:s.result,found:found,done:String(s.done||'').trim(),todo:String(s.todo||'').trim(),upAt:sc.upAt});
+      if(me&&pos&&pos!==(S.crew.get(me)||{}).pos){try{await S.db.doc('crew/'+me).update({pos:pos});}catch(_){ }}
+      for(var i=0;i<files.length;i++){try{await addPhoto(files[i].f,{job:'',kind:'insp',insp:id});}catch(_){ }}
+      dropSheet();toast(s.result==='bad'?'Saved as not safe. '+bossFirst()+' can see it.':'Inspection saved. The next one is due '+fshort(addDays(today(0),7))+'.');
+    }catch(e){fail(e);}
+    S.busy='';render(true);
+  },
+  scafnew:function(){S.sheet={k:'scaf',addr:'',up:today(0),last:'',who:'',err:''};render(true);},
+  scafsave:async function(){
+    var s=S.sheet;if(!s||s.k!=='scaf')return;var addr=String(s.addr||'').trim().replace(/\s+/g,' '),pk=placeKey(addr),t0=today(0),up=s.up&&s.up<=t0?s.up:t0,last=s.last&&s.last<=t0?s.last:'',cur=S.scafs.get(pk);
+    s.err=!pk?'Put the address in.':(cur&&cur.upAt&&!cur.downAt?'That address is already on the record.':(last&&last<up?'It can’t have been inspected before it went up.':''));
+    if(s.err){render(true);return;}
+    try{await S.db.doc('scaffolds/'+pk).set({pk:pk,address:addr,lat:null,lon:null,upAt:up===t0?Date.now():pdate(up).getTime(),upJob:'',paperAt:last,inspector:s.who||'',inspect:true,redoAt:0,downAt:null,downJob:'',customer:(cur&&cur.customer)||'',desc:(cur&&cur.desc)||''});
+      S.sheet=null;toast('On the record');go({k:'scaf',id:pk});}catch(e){fail(e);}
+  },
+  scafins:async function(b){var s=S.scafs.get(b.dataset.id);if(!s)return;try{await S.db.doc('scaffolds/'+s.id).update({inspect:s.inspect===false});}catch(e){fail(e);}},
+  scafdown:async function(b){var id=b.dataset.id;if(!two('down'+id))return;try{await S.db.doc('scaffolds/'+id).update({downAt:Date.now(),downJob:''});toast('Marked as down. No more inspections.');go(null);}catch(e){fail(e);}},
+  wknew:function(b){ // a weekend day picked on the calendar or on the job sheet is offered first; otherwise the next weekend that hasn't started
+    var t=today(0), v=b&&b.dataset&&b.dataset.v, d=v&&isWkend(v)&&v>=t?v:(S.day&&isWkend(S.day)&&S.day>=t&&!S.page?S.day:''), g=d?pdate(d).getDay():-1;
+    S.sheet={k:'wk',sat:d?(g===6?d:addDays(d,-1)):(pdate(t).getDay()===6?addDays(t,7):wkStart()),d6:d?g===6:true,d0:d?g===0:true,note:'',err:''};render(true);
+  },
+  wksat:function(b){S.sheet.sat=b.dataset.v;render(true);},
+  wkd:function(b){S.sheet[b.dataset.v]=!S.sheet[b.dataset.v];S.sheet.err='';render(true);},
+  wksave:async function(){
+    var s=S.sheet,t0=today(0),days=[];if(s.d6)days.push(s.sat);if(s.d0)days.push(addDays(s.sat,1));days=days.filter(function(d){return d>=t0;});
+    if(!days.length){s.err='Pick Saturday, Sunday or both.';render(true);return;}
+    try{for(var i=0;i<days.length;i++)await S.db.doc('wkdays/'+days[i]).set({date:days[i],note:String(s.note||'').trim(),by:myCrew()||'',at:Date.now(),closed:false});
+      S.sheet=null;if(!S.page){S.tab='cal';S.calMode='wk';S.day=days[0];S.month=days[0].slice(0,7);S.nav=true;}toast('Asked. Staff can put their names down now.');render(true);}catch(e){fail(e);}
+  },
+  wkname:async function(b){
+    var ds=b.dataset.v,me=myCrew();if(!me)return;var id=ds+'_'+me;
+    try{if(S.wknames.get(id)){await S.db.doc('wknames/'+id).delete();toast('Your name is off '+fshort(ds));}else{await S.db.doc('wknames/'+id).set({date:ds,person:me,at:Date.now(),picked:false});toast('Your name is down for '+fshort(ds));}}catch(e){fail(e);}
+  },
+  wkpick:async function(b){var n=S.wknames.get(b.dataset.id);if(!n)return;try{await S.db.doc('wknames/'+n.id).update({picked:!n.picked,pickedAt:Date.now()});}catch(e){fail(e);}},
+  wkclose:async function(b){var ds=b.dataset.v;if(!two('wk'+ds))return;try{await S.db.doc('wkdays/'+ds).update({closed:true});toast('Called off');}catch(e){fail(e);}},
+  wkhide:function(){var h=wkHidden();wkOpenDays().forEach(function(w){if(h.indexOf(w.date)<0)h.push(w.date);});try{localStorage.setItem('fcs-wk-hide',JSON.stringify(h.slice(-40)));}catch(_){ }render(true);},
+  wkgo:function(b){S.tab='cal';S.calMode='wk';S.day=b.dataset.v;S.month=b.dataset.v.slice(0,7);S.nav=true;window.scrollTo(0,0);render(true);},
+  demo:function(){demoStart();},
+  demonext:function(){demoAuto();},
+  demoend:function(){demoEnd();},
   stdopen:function(){S.form.stdOpen=!S.form.stdOpen;render(true);},
   std:function(b){var f=S.form,i=f.std.indexOf(b.dataset.i);if(i>=0)f.std.splice(i,1);else f.std.push(b.dataset.i);render(true);},
   step:function(b){var f=S.form,i=b.dataset.i,q=Math.max(0,Math.min(999,(f.extra[i]||0)+(+b.dataset.d)));if(q)f.extra[i]=q;else delete f.extra[i];render(true);},
@@ -1455,10 +1915,12 @@ document.addEventListener('change',function(e){
   if(t.type==='file'){
     var files=Array.prototype.slice.call(t.files||[]).filter(function(x){return !x.type||/^image\//.test(x.type);}); try{t.value='';t.blur();}catch(_){ }
     if(!files.length) return;
-    if(d.pick==='extra'&&S.sheet&&S.sheet.k==='extra'){files.slice(0,6).forEach(function(x){S.sheet.files.push({f:x,u:URL.createObjectURL(x)});});render(true);}
+    if(d.pick&&S.sheet&&S.sheet.files){files.slice(0,6).forEach(function(x){S.sheet.files.push({f:x,u:URL.createObjectURL(x)});});render(true);}
     else if(d.phAdd&&d.id) savePhotos(files.slice(0,12),{job:d.id,kind:d.phAdd});
     return;
   }
+  if(d.wkadd){if(t.value)S.db.doc('wknames/'+d.wkadd+'_'+t.value).set({date:d.wkadd,person:t.value,at:Date.now(),picked:true,byBoss:true,pickedAt:Date.now()}).catch(fail);t.blur();return;}
+  if(d.sc&&d.id){var v={};v[d.sc]=String(t.value||'').trim();S.db.doc('scaffolds/'+d.id).update(v).then(function(){toast('Saved');},fail);if(t.tagName==='SELECT')t.blur();return;}
   if(d.c&&f){
     if(d.c==='date'){if(t.value)f.date=t.value;}
     else if(d.c==='vehicle') f.vehicle=t.value;
