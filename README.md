@@ -12,12 +12,14 @@ What it does:
 - **Inspections.** A finished Erect job puts the scaffold on the record. The app shows when each inspection is due, keeps the inspection record, and flags anything overdue or not safe.
 - **The property.** A picture from above with the house outlined and measured, the type of house and storeys, and a note. It is kept on file for the address. Street View, satellite and directions are one tap away.
 - **Calendar.** One calendar with a colour key: jobs, inspections, time off and weekend work. Tap a day to see what is on, who is free and which lorries are free. Staff ask for time off in the app: a week's notice or more goes straight on, less goes to Gerry to approve. Anyone who's off can't be put on a job.
+- **Alerts.** Each person is told what they need to know, under the Alerts button. Staff are told when they are put on a job or made charge hand, and when a job moves, changes or is cancelled. The yard is told about every new load. Gerry is told when a lorry is loaded, when anything is missing, when a gang leaves the yard, about extra work, finished jobs, time off, weekend names and scaffolds found not safe. After 4 o'clock each man gets tomorrow's jobs, and on the day an inspection is due the inspector and Gerry are told.
+- **Week planner (laptop).** Calendar → Week planner shows the staff down the side and the days across the top. Drag a job onto another man to make him charge hand, or along to another day. The + in a square puts a new job on. The bottom row shows which lorries are free.
 - **Demo.** Set-up → Demo runs one job all the way through, seen as each person in turn. Nothing in it is saved.
 - **Guide.** The last button along the bottom has short steps for each thing a person does. Each person sees their own part.
 - **Phone and laptop.** On a phone it is one column with buttons along the bottom. On a laptop the menu sits down the left side and the screens use two columns.
 - **Set-up.** The staff list, the lorries list, and the address finder key.
 
-This is the practice version. Everything stays on the phone it's used on, and nothing is shared between phones. Tap the name at the top right to see the app as someone else. **Set-up → Start again from scratch** wipes it.
+This is the practice version. Everything stays on the phone it's used on, and nothing is shared between phones. That includes the alerts: they are all kept on the one phone, and can pop up on it if you turn that on at the top of the Alerts screen. Alerts that reach each man's own phone need the phones to share storage first. Tap the name at the top right to see the app as someone else. **Set-up → Start again from scratch** wipes it.
 
 ## Put it on an iPhone home screen
 
