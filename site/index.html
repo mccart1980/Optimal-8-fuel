@@ -84,6 +84,13 @@ h1,h2,h3,p,dl{margin:0}
 .coach-b{display:flex;align-items:center;gap:14px}
 .coach .btn{background:var(--plate-ink);color:var(--plate);min-height:40px}
 .coach .link{color:var(--plate-ink)}
+.coach.look .coach-in{gap:6px;padding-top:8px;padding-bottom:6px}
+.coach-r{display:flex;flex-wrap:wrap;align-items:center;gap:2px 20px}
+.coach.look .coach-b{gap:20px}
+.coach.look .coach-b .link{padding:9px 0}
+.coach-w{display:flex;flex-wrap:wrap;gap:6px}
+.coach-c{min-height:38px;padding:0 13px;border-radius:999px;border:1.5px solid currentColor;background:transparent;color:var(--plate-ink);font:inherit;font-weight:600;font-size:.88rem;cursor:pointer}
+.coach-c[aria-pressed="true"]{background:var(--plate-ink);border-color:var(--plate-ink);color:var(--plate)}
 .upd{appearance:none;border:0;display:block;width:100%;background:var(--go);color:var(--on-go);font-weight:700;padding:11px 16px;text-align:center}
 main{max-width:600px;margin:0 auto;padding-top:18px;padding-bottom:calc(96px + env(safe-area-inset-bottom,0px));padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;gap:16px;animation:pagein .2s ease both}
 main.has-foot{padding-bottom:calc(124px + env(safe-area-inset-bottom,0px))}
@@ -262,6 +269,7 @@ button.need{appearance:none;border-top:0;border-right:0;border-bottom:0;width:10
 .ck-b{width:28px;height:28px;border-radius:9px;border:2px solid var(--ink3);flex:none;display:grid;place-items:center;color:transparent;transition:background .15s ease,border-color .15s ease}
 .ck-b svg{width:17px;height:17px}
 .ck-n{flex:1;min-width:0;font-weight:500}
+.ck-n small{display:block;font-size:.82rem;font-weight:400;color:var(--ink2);line-height:1.3}
 .ck-q{font-weight:700;font-variant-numeric:tabular-nums;background:var(--bg);border-radius:8px;padding:3px 9px;font-size:.95rem}
 .ck.ok .ck-b{background:var(--go);border-color:var(--go);color:var(--on-go)}
 .ck.no .ck-b{background:var(--bad);border-color:var(--bad);color:var(--on-bad)}
@@ -523,29 +531,31 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'aa5fe9cd',at:'21 Nov, 13:22'};
+var FCS_BUILD={v:'52a0c726',at:'21 Nov, 14:42'};
 var ADDR_KEY_BUILT='';
-var COMPANY='First Choice Scaffolding', APP='Load Check', VER='8';
+var COMPANY='First Choice Scaffolding', APP='Load Check', VER='9';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
 var $app=document.getElementById('app'), $toast=document.getElementById('toast');
 
-/* ---------- what goes on a load ---------- */
-// The load list is tube, boards, standard fittings and beams. Everything else is Miscellaneous.
-var STD=[['Tube',[['t5','5ft'],['t6','6ft'],['t8','8ft'],['t10','10ft'],['t13','13ft'],['t16','16ft'],['t21','Long']]],
-  ['Boards',[['b8','8ft'],['b10','10ft'],['b13','13ft']]],
-  ['Fittings',[['fdb','Doubles'],['fsg','Singles'],['fsw','Swivels'],['fsl','Sleeves'],['fbp','Base plates'],['fsb','Sole boards']]]];
-var BEAMS=[['bm3','3m beams'],['bm4','4m beams'],['bm5','5m beams'],['bm6','6m beams'],['bm8','8m beams']], BEAMID={};   // on the load list, each with a number
-BEAMS.forEach(function(x){BEAMID[x[0]]=1;});
-var EXTRA=[['Beam joiners and pins',[['bmj','Beam joiners'],['bmp','Pins']]],
-  ['Butts',[['bt12','1ft butts'],['bt18','18in butts'],['bt24','2ft butts'],['bt36','3ft butts'],['bt48','4ft butts']]],
-  ['Ladders and access',[['lds','Short ladders'],['ldl','Long ladders'],['str','Stair treads'],['gat','Gates']]],
+/* ---------- what goes on a load ----------
+   The size of the load (full, half and so on) tells the yard what tube, boards, fittings, base plates and sole boards to put on. Nobody ticks those one by one.
+   The load list adds what changes from job to job, each with a number: beams, ladders, and boards when the amount is different from usual.
+   Miscellaneous is the things that could be forgotten, so they get ticked off: EXTRA takes a number, TICKS are needed or not. */
+var LOADSAYS='Tube, boards, fittings, base plates and sole boards';
+var LOADX=[['Change the boards',[['bq8','8ft boards'],['bq10','10ft boards'],['bq13','13ft boards']],'Leave these alone and the yard puts on the usual boards for the load. Put a number in only when this job needs a different amount. The yard loads that many in place of the usual.','In place of the usual amount'],
+  ['Beams',[['bm3','3m beams'],['bm4','4m beams'],['bm5','5m beams'],['bm6','6m beams'],['bm8','8m beams']]],
+  ['Ladders',[['ldl','Long ladders'],['lds','Short ladders']]]], LOADID={};
+LOADX.forEach(function(g){g[1].forEach(function(x){LOADID[x[0]]=1;});});
+var EXTRA=[['Butts',[['bt12','1ft butts'],['bt18','18in butts'],['bt24','2ft butts'],['bt36','3ft butts'],['bt48','4ft butts']]],
+  ['Beam joiners and pins',[['bmj','Beam joiners'],['bmp','Pins']]],
+  ['Stair treads and gates',[['str','Stair treads'],['gat','Gates']]],
   ['Brackets and jacks',[['brk','Brackets'],['sjk','Screw jacks']]],
   ['Lifting and rubbish',[['rpw','Rope and wheel'],['cht','Chutes'],['hop','Hoppers'],['chb','Chute brackets']]]];
-// Miscellaneous: EXTRA takes a number, TICKS are needed or not.
-var TICKS=[['ldf','Ladder safes'],['trd','Treads'],['tie','Tie gear'],['xcb','Excalibur bolts'],['net','Netting'],['fom','Foam'],['cap','Caps'],['ctt','Cable ties'],['fbc','Board clips'],['bsh','Short boards']];
+var TICKS=[['ldf','Ladder safes'],['trd','Treaders'],['tie','Tie gear'],['xcb','Excalibur bolts'],['net','Netting'],['fom','Foam'],['cap','Caps'],['ctt','Cable ties'],['fbc','Board clips'],['bsh','Short boards']];
+// names of things earlier versions ticked one by one, so an old job's record still reads properly
+var OLDNAME={t5:'5ft tube',t6:'6ft tube',t8:'8ft tube',t10:'10ft tube',t13:'13ft tube',t16:'16ft tube',t21:'Long tube',b8:'8ft boards',b10:'10ft boards',b13:'13ft boards',fdb:'Doubles',fsg:'Singles',fsw:'Swivels',fsl:'Sleeves',fbp:'Base plates',fsb:'Sole boards'};
 var LOADS=[['full','Full'],['three','¾'],['half','Half'],['quarter','¼'],['empty','Empty']];
 var LOADNAME={full:'Full load',three:'Three-quarter load',half:'Half load',quarter:'Quarter load',empty:'Empty'};
-var ALLSTD=[]; STD.forEach(function(g){g[1].forEach(function(x){ALLSTD.push(x[0]);});});
 var TYPES=['Detached','Semi','Terraced','Bungalow','Flats','Other'], STOREYS=['1','2','3','4+'];
 var KINDS=[['erect','Erect'],['alter','Alter'],['strike','Strike']], KINDNAME={erect:'Erect',alter:'Alter',strike:'Strike'};
 var LAY='';   // how the page in hand wants laying out on a wide screen: 'two' columns, a 'side' column, or one
@@ -617,6 +627,7 @@ function nameOf(id){var c=S.crew.get(id);return c&&c.name?c.name:'Someone';}
 function firstOf(id){return nameOf(id).trim().split(/\s+/)[0];}
 function initials(n){var p=String(n||'').trim().split(/\s+/);return ((p[0]||'?')[0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase();}
 function local(){return S.standalone||!!S.demo;}   // data kept on this phone, where you can be anyone
+function walking(){return !!(S.demo&&S.demo.step);}   // the demo is following one job step by step (step 0 is looking round the example week)
 function myCrew(){
   if(local()){return S.viewAs&&S.crew.has(S.viewAs)&&!S.crew.get(S.viewAs).removed?S.viewAs:null;}
   var p=S.people.get(S.me), c=p&&p.crewId; return c&&S.crew.has(c)&&!S.crew.get(c).removed?c:null;
@@ -644,12 +655,11 @@ function pendingOff(){return offList().filter(function(o){return o.status==='pen
 function jobList(){return Array.from(S.jobs.values()).filter(function(j){return j.date&&j.v===2;});}
 function visJobs(){var all=isBoss()||isYard();return jobList().filter(function(j){return all||onJob(j);});}
 function exOf(j){var o={},e=(j&&j.extra)||{};Object.keys(e).forEach(function(k){if(e[k]>0)o[k]=e[k];});return o;}   // the miscellaneous items a job really has: anything taken off again is stored as 0
-function stdOf(j){return ((j&&j.std)||[]).filter(function(id){return ALLSTD.indexOf(id)>=0;});}   // sizes still on the load list
-function loadSig(j){var e=exOf(j);return JSON.stringify([stdOf(j).sort(),Object.keys(e).sort().map(function(k){return k+':'+e[k];}),j.load]);}   // has the load sheet changed?
-function rowsOf(j){
-  var out=[], ex=exOf(j), std=stdOf(j);   // the load list first (beams, then tube, boards and fittings), then miscellaneous
-  BEAMS.forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],qty:ex[x[0]],sec:'beam'});});
-  STD.forEach(function(g){g[1].forEach(function(x){if(std.indexOf(x[0])>=0)out.push({id:x[0],name:g[0]==='Fittings'?x[1]:x[1]+' '+g[0].toLowerCase(),sec:'std',grp:g[0]});});});
+function loadSig(j){var e=exOf(j);return JSON.stringify([j.load||'',Object.keys(e).sort().map(function(k){return k+':'+e[k];})]);}   // has the load sheet changed?
+function rowsOf(j){ // what the yard and the charge hand tick: the load in one line, what was added to the load list, then miscellaneous
+  var out=[], ex=exOf(j);
+  if(j.load&&j.load!=='empty') out.push({id:'load',name:LOADNAME[j.load]||'Load',sub:LOADSAYS,sec:'load'});
+  LOADX.forEach(function(g){g[1].forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sub:j.load&&j.load!=='empty'?(g[3]||''):'',qty:ex[x[0]],sec:'load'});});});
   EXTRA.forEach(function(g){g[1].forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],qty:ex[x[0]],sec:'extra'});});});
   TICKS.forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sec:'extra'});});
   return out;
@@ -657,9 +667,12 @@ function rowsOf(j){
 function statusOf(j){return j.done&&j.done.at?'done':(j.left&&j.left.at?'out':(j.chk&&j.chk.at?'checked':(j.yard&&j.yard.at?'loaded':'toload')));}
 function missingOf(j){ // only things still on this job's load sheet count as missing
   var m=(j.chk&&j.chk.at?j.chk.missing:(j.yard&&j.yard.at?j.yard.missing:null))||[]; if(!m.length) return m;
-  var on={}; rowsOf(j).forEach(function(r){on[r.id]=1;}); return m.filter(function(id){return on[id];});
+  var on={}, out=[]; rowsOf(j).forEach(function(r){on[r.id]=1;});
+  m.forEach(function(id){if(OLDNAME[id])id='load';if(on[id]&&out.indexOf(id)<0)out.push(id);});   // a size of tube ticked missing on an older job counts against the load
+  return out;
 }
-function itemName(id){var n=id;EXTRA.concat(STD).forEach(function(g){g[1].forEach(function(x){if(x[0]===id)n=(g[0]==='Tube'||g[0]==='Boards')?x[1]+' '+g[0].toLowerCase():x[1];});});TICKS.concat(BEAMS).forEach(function(x){if(x[0]===id)n=x[1];});return n;}
+function sheetSum(j,rows){var n=rows.filter(function(r){return r.id!=='load';}).length;return (LOADNAME[j.load]||'Load')+(n?' · '+plural(n,j.load==='empty'?'item':'other item'):'');}
+function itemName(id){var n=OLDNAME[id]||id;if(id==='load')return 'Tube, boards or fittings (load short)';EXTRA.concat(LOADX).forEach(function(g){g[1].forEach(function(x){if(x[0]===id)n=x[1];});});TICKS.forEach(function(x){if(x[0]===id)n=x[1];});return n;}
 function onJob(j){var c=myCrew();return !!c&&(j.crew||[]).indexOf(c)>=0;}
 function isCh(j){var c=myCrew();return !!c&&j.ch===c;}
 function canStep(j){return isCh(j)||(isBoss()&&S.self===j.id);}   // may move the job on a step
@@ -670,7 +683,10 @@ function stageFor(j){ // which tick list this person works on now
   if((st==='toload'||st==='loaded')&&canStep(j)) return 'chk';
   return null;
 }
-function ticksOf(stage,id){var src=(stage==='yard'?S.ychk:S.cchk).get(id), t=Object.assign({},(src&&src.ticks)||{}), p=S.pend[stage+'|'+id];if(p)Object.keys(p).forEach(function(k){if(p[k]===null)delete t[k];else t[k]=p[k];});return t;}
+function ticksOf(stage,id){var src=(stage==='yard'?S.ychk:S.cchk).get(id), t=Object.assign({},(src&&src.ticks)||{}), p=S.pend[stage+'|'+id];if(p)Object.keys(p).forEach(function(k){if(p[k]===null)delete t[k];else t[k]=p[k];});
+  if(!t.load){var j=S.jobs.get(id), std=((j&&j.std)||[]).filter(function(k){return OLDNAME[k];});   // an older job was ticked size by size: read that as the one load line
+    if(std.length){if(std.some(function(k){return t[k]==='no';}))t.load='no';else if(std.every(function(k){return t[k]==='ok';}))t.load='ok';}}
+  return t;}
 var saveT={}, saving={};
 function setTick(stage,id,item,val){
   var k=stage+'|'+id; (S.pend[k]=S.pend[k]||{})[item]=val;
@@ -901,28 +917,31 @@ function wkOpenDays(){var t0=today(0);return Array.from(S.wkdays.values()).filte
 function wkOffDays(){var t0=today(0);return Array.from(S.wkdays.values()).filter(function(w){return w.date&&w.date>=t0&&w.closed&&wkMine(w.date);}).sort(function(a,b){return a.date<b.date?-1:1;});}   // called off after I put my name down
 function wkHidden(){try{return JSON.parse(localStorage.getItem('fcs-wk-hide')||'[]');}catch(_){return [];}}
 
-/* ---------- the demo: a throwaway copy of the staff and lorries, with no jobs ---------- */
-function demoSeed(){
-  var crew={}, vans={}, bosses=S.bosses.filter(function(b){return S.crew.has(b)&&!S.crew.get(b).removed;}), names=['Charge hand','Labourer'], n=0;
+/* ---------- the demo: a throwaway copy of the staff and lorries. The example week (further down) is built on top of it ---------- */
+function demoSeed(full){ // full: enough staff and lorries to make up two gangs for the example week
+  var crew={}, vans={}, bosses=S.bosses.filter(function(b){return S.crew.has(b)&&!S.crew.get(b).removed;}), names=['Sam Example','Alex Sample','Chris Demo','Pat Trial'], n=0, v=0;   // stand-in names, only used when the real staff list is too short to make up the gangs
   crewList().forEach(function(c){crew[c.id]={name:c.name,yard:!!c.yard};});
-  fleet().forEach(function(v){vans[v.id]={reg:v.reg,name:v.name||''};});
+  fleet().forEach(function(x){vans[x.id]={reg:x.reg,name:x.name||''};});
   if(!bosses.length){crew.d_boss={name:'Gerry Fuller'};bosses=['d_boss'];}
   if(!Object.keys(crew).some(function(k){return crew[k].yard;})) crew.d_yard={name:'Yard',yard:true};
-  while(Object.keys(crew).filter(function(k){return !crew[k].yard&&bosses.indexOf(k)<0;}).length<2){crew['d_s'+n]={name:names[n]||('Scaffolder '+(n+1))};n++;}
-  if(!Object.keys(vans).length) vans.d_v={reg:'LORRY 1'};
+  while(Object.keys(crew).filter(function(k){return !crew[k].yard&&bosses.indexOf(k)<0;}).length<(full?4:2)){crew['d_s'+n]={name:names[n]||('Scaffolder '+(n+1))};n++;}
+  while(Object.keys(vans).length<(full?2:1)){v++;vans['d_v'+v]={reg:'LORRY '+v};}
   return {crew:crew,settings:{roles:{bosses:bosses}},vehicles:vans,jobs:{},people:{},daysoff:{},yardchecks:{},checks:{},extras:{},photos:{},places:{},scaffolds:{},inspections:{},wkdays:{},wknames:{},alerts:{}};
 }
-function demoPicture(){
+var DEMOPIC={};
+function demoPicture(v){ // a drawn stand-in for a photo. Four different houses, so a row of them doesn't look like one picture repeated.
+  v=(v||0)%4; if(DEMOPIC[v]) return DEMOPIC[v];
+  var wall=['#a86a50','#cdbb9d','#8c5a4a','#b9b3a7'][v], roof=['#5f4b44','#6b4a3f','#3f4650','#7a4d3d'][v], sky=[['#9cc7ee','#dcebf7'],['#b9c6d6','#e6ebf1'],['#8fc0ea','#e3f0fa'],['#c7d3e0','#eef2f6']][v], lifts=[[420,310,200],[420,310],[420,310,200],[420,300]][v], top=lifts[lifts.length-1]-50;
   var c=document.createElement('canvas'); c.width=800; c.height=600; var x=c.getContext('2d'), g=x.createLinearGradient(0,0,0,600), i;
-  g.addColorStop(0,'#9cc7ee'); g.addColorStop(1,'#dcebf7'); x.fillStyle=g; x.fillRect(0,0,800,600);
-  x.fillStyle='#7c8a78'; x.fillRect(0,470,800,130); x.fillStyle='#a86a50'; x.fillRect(220,190,360,280);
-  x.fillStyle='#5f4b44'; x.beginPath(); x.moveTo(190,195); x.lineTo(400,80); x.lineTo(610,195); x.fill();
+  g.addColorStop(0,sky[0]); g.addColorStop(1,sky[1]); x.fillStyle=g; x.fillRect(0,0,800,600);
+  x.fillStyle='#7c8a78'; x.fillRect(0,470,800,130); x.fillStyle=wall; x.fillRect(220,190,360,280);
+  x.fillStyle=roof; x.beginPath(); x.moveTo(190,195); x.lineTo(v===1?330:400,80); if(v===1)x.lineTo(470,80); x.lineTo(610,195); x.fill();
   x.fillStyle='#d9e6ee'; [[270,240],[450,240],[270,360],[450,360]].forEach(function(w){x.fillRect(w[0],w[1],80,70);});
-  x.strokeStyle='#b4b9c1'; x.lineWidth=7; for(i=0;i<6;i++){x.beginPath();x.moveTo(170+i*92,470);x.lineTo(170+i*92,150);x.stroke();}
-  [420,310,200].forEach(function(y){x.beginPath();x.moveTo(170,y);x.lineTo(630,y);x.stroke();x.fillStyle='#d6b262';x.fillRect(170,y+5,460,13);});
+  x.strokeStyle='#b4b9c1'; x.lineWidth=7; for(i=0;i<6;i++){x.beginPath();x.moveTo(170+i*92,470);x.lineTo(170+i*92,top);x.stroke();}
+  lifts.forEach(function(y){x.beginPath();x.moveTo(170,y);x.lineTo(630,y);x.stroke();x.fillStyle='#d6b262';x.fillRect(170,y+5,460,13);});
   x.fillStyle='rgba(20,20,40,.78)'; x.fillRect(0,0,800,56); x.fillStyle='#fff'; x.font='bold 26px sans-serif'; x.fillText('Demo photo',20,37);
   var t=document.createElement('canvas'); t.width=420; t.height=315; t.getContext('2d').drawImage(c,0,0,420,315);
-  return {full:c.toDataURL('image/jpeg',0.8),th:t.toDataURL('image/jpeg',0.72)};
+  return DEMOPIC[v]={full:c.toDataURL('image/jpeg',0.8),th:t.toDataURL('image/jpeg',0.72)};
 }
 
 /* ---------- storage: the shared one inside Claude, or one kept on this phone ---------- */
@@ -1054,7 +1073,7 @@ function canSat(){return S.net;}   // pictures and map lookups are blocked insid
 function blankProp(){return {type:'',storeys:'',note:'',ring:'',w:0,d:0,run:0,area:0,ax:0,front:false,eaves:0,top:0,src:''};}
 function clearSize(p){p.ring='';p.w=0;p.d=0;p.run=0;p.area=0;p.ax=0;p.front=false;p.eaves=0;p.top=0;p.src='';}
 function highText(p){return p.eaves?'Eaves about '+fm(p.eaves)+' ('+fft(p.eaves)+')'+(p.top>p.eaves?' · highest point '+fm(p.top)+' ('+fft(p.top)+')':''):'';}   // heights only come from Ordnance Survey
-function srcText(p){return p.src==='os'?'From Ordnance Survey’s record of the building.':'Measured from the map, so use it as a guide.';}
+function srcText(p){return p.src==='os'?'From Ordnance Survey’s record of the building.':(p.src==='demo'?'Made-up sizes for the demo. On a real job they come from the building’s record.':'Measured from the map, so use it as a guide.');}
 function sizeText(p){return p.front?'About '+fm(p.w)+' wide × '+fm(p.d)+' deep':'About '+fm(p.w)+' × '+fm(p.d);}
 function sizeSub(p){return fft(p.w)+' × '+fft(p.d)+(p.run?' · '+p.run+' m ('+fft(p.run)+') all the way round':'');}
 function houseText(p){return [p.type||'',p.storeys?(p.storeys==='1'?'1 storey':p.storeys+' storeys'):''].filter(Boolean).join(', ');}
@@ -1176,7 +1195,7 @@ function barHtml(){
   var back=!!S.page, pk=back&&S.page.k, title=back?(pk==='job'?'Job sheet':(pk==='scaf'?'Scaffold record':(S.form&&S.form.id?'Change job':'New job'))):(S.tab==='jobs'?tabName():(S.tab==='cal'?'Calendar':(S.tab==='guide'?'Guide':(S.tab==='alerts'?'Alerts':'Set-up')))), c=myCrew();
   var h='<header class="bar"><div class="bar-in">'+(back?'<button class="bar-back" data-a="back" aria-label="Back">'+IC.back+'</button>':'<img class="bar-logo" src="'+LOGO+'" alt="">');
   h+='<div class="bar-t"><small>'+esc(COMPANY)+'</small><b>'+esc(title)+'</b></div>';
-  if(!back&&c) h+=S.standalone&&!S.demo?'<button class="who" data-a="who" aria-label="Viewing as '+esc(nameOf(c))+'. Change person"><span class="av">'+esc(initials(nameOf(c)))+'</span><span>'+esc(firstOf(c))+'</span>'+IC.down+'</button>':'<div class="who plain" title="'+esc(nameOf(c))+'"><span class="av">'+esc(initials(nameOf(c)))+'</span></div>';
+  if(!back&&c) h+=(S.standalone&&!S.demo)||(S.demo&&!S.demo.step)?'<button class="who" data-a="who" aria-label="Viewing as '+esc(nameOf(c))+'. Change person"><span class="av">'+esc(initials(nameOf(c)))+'</span><span>'+esc(firstOf(c))+'</span>'+IC.down+'</button>':'<div class="who plain" title="'+esc(nameOf(c))+'"><span class="av">'+esc(initials(nameOf(c)))+'</span></div>';
   return h+'</div>'+coachHtml()+(S.updateReady&&!S.demo?'<button class="upd" data-a="doupdate">New version ready. Tap to update.</button>':'')+'</header>';
 }
 function navHtml(sub){
@@ -1255,7 +1274,7 @@ function jobListHtml(){
       h+='<div class="sec"><div class="sec-h"><span class="lab">'+esc(fwhen(g.d))+'</span>'+(sum?'<span class="small muted">'+sum+'</span>':'')+'</div>'+runs.map(function(r){
         var full=runOf(r[0]).length, f=r.sort(bySeq)[0];
         if(full<2) return jobCard(f);
-        return '<div class="run"><div class="run-h">'+(f.vehicle?'<span class="plate">'+esc(f.vehicle)+'</span>':'')+'<b>'+esc(f.ch?firstOf(f.ch)+'’s gang':'Gang')+'</b><span class="small muted">'+full+' jobs that day</span>'+(boss&&!S.demo?'<button class="link small run-add" data-a="another" data-id="'+esc(r[r.length-1].id)+'">Add a job</button>':'')+'</div>'+r.map(function(j){return jobCard(j);}).join('')+'</div>';
+        return '<div class="run"><div class="run-h">'+(f.vehicle?'<span class="plate">'+esc(f.vehicle)+'</span>':'')+'<b>'+esc(f.ch?firstOf(f.ch)+'’s gang':'Gang')+'</b><span class="small muted">'+full+' jobs that day</span>'+(boss&&!walking()?'<button class="link small run-add" data-a="another" data-id="'+esc(r[r.length-1].id)+'">Add a job</button>':'')+'</div>'+r.map(function(j){return jobCard(j);}).join('')+'</div>';
       }).join('')+'</div>';
     });
   }
@@ -1288,7 +1307,7 @@ function heroHtml(j){
   h+='<dl class="kv"><dt>Lorry</dt><dd>'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span> ':'')+'<span>'+esc((v&&v.name?v.name+' · ':'')+(LOADNAME[j.load]||''))+'</span></dd><dt>Charge hand</dt><dd>'+esc(j.ch?nameOf(j.ch):'Not set')+'</dd>'+(gang.length?'<dt>Gang</dt><dd>'+esc(gang.map(nameOf).join(', '))+'</dd>':'');
   if(house&&!yardOnly) h+='<dt>House</dt><dd>'+esc(house)+'</dd>';
   h+='</dl>';
-  if(p.w&&p.d&&!yardOnly) h+='<div class="size"><b>'+esc(sizeText(p))+'</b><span>'+esc(sizeSub(p))+'</span>'+(highText(p)?'<span>'+esc(highText(p))+'</span>':'')+'<span>'+(p.src==='os'?'From Ordnance Survey’s record of the building.':'A guide, measured from the map.')+'</span></div>';
+  if(p.w&&p.d&&!yardOnly) h+='<div class="size"><b>'+esc(sizeText(p))+'</b><span>'+esc(sizeSub(p))+'</span>'+(highText(p)?'<span>'+esc(highText(p))+'</span>':'')+'<span>'+(p.src==='os'?'From Ordnance Survey’s record of the building.':(p.src==='demo'?'Made-up sizes for the demo. On a real job they come from the building’s record.':'A guide, measured from the map.'))+'</span></div>';
   if(p.note&&!yardOnly) h+='<div class="note know"><b>Good to know</b>'+esc(p.note)+'</div>';
   if(j.notes) h+='<div class="note"><b>From '+esc(bossFirst())+'</b>'+esc(j.notes)+'</div>';
   return h+'</div></section>';
@@ -1310,25 +1329,24 @@ function trackHtml(j){
   if(boss&&!isCh(j)&&!d) h+=S.self===j.id?'<p class="hint">You’re doing the steps on this job yourself. <button class="link small" data-a="self" data-id="'+id+'">Stop</button></p>':'<p class="hint">Yard or charge hand not on the app? <button class="link small" data-a="self" data-id="'+id+'">Do the next step yourself</button></p>';
   return h+'</section>';
 }
-function sheetRows(j,stage,t){
+function sheetRows(j,stage,t){ // every line is ticked once when it's on, and tapped again if it's missing
   var rows=rowsOf(j), live=!!stage;
-  var sec=function(keys,title,extra){
-    var list=rows.filter(function(r){return keys.indexOf(r.sec)>=0;}); if(!list.length) return '';
-    return '<div class="sh-g"><span>'+title+'</span>'+(extra||'')+'</div>'+list.map(function(r){var v=t[r.id]||'';
-      return '<button class="ck '+(v==='ok'?'ok':(v==='no'?'no':''))+(live?'':' ro')+'"'+(live?' data-a="tick" data-s="'+stage+'" data-id="'+esc(j.id)+'" data-i="'+r.id+'"':' tabindex="-1"')+' aria-label="'+esc(r.name)+(r.qty?' times '+r.qty:'')+(v==='ok'?', on':(v==='no'?', missing':', not ticked'))+'"><span class="ck-b">'+(v==='no'?IC.no:IC.ok)+'</span><span class="ck-n">'+esc(r.name)+'</span>'+(v==='no'?'<span class="ck-s">Missing</span>':'')+(r.qty?'<span class="ck-q">× '+r.qty+'</span>':'')+'</button>';}).join('');
+  var sec=function(k,title){
+    var list=rows.filter(function(r){return r.sec===k;}); if(!list.length) return '';
+    return '<div class="sh-g"><span>'+title+'</span></div>'+list.map(function(r){var v=t[r.id]||'';
+      return '<button class="ck '+(v==='ok'?'ok':(v==='no'?'no':''))+(live?'':' ro')+'"'+(live?' data-a="tick" data-s="'+stage+'" data-id="'+esc(j.id)+'" data-i="'+r.id+'"':' tabindex="-1"')+' aria-label="'+esc(r.name)+(r.qty?' times '+r.qty:'')+(v==='ok'?', on':(v==='no'?', missing':', not ticked'))+'"><span class="ck-b">'+(v==='no'?IC.no:IC.ok)+'</span><span class="ck-n">'+esc(r.name)+(r.sub?'<small>'+esc(r.sub)+'</small>':'')+'</span>'+(v==='no'?'<span class="ck-s">Missing</span>':'')+(r.qty?'<span class="ck-q">× '+r.qty+'</span>':'')+'</button>';}).join('');
   };
-  var left=function(k){return rows.some(function(r){return r.sec===k&&!t[r.id];});}, all=function(k){return '<button class="link small" data-a="allon" data-k="'+k+'" data-s="'+stage+'" data-id="'+esc(j.id)+'" style="padding:0;text-transform:none;letter-spacing:0">Tick tube, boards and fittings</button>';};   // beams and miscellaneous are ticked one by one
-  return sec(['beam','std'],'Load list',live&&left('std')?all('std'):'')+sec(['extra'],'Miscellaneous');
+  return sec('load','Load list')+sec('extra','Miscellaneous');
 }
 function sheetHtml(j,stage){
   var rows=rowsOf(j), t=ticksOf(stage,j.id), done=rows.filter(function(r){return t[r.id];}).length;
   if(!rows.length) return '<section class="card flush"><div class="sh-h"><div><b class="t">'+(stage==='yard'?'Load the lorry':'Morning check')+'</b><div class="small muted">'+esc(LOADNAME[j.load]||'')+' · nothing to load</div></div></div><p class="tip">Nothing is down for this job, so the lorry goes out empty. Tap <b>'+(stage==='yard'?'Confirm loaded':'Confirm checked')+'</b> to say it’s ready.</p></section>';
-  return '<section class="card flush"><div class="sh-h"><div><b class="t">'+(stage==='yard'?'Load the lorry':'Morning check')+'</b><div class="small muted">'+esc(LOADNAME[j.load]||'')+' · '+plural(rows.length,'item')+'</div></div><span class="tag">'+done+' of '+rows.length+'</span></div>'+
+  return '<section class="card flush"><div class="sh-h"><div><b class="t">'+(stage==='yard'?'Load the lorry':'Morning check')+'</b><div class="small muted">'+esc(sheetSum(j,rows))+'</div></div><span class="tag">'+done+' of '+rows.length+'</span></div>'+
     '<div style="padding:0 16px 12px"><div class="prog"><i style="width:'+(rows.length?Math.round(done/rows.length*100):0)+'%"></i></div></div><p class="tip">Tap once when it’s on. Tap again if it’s missing.'+(stage==='chk'&&statusOf(j)==='toload'?' The yard hasn’t confirmed this load yet.':'')+'</p>'+sheetRows(j,stage,t)+'</section>';
 }
 function sheetFold(j){
   var rows=rowsOf(j), src=j.chk&&j.chk.at?'chk':'yard', t=ticksOf(src,j.id), m=missingOf(j), k='sheet'+j.id, open=S.open[k]!=null?S.open[k]:(m.length>0&&!(j.left&&j.left.at));
-  return '<section class="card flush"><details class="fold" data-o="'+esc(k)+'"'+(open?' open':'')+'><summary><span><b>Load sheet</b><small>'+esc(LOADNAME[j.load]||'')+' · '+plural(rows.length,'item')+(m.length?' · '+m.length+' missing':'')+'</small></span></summary>'+(rows.length?sheetRows(j,null,t):'<p class="tip">Nothing is down for this job. The lorry goes out empty.</p>')+'</details></section>';
+  return '<section class="card flush"><details class="fold" data-o="'+esc(k)+'"'+(open?' open':'')+'><summary><span><b>Load sheet</b><small>'+esc(sheetSum(j,rows))+(m.length?' · '+m.length+' missing':'')+'</small></span></summary>'+(rows.length?sheetRows(j,null,t):'<p class="tip">Nothing is down for this job. The lorry goes out empty.</p>')+'</details></section>';
 }
 function galHtml(list,cls){return '<div class="gal'+(cls?' '+cls:'')+'">'+list.map(function(p,i){return '<button class="th" data-a="lb" data-id="'+esc(p.id)+'" aria-label="Photo '+(i+1)+' of '+list.length+'">'+photoImg(p)+'</button>';}).join('')+'</div>';}
 function siteHtml(j){
@@ -1367,7 +1385,7 @@ function jobPage(j){
   else if(st==='out'||st==='done') h+=site+scafCard(j)+track+sheetFold(j);
   else h+=track+site+sheetFold(j);
   h+=historyHtml(j);
-  if(boss&&!S.demo) h+='<button class="btn soft sm" data-a="another" data-id="'+id+'" style="width:100%">'+IC.plus+'Add another job for this gang</button>'+(pos.n>1?'<div class="btns"><button class="btn line sm" data-a="seqmove" data-d="-1" data-id="'+id+'"'+(pos.i===0?' disabled':'')+'>Do it earlier</button><button class="btn line sm" data-a="seqmove" data-d="1" data-id="'+id+'"'+(pos.i===pos.n-1?' disabled':'')+'>Do it later</button></div>':'');
+  if(boss&&!walking()) h+='<button class="btn soft sm" data-a="another" data-id="'+id+'" style="width:100%">'+IC.plus+'Add another job for this gang</button>'+(pos.n>1?'<div class="btns"><button class="btn line sm" data-a="seqmove" data-d="-1" data-id="'+id+'"'+(pos.i===0?' disabled':'')+'>Do it earlier</button><button class="btn line sm" data-a="seqmove" data-d="1" data-id="'+id+'"'+(pos.i===pos.n-1?' disabled':'')+'>Do it later</button></div>':'');
   if(boss) h+='<button class="btn soft sm" data-a="share" data-id="'+esc(j.id)+'" style="width:100%">'+IC.send+'Send this job as a message</button><div class="btns"><button class="btn line sm" data-a="edit" data-id="'+esc(j.id)+'">Change job</button><button class="btn danger sm" data-a="del" data-id="'+esc(j.id)+'">'+(S.confirm==='del'+j.id?'Tap again to delete':'Delete job')+'</button></div>';
   LAY='two'; return h+'</div>';
 }
@@ -1375,10 +1393,7 @@ function shareText(j){ // the whole job as plain words, for WhatsApp or a text
   var rows=rowsOf(j), gang=(j.crew||[]).filter(function(x){return x!==j.ch;}), p=j.prop||{}, pick=function(k){return rows.filter(function(r){return r.sec===k;});};
   var L=[COMPANY.toUpperCase(),fshort(j.date)+' · '+(j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]+' · ':'')+j.address,'Lorry: '+(j.vehicle||'not set')+' · '+(LOADNAME[j.load]||''),'Charge hand: '+(j.ch?nameOf(j.ch):'not set')];
   if(gang.length) L.push('Gang: '+gang.map(nameOf).join(', '));
-  if(pick('std').length||pick('beam').length){
-    L.push('','LOAD LIST'); if(pick('std').length) L.push(pick('std').length===ALLSTD.length?'All tube, boards and fittings':pick('std').map(function(r){return r.name;}).join(', '));
-    pick('beam').forEach(function(r){L.push('- '+r.name+' x '+r.qty);});
-  }
+  if(pick('load').length){L.push('','LOAD LIST');pick('load').forEach(function(r){L.push(r.id==='load'?r.name+': '+LOADSAYS.toLowerCase():'- '+r.name+' x '+r.qty+(r.sub?' ('+r.sub.toLowerCase()+')':''));});}
   if(pick('extra').length){L.push('','MISCELLANEOUS');pick('extra').forEach(function(r){L.push('- '+r.name+(r.qty?' x '+r.qty:''));});}
   if(houseText(p)||p.w) L.push('','THE PROPERTY',[houseText(p),p.w?sizeText(p):'',p.w?highText(p):''].filter(Boolean).join(' · '));
   if(p.note) L.push('Good to know: '+p.note);
@@ -1390,7 +1405,7 @@ function jobFoot(j){
   var stage=stageFor(j), st=statusOf(j), id=esc(j.id), wrap=function(x){return '<div class="foot"><div class="foot-in">'+x+'</div></div>';};
   if(stage){
     var rows=rowsOf(j), t=ticksOf(stage,j.id), left=rows.filter(function(r){return !t[r.id];}).length, no=rows.filter(function(r){return t[r.id]==='no';}).length;
-    return wrap((left?'<span class="foot-note">'+plural(left,'item')+' left to tick</span>':'')+'<button class="btn go" data-a="confirm" data-s="'+stage+'" data-id="'+id+'"'+(left?' disabled':'')+'>'+IC.ok+(stage==='yard'?'Confirm loaded':'Confirm checked')+(no?' · '+no+' missing':'')+'</button>');
+    return wrap((left?'<span class="foot-note">'+left+' left to tick</span>':'')+'<button class="btn go" data-a="confirm" data-s="'+stage+'" data-id="'+id+'"'+(left?' disabled':'')+'>'+IC.ok+(stage==='yard'?'Confirm loaded':'Confirm checked')+(no?' · '+no+' missing':'')+'</button>');
   }
   if(!canStep(j)) return '';
   var chk=runOf(j).filter(function(o){return statusOf(o)==='checked';}).length;
@@ -1581,11 +1596,11 @@ function sentSheet(s){
     '<button class="btn soft" data-a="another" data-id="'+esc(s.job)+'">'+IC.plus+'Add another job for this gang</button><button class="btn go" data-a="closesheet">Done</button></div></div>';
 }
 
-/* ---------- the demo: one job, seen by each person in turn, on throwaway data ---------- */
+/* ---------- the demo. It opens on the example week, to look round as anyone. From there one new job can be followed step by step, seen by each person in turn, on a blank sheet. ---------- */
 function demoText(d){
   var j=d.job&&S.jobs.get(d.job), ch=j&&j.ch?firstOf(j.ch):'the charge hand', boss=firstOf(d.boss);
   return [null,
-    {who:'You are '+boss,what:'Put a job on. It needs an address, a lorry and a charge hand. Then tap Send to the yard.',btn:'Fill it in for me'},
+    {who:'You are '+boss,what:'One new job, from start to finish. Put it on: it needs an address, a lorry and a charge hand. Then tap Send to the yard.',btn:'Fill it in for me'},
     {who:'You are the yard',what:'This is what the yard sees. Tick the load, then tap Confirm loaded.',btn:'Do it for me'},
     {who:'You are '+ch+', the charge hand',what:'Check the load and confirm. Then tap Leaving the yard.',btn:'Do it for me'},
     {who:'You are '+(d.gang?firstOf(d.gang):'one of the gang')+', in the gang',what:'He sees the job and the house. He can’t change anything.',btn:'Next'},
@@ -1593,23 +1608,45 @@ function demoText(d){
     {who:'You are '+boss+' again',what:'The job shows finished, with the times and the photo. The scaffold is on the calendar for its inspections, and Alerts lists what you were told along the way.',btn:''}][d.step];
 }
 function coachHtml(){
-  var d=S.demo; if(!d) return ''; var T=demoText(d);
-  return '<div class="coach"><div class="coach-in"><div class="coach-t"><small>Demo · step '+d.step+' of 6 · nothing here is saved</small><b>'+esc(T.who)+'</b><span>'+esc(T.what)+'</span></div><div class="coach-b">'+(T.btn?'<button class="btn sm" data-a="demonext">'+esc(T.btn)+'</button>':'')+'<button class="'+(T.btn?'link small':'btn sm')+'" data-a="demoend">End demo</button></div></div></div>';
+  var d=S.demo; if(!d) return '';
+  if(!d.step){ // looking round the example week: four buttons, one for each kind of screen. The one lit up is the kind of screen showing now.
+    var me=myCrew(), t0=today(0), isCh=!!me&&jobList().some(function(j){return j.ch===me&&j.date>=t0;}), kind=!me?'':(S.bosses.indexOf(me)>=0?'Boss':(isYard()?'Yard':(isCh?'Charge hand':'Gang')));
+    return '<div class="coach look"><div class="coach-in"><div class="coach-t"><small>Demo · a made-up week · nothing here is saved</small></div><div class="coach-r">'+
+      '<div class="coach-w" role="group" aria-label="See the app as">'+[[d.boss,'Boss'],[d.yard,'Yard'],[d.ch,'Charge hand'],[d.man,'Gang']].filter(function(x){return x[0];}).map(function(x){return '<button class="coach-c" data-a="be" data-id="'+esc(x[0])+'" aria-pressed="'+(x[1]===kind)+'">'+x[1]+'</button>';}).join('')+'</div>'+
+      '<div class="coach-b"><button class="link small" data-a="demowalk">Follow one job step by step</button><button class="link small" data-a="demoend">End demo</button></div></div></div></div>';
+  }
+  var T=demoText(d);
+  return '<div class="coach"><div class="coach-in"><div class="coach-t"><small>Demo · step '+d.step+' of 6 · nothing here is saved</small><b>'+esc(T.who)+'</b><span>'+esc(T.what)+'</span></div><div class="coach-b">'+(T.btn?'<button class="btn sm" data-a="demonext">'+esc(T.btn)+'</button>':'<button class="btn sm" data-a="demolook">Back to the example week</button>')+'<button class="link small" data-a="demoend">End demo</button></div></div></div>';
 }
-function demoStart(){
+function demoStart(step){ // step 1 goes straight to following one job
   if(S.demo) return;
-  var w=attach(LocalDb(demoSeed(),null,true)), boss=S.bosses.filter(function(b){return S.crew.has(b)&&!S.crew.get(b).removed;})[0]||'d_boss';
-  S.demo={step:1,job:null,gang:null,boss:boss,yard:null,photos:[],back:{world:S.world,viewAs:S.viewAs}};
-  S.sheet=null; S.lb=null; S.pend={}; S.self=null; S.q=''; S.calMode='all'; S.calView='month'; S.week=null; S.fresh=null; S.month=null; S.day=null;
-  useWorld(w); S.viewAs=boss;
-  S.demo.yard=(crewList().filter(function(c){return c.yard;})[0]||{}).id||null;
+  var back={world:S.world,viewAs:S.viewAs};
+  S.sheet=null; S.lb=null; S.pend={}; S.self=null; S.q=''; S.form=null; S.page=null; S.calMode='all'; S.calView='month'; S.week=null; S.fresh=null; S.month=null; S.day=null;
+  useWorld(attach(LocalDb(demoSeed(true),null,true)));                 // the staff and lorries on their own first, so the example week is written with the right names
+  var boss=bossIds()[0]||'d_boss', wk=demoWeek(S.db.dump());
+  useWorld(attach(LocalDb(wk.data,null,true))); demoLate(wk.data);       // then the reminders the clock would have raised by now
+  var w=attach(LocalDb(wk.data,null,true)); useWorld(w); S.viewAs=boss;
+  S.demo={step:0,job:null,gang:null,boss:boss,yard:yardIds()[0]||null,ch:wk.ch,man:wk.man,photos:[],back:back,week:w};
+  wk.pics.forEach(function(p){var im=demoPicture(p.v);keepPhoto(p.id,im.th,im.full);});
+  if(step===1){demoWalk();return;}
+  S.tab='jobs'; S.nav=true; window.scrollTo(0,0); render(true);
+}
+function demoWalk(){ // one new job, followed from start to finish on a blank sheet so nothing else gets in the way
+  var d=S.demo; if(!d) return;
+  useWorld(attach(LocalDb(demoSeed(),null,true))); S.viewAs=d.boss; d.step=1; d.job=null; d.gang=null;
+  S.sheet=null; S.lb=null; S.pend={}; S.self=null; S.q=''; S.fresh=null; S.month=null; S.day=null;
   var f=blankForm(); f.date=today(0); f.dmode='today'; S.form=f; S.page={k:'form'}; S.tab='jobs'; S.nav=true; window.scrollTo(0,0); render(true);
+}
+function demoLook(){ // back to the example week
+  var d=S.demo; if(!d) return;
+  useWorld(d.week); S.viewAs=d.boss; d.step=0; d.job=null; d.gang=null;
+  S.sheet=null; S.lb=null; S.form=null; S.page=null; S.pend={}; S.self=null; S.q=''; S.fresh=null; S.month=null; S.day=null; S.tab='jobs'; S.nav=true; window.scrollTo(0,0); render(true);
 }
 function demoEnd(){
   var d=S.demo; if(!d) return;
-  d.photos.forEach(function(id){PH.thumb.delete(id);PH.mem.delete('t:'+id);PH.mem.delete('f:'+id);});
+  d.photos.forEach(function(id){PH.thumb.delete(id);PH.mem.delete('t:'+id);PH.mem.delete('f:'+id);}); DEMOPIC={};
   S.demo=null; S.viewAs=d.back.viewAs; useWorld(d.back.world);
-  S.page=null; S.form=null; S.sheet=null; S.lb=null; S.pend={}; S.self=null; S.tab='jobs'; S.calMode='all'; S.calView='month'; S.fresh=null; S.month=null; S.day=null; S.nav=true; window.scrollTo(0,0); render(true);
+  S.page=null; S.form=null; S.sheet=null; S.lb=null; S.pend={}; S.self=null; S.tab='jobs'; S.calMode='all'; S.calView='month'; S.week=null; S.fresh=null; S.month=null; S.day=null; S.nav=true; window.scrollTo(0,0); render(true);
   toast('Demo over. Nothing from it was kept.');
 }
 function demoGo(n){
@@ -1625,8 +1662,8 @@ async function demoAuto(){ // "Do it for me": carry out the step exactly as that
   try{
     if(n===1){
       var staff=crewList().filter(function(c){return !c.yard&&S.bosses.indexOf(c.id)<0;}), v=fleet()[0], addr='12 Sample Street, Rayleigh';
-      var ref=await S.db.collection('jobs').add({v:2,kind:'erect',seq:1,date:today(0),address:addr,line:addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(addr),prop:Object.assign(blankProp(),{type:'Semi',storeys:'2',note:'Side gate on the left.'}),vehicle:String(v.reg).toUpperCase(),load:'full',std:ALLSTD.slice(),extra:{bm4:2,rpw:1,ldf:1,net:1,cap:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id,notes:'Scaffold the front for new windows.',createdAt:now,createdBy:d.boss,yard:null,chk:null,left:null,done:null});
-      tell(jobAlerts(null,Object.assign({id:ref.id},{date:today(0),address:addr,vehicle:String(v.reg).toUpperCase(),load:'full',extra:{bm4:2,rpw:1,ldf:1,net:1,cap:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id})));
+      var ref=await S.db.collection('jobs').add({v:2,kind:'erect',seq:1,date:today(0),address:addr,line:addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(addr),prop:Object.assign(blankProp(),{type:'Semi',storeys:'2',note:'Side gate on the left.'}),vehicle:String(v.reg).toUpperCase(),load:'full',extra:{bm4:2,ldl:2,rpw:1,ldf:1,net:1,cap:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id,notes:'Scaffold the front for new windows.',createdAt:now,createdBy:d.boss,yard:null,chk:null,left:null,done:null});
+      tell(jobAlerts(null,Object.assign({id:ref.id},{date:today(0),address:addr,vehicle:String(v.reg).toUpperCase(),load:'full',extra:{bm4:2,ldl:2,rpw:1,ldf:1,net:1,cap:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id})));
       d.job=ref.id; S.busy=''; demoGo(2); return;
     }
     if(!j){S.busy='';return;}
@@ -1661,7 +1698,8 @@ function guideTopics(){
       '**The yard** sees the load list and the miscellaneous for each lorry, ticks it off and confirms it is loaded.',
       '**The charge hand** sees his jobs, checks the load in the morning, and marks the job as it goes.',
       '**The gang** just see the job: where it is, the house, who they are with.',
-      local()?'To look at any of the four, tap your name at the top right and pick a person.':null],'ul'],
+      local()?'To look at any of the four, tap your name at the top right and pick a person.':null,
+      'The **Demo** under Set-up shows all four with a made-up week of jobs on them.'],'ul'],
     ['Put a job on','One sheet, then it goes to the yard.',[
       'Tap **Jobs**, then **New job**.',
       'Tap **Erect**, **Alter** or **Strike**. Then tap the day.',
@@ -1669,8 +1707,9 @@ function guideTopics(){
       map?'A picture from above comes up. Tap the house to mark it and measure it. The size goes on the job for the gang to see.':null,
       'Tap the type of house and the storeys. Add a note if the crew need one.',
       'Pick the lorry, the charge hand and the gang from the lists.',
-      'Under **Load list**, tap the load: **Full**, **¾**, **Half**, **¼** or **Empty**. That is the tube, boards and fittings. Open **Beams** to put a number against any beams.',
-      'Under **Miscellaneous**, tap anything else this job needs, such as caps or netting. Open a group, such as Butts, to put a number against the rest.',
+      'Under **Load list**, tap the load: **Full**, **¾**, **Half**, **¼** or **Empty**. The yard knows what tube, boards, fittings, base plates and sole boards that takes.',
+      'Open **Beams** or **Ladders** to put a number against any this job needs. Open **Change the boards** only when this job needs a different amount of boards from usual.',
+      'Under **Miscellaneous**, tap the things that could get forgotten, such as caps or netting. Open a group, such as Butts, to put a number against the rest.',
       'Tap **Send to the yard**.']],
     ['Give a gang more than one job in a day','It works for every gang.',[
       'Send the first job as normal.',
@@ -1738,14 +1777,17 @@ function guideTopics(){
       '**Remove** takes a person or a lorry off. Their old jobs stay.']],
     ['Watch it work first','The demo. Nothing in it is saved.',[
       'Tap **Set-up**, then **Run it** next to Demo.',
-      'A yellow strip takes you through one job as each person: you, the yard, the charge hand, the gang, then the finish.',
-      'One button does each step for you. **End demo** stops it.']]],
+      'It opens on a made-up week of jobs, so every screen has something on it.',
+      'The yellow strip at the top has four buttons: **Boss**, **Yard**, **Charge hand** and **Gang**. Tap one to see that person’s screen.',
+      '**Follow one job step by step** takes one new job from start to finish, as each person in turn. One button does each step for you.',
+      '**End demo** stops it. Your real jobs are not touched.']]],
    yard:[
     ['Load a lorry','Tick the sheet, then confirm.',[
       'Open the app. Every job that needs loading is on the **Loads** screen.',
-      'Tap a job. The load list comes first: any beams, then the tube, boards and fittings. Miscellaneous is underneath.',
-      'Tap an item once when it’s on the lorry. Tap it again if it’s missing.',
-      '**Tick tube, boards and fittings** ticks those in one go. Beams and miscellaneous items are ticked one by one.',
+      'Tap a job. The load list comes first, with Miscellaneous underneath.',
+      'The load is one line, such as **Full load**. That is the usual tube, boards, fittings, base plates and sole boards for a load that size.',
+      'Under it are any beams, ladders or a changed number of boards, each with how many.',
+      'Tap a line once when it’s on the lorry. Tap it again if it’s missing.',
       'Tap **Confirm loaded**. '+boss+' and the charge hand can see it straight away.']],
     ['Alerts','What you get told.',[
       'Tap **Alerts**. The red number is how many are new. Tap an alert to open the load.',
@@ -1803,7 +1845,7 @@ function guideHtml(){
   var T=guideTopics(), boss=isBoss(), n=0, groups;
   if(boss) groups=[['Your part',T.boss.concat([T.cal]).filter(Boolean)],['What the yard does',T.yard],['What the charge hand and the gang do',T.ch],['What everyone can do',T.all]];
   else groups=[['Your part',isYard()?T.yard:T.ch],['Everyone',T.all.concat([T.cal])]];
-  var h='<section class="card"><div><h1 class="h1 gd-h">How to use '+esc(APP)+'</h1><p class="sub">Short steps for each thing you do. Tap one to open it.</p></div>'+(boss&&!S.demo?'<button class="btn soft sm" data-a="demo" style="align-self:flex-start">'+IC.play+'Watch a job go through</button>':'')+'</section>';
+  var h='<section class="card"><div><h1 class="h1 gd-h">How to use '+esc(APP)+'</h1><p class="sub">Short steps for each thing you do. Tap one to open it.</p></div>'+(boss&&!S.demo?'<button class="btn soft sm" data-a="demo" data-v="1" style="align-self:flex-start">'+IC.play+'Watch a job go through</button>':'')+'</section>';
   groups.forEach(function(g){
     h+='<div class="sec"><span class="lab">'+esc(g[0])+'</span><section class="card flush">'+g[1].map(function(t){
       var k='g-'+(boss?'b':(isYard()?'y':'s'))+(n++), tag=t[3]==='ul'?'ul':'ol';
@@ -1843,7 +1885,9 @@ function jobAlerts(old,nw){ // a job put on (no old), changed, or taken off (no 
   var out=[], yard=yardIds(), when=function(j){return fshort(j.date);};
   var chMsg=function(j){var g=(j.crew||[]).filter(function(x){return x!==j.ch;}).map(firstOf);return when(j)+': '+j.address+'. Lorry '+vehOf(j)+(g.length?', with '+andList(g):'')+'.';};
   var gangMsg=function(j){return when(j)+': '+j.address+'. '+firstOf(j.ch)+' is charge hand, lorry '+vehOf(j)+'.';};
-  var loadMsg=function(j){var e=exOf(j),nb=0,n=0;Object.keys(e).forEach(function(k){if(BEAMID[k])nb+=e[k];else n++;});return vehOf(j)+' for '+when(j)+': '+j.address+'. '+(LOADNAME[j.load]||'')+(nb?', '+plural(nb,'beam'):'')+(n?', '+plural(n,'miscellaneous item'):'')+'.';};
+  var loadMsg=function(j){var e=exOf(j),on=[],n=0;LOADX.forEach(function(g){g[1].forEach(function(x){if(e[x[0]]>0)on.push(x[1].charAt(0).toLowerCase()+x[1].slice(1)+' × '+e[x[0]]);});});Object.keys(e).forEach(function(k){if(!LOADID[k])n++;});
+    var misc=n?plural(n,'miscellaneous item'):'', says=j.load==='empty'?(on.length||n?'Empty apart from '+andList(on.concat(n?[misc]:[])):'Empty'):(LOADNAME[j.load]||'Load')+(on.length?' with '+andList(on):'')+(n?(on.length?', and ':' and ')+misc:'');
+    return vehOf(j)+' for '+when(j)+': '+j.address+'. '+says+'.';};
   var sig=loadSig;
   if(!old&&nw){
     out.push({to:nw.ch,k:'job',t:'You’re charge hand',m:chMsg(nw),job:nw.id});
@@ -1885,7 +1929,7 @@ function checkAlerts(j,miss){ // the charge hand's morning check only raises an 
   return toBosses(a).concat(toAll(yardIds(),a));
 }
 function leftAlerts(j,at,n){return toBosses({k:'time',t:'Left the yard',m:firstOf(j.ch)+'’s gang left at '+clock(at)+' on '+vehOf(j)+(n>1?' for '+n+' jobs.':': '+j.address+'.'),job:j.id});}
-function doneAlerts(j,at){var ph=photosOf(j.id,'finish').length, ex=extrasOf(j.id).length;return toBosses({k:'job',t:'Job finished',m:j.address+'. '+firstOf(j.ch)+'’s gang, '+clock(at)+(ph?', '+plural(ph,'photo'):'')+(ex?', '+plural(ex,'extra'):'')+'.',job:j.id});}
+function doneAlerts(j,at,ph,ex){if(ph==null)ph=photosOf(j.id,'finish').length;if(ex==null)ex=extrasOf(j.id).length;return toBosses({k:'job',t:'Job finished',m:j.address+'. '+firstOf(j.ch)+'’s gang, '+clock(at)+(ph?', '+plural(ph,'photo'):'')+(ex?', '+plural(ex,'extra'):'')+'.',job:j.id});}
 function myAlerts(){var me=myCrew();return !me?[]:Array.from(S.alerts.values()).filter(function(a){return a.to===me&&a.t;}).sort(function(a,b){return (b.at||0)-(a.at||0);});}
 function unreadAlerts(){return myAlerts().filter(function(a){return !a.read;}).length;}
 function markAlertsRead(){ // looking at them reads them: the count clears, but the new ones stay marked while you are on the screen
@@ -2051,11 +2095,149 @@ function clockAlerts(){
 }
 function clockSoon(){clearTimeout(clockT);clockT=setTimeout(clockAlerts,1200);}
 setInterval(clockAlerts,60000);
+/* ---------- the demo's example week: made-up jobs on the firm's own staff and lorries, so every screen has something on it.
+   It is built as one throwaway store and dropped when the demo ends. Nothing here touches the real jobs.
+   Times are fixed times of day, and a step is only filled in if that time has already gone, so the week reads properly whenever it is opened:
+   early on, today's lorries are loaded and waiting for the morning check; by the afternoon the jobs are finished with their photos. ---------- */
+function demoWeek(base){ // base: the staff and lorries. Call it with that store in use, so names and lorries read properly.
+  var D=JSON.parse(JSON.stringify(base)), now=Date.now(), T=today(0), pics=[];
+  var boss=bossIds()[0], yard=yardIds()[0]||'', st=crewList().filter(function(c){return !c.yard&&S.bosses.indexOf(c.id)<0;}).map(function(c){return c.id;}), L=fleet().map(function(v){return String(v.reg).toUpperCase();});
+  var s0=st[0], s1=st[1%st.length], s2=st[2%st.length], s3=st[3%st.length], L0=L[0], L1=L[1%L.length], L2=L[2%L.length], spare=L.length>2;   // two gangs: s0 with s1, s2 with s3
+  ['jobs','daysoff','yardchecks','checks','extras','photos','places','scaffolds','inspections','wkdays','wknames','alerts'].forEach(function(c){D[c]={};});
+  var wd=function(ds){var g=pdate(ds).getDay();return g>0&&g<6;};
+  var hop=function(ds,n){var d=ds,k=Math.abs(n);while(k){d=addDays(d,n<0?-1:1);if(wd(d))k--;}return d;};   // n working days away
+  var at=function(ds,h,m){var d=pdate(ds);d.setHours(h,m,0,0);return d.getTime();};
+  var ago=function(n,h,m){return at(addDays(T,-n),h,m);};
+  var been=function(t){return t<=now-60000;};
+  var P=hop(T,-1), P2=hop(T,-2), P3=hop(T,-3), N=hop(T,1), N2=hop(T,2), N3=hop(T,3), N4=hop(T,4), day0=at(T,0,0);
+
+  /* alerts are written with the same words the app uses, and never to the person who did the thing */
+  var seen={}, an=0;
+  var say=function(list,t,by){(list||[]).forEach(function(a){
+    if(!a||!a.to||a.to===by||!S.crew.has(a.to)) return; var k=a.to+'|'+a.t+'|'+a.m; if(seen[k]) return; seen[k]=1;
+    D.alerts['da'+(an++)]=Object.assign({at:t+an,by:by||'',read:t<day0},a);});};
+
+  var seqs={};
+  var job=function(id,o){
+    var k=o.date+'|'+o.veh+'|'+o.ch; seqs[k]=(seqs[k]||0)+1;
+    var j={id:id,v:2,kind:o.kind,seq:seqs[k],date:o.date,address:o.addr,line:o.addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(o.addr),prop:Object.assign(blankProp(),o.prop||{}),vehicle:o.veh,load:o.load,extra:o.extra||{},crew:[o.ch].concat(o.gang||[]),ch:o.ch,notes:o.notes||'',createdAt:o.made,createdBy:boss,yard:null,chk:null,left:null,done:null};
+    D.jobs[id]=j; D.places[j.pk]=Object.assign({address:j.address,lat:null,lon:null,exact:false,at:o.made,by:boss},j.prop);
+    say(jobAlerts(null,j),o.made,boss); return j;
+  };
+  var ticks=function(j,miss){var t={};rowsOf(j).forEach(function(r){t[r.id]=miss.indexOf(r.id)>=0?'no':'ok';});return t;};
+  var loaded=function(j,t,miss){miss=miss||[];if(!been(t))return false;j.yard={at:t,by:yard,missing:miss};D.yardchecks[j.id]={ticks:ticks(j,miss),at:t,by:yard};say(loadedAlerts(j,miss),t,yard);return true;};
+  var checked=function(j,t,miss){miss=miss||[];if(!j.yard||!been(t))return false;j.chk={at:t,by:j.ch,missing:miss};D.checks[j.id]={ticks:ticks(j,miss),at:t,by:j.ch};say(checkAlerts(j,miss),t,j.ch);return true;};
+  var left=function(list,t){if(!been(t)||list.some(function(j){return !j.chk;}))return false;list.forEach(function(j){j.left={at:t,by:j.ch,typed:false};});say(leftAlerts(list[0],t,list.length),t,list[0].ch);return true;};
+  var photo=function(job,kind,by,t,v,more){var id='dp'+pics.length;D.photos[id]=Object.assign({job:job,kind:kind,by:by,at:t},more||{});pics.push({id:id,v:v});};
+  var extra=function(j,t,text,who,charged){
+    if(!j.left||!been(t)) return 0; var id='dx'+Object.keys(D.extras).length;
+    D.extras[id]={job:j.id,text:text+'.',who:who,by:j.ch,at:t,charged:charged&&been(charged)?{at:charged,by:boss}:null}; photo(j.id,'extra',j.ch,t,2,{extra:id});
+    say(toBosses({k:'x',t:'Extra work',m:j.address+': '+text+'.'+(who?' Asked for by '+who+'.':''),job:j.id}),t,j.ch); return 1;
+  };
+  var scaf=function(addr,upAt,inspector,more){var pk=placeKey(addr);D.scaffolds[pk]=Object.assign({pk:pk,address:addr,lat:null,lon:null,upAt:upAt,upJob:'',inspector:inspector,inspect:true,redoAt:0,downAt:null,downJob:'',customer:'',desc:''},more||{});return pk;};
+  var insp=function(pk,t,by,o){ // o.bad: what was found. o.quiet: an old one, nobody needs telling again
+    o=o||{}; var s=D.scaffolds[pk]; if(!s||!been(t)) return ''; var id='di'+Object.keys(D.inspections).length;
+    D.inspections[id]={pk:pk,address:s.address,at:t,by:by,pos:'Charge hand',result:o.bad?'bad':'ok',found:o.bad?o.bad+'.':'',done:o.done||'',todo:o.todo||'',upAt:s.upAt};
+    if(!o.quiet){var im=o.bad?{k:'insp',t:'Scaffold not safe',m:s.address+': '+o.bad+'.',scaf:pk}:{k:'insp',t:'Inspection done',m:s.address+': safe to use.',scaf:pk};say(toBosses(im).concat(s.inspector?[Object.assign({to:s.inspector},im)]:[]),t,by);}
+    return id;
+  };
+  var standing=function(addr,days,by,weeks,more){ // a scaffold that was already up: inspected the day it went up, then on these days since
+    var pk=scaf(addr,ago(days,13,0),by,more); insp(pk,ago(days,14,30),by,{quiet:true}); weeks.forEach(function(n){insp(pk,ago(n,8,20+n%9),by,{quiet:true});}); return pk;
+  };
+  var finished=function(j,t,nPh,nEx){
+    if(!j.left||!been(t)) return false; j.done={at:t,by:j.ch};
+    for(var i=0;i<nPh;i++) photo(j.id,'finish',j.ch,t-(nPh-i)*45000,(j.seq+i+(j.ch===s0?0:2))%4);
+    var cur=D.scaffolds[j.pk];   // the same as the real thing: an erect goes on the register, an alter is due again, a strike comes off
+    if(j.kind==='strike'){if(cur&&!cur.downAt){cur.downAt=t;cur.downJob=j.id;}}
+    else if(cur&&!cur.downAt) cur.redoAt=t;
+    else scaf(j.address,t,j.ch,{upJob:j.id});
+    say(doneAlerts(j,t,nPh,nEx||0),t,j.ch); return true;
+  };
+  var size=function(type,storeys,w,d,eaves,top,note){return {type:type,storeys:storeys,note:note||'',w:w,d:d,run:Math.round((w+d)*20)/10,area:Math.round(w*d),front:true,eaves:eaves,top:top,src:'demo'};};
+
+  /* scaffolds already standing when the week starts */
+  var sa=standing('3 Mock Crescent, Rayleigh',14,s0,[7],{customer:'Mr Sample',desc:'Front, three lifts, for new windows.'});          // last inspected a week ago, so it is due today
+  var sb=standing('9 Trial Gardens, Hullbridge',12,s0,[5],{customer:'Example Builders',desc:'Rear and one gable, two lifts.'});
+  standing('30 Showcase Drive, Hockley',36,s2,[29,22,15,8,1],{customer:'Mrs Example',desc:'Front and gable, two lifts.'});
+  standing('8 Demo Lane, Hockley',41,s2,[34,27,20,13,6]);
+  standing('41 Practice Road, Rochford',20,s2,[13,6]);
+  standing('19 Test Road, Rayleigh',16,s0,[9,2]);
+  standing('33 Model Road, Rayleigh',44,s0,[37,30,23,16,9,2]);
+  var bad=insp(sb,at(P,15,44),s0,{bad:'Ledger bracket loose on the second lift at the gable end. Two boards missing from the top lift',done:'Taped off the gable end and put a sign up.',todo:'Fit a new bracket and two 13ft boards before anyone goes up.'});
+  if(bad) photo('','insp',s0,at(P,15,44),3,{insp:bad});
+
+  /* the last working day: three jobs, all finished */
+  var p1=job('dj_p1',{kind:'erect',date:P,addr:'27 Example Avenue, Rayleigh',veh:L0,load:'full',extra:{bm4:2,ldl:2,lds:1,bt18:4,rpw:1,ldf:1,tie:1,net:1,cap:1},ch:s0,gang:[s1],notes:'Front and both sides for a re-roof. Keep the drive clear.',prop:size('Detached','2',9.6,8.2,5.2,8.4,'Dog in the back garden. Knock first.'),made:at(P3,16,5)});
+  var p2=job('dj_p2',{kind:'strike',date:P,addr:'8 Demo Lane, Hockley',veh:L1,load:'empty',extra:{ldl:1,rpw:1},ch:s2,gang:[s3],notes:'Strike the lot. Stack it by the garage until the lorry is backed in.',prop:{type:'Semi',storeys:'2'},made:at(P3,16,8)});
+  var p3=job('dj_p3',{kind:'alter',date:P,addr:'41 Practice Road, Rochford',veh:L1,load:'quarter',extra:{bsh:1,fbc:1,tie:1},ch:s2,gang:[s3],notes:'Drop the top lift on the gable end.',prop:size('Semi','2',6.1,8.8,5,7.9),made:at(P3,16,10)});
+  loaded(p1,at(P2,15,40)); loaded(p2,at(P2,15,55)); loaded(p3,at(P2,15,56));
+  checked(p1,at(P,6,46)); left([p1],at(P,7,2)); checked(p2,at(P,6,55)); checked(p3,at(P,6,55)); left([p2,p3],at(P,7,15));
+  finished(p2,at(P,11,48),1);
+  finished(p1,at(P,15,12),2,extra(p1,at(P,13,25),'Scaffold taken round the side for the roofer. Two extra bays','Mr Sample')); insp(p1.pk,at(P,15,20),s0);
+  finished(p3,at(P,15,38),2,extra(p3,at(P,14,40),'Loading bay put on the front for the bricklayers','the site manager',at(P,17,5))); insp(p3.pk,at(P,15,46),s2);
+
+  /* today: one gang with three jobs on one lorry, the other gang on one job with caps missing */
+  var t1=job('dj_t1',{kind:'erect',date:T,addr:'5 Trial Close, Rayleigh',veh:L0,load:'three',extra:{bm5:2,ldl:1,bt24:2,ldf:1,tie:1,cap:1,ctt:1},ch:s0,gang:[s1],notes:'Rear extension. Bridge the conservatory with the beams.',prop:size('Semi','2',5.9,9.4,5.1,8,'Side gate on the left. Park on the road.'),made:at(P2,16,10)});
+  var t2=job('dj_t2',{kind:'alter',date:T,addr:'19 Test Road, Rayleigh',veh:L0,load:'quarter',extra:{bsh:1,fbc:1},ch:s0,gang:[s1],notes:'Add a lift at the back for the roofers.',prop:size('Bungalow','1',11.2,7.6,2.6,5.4),made:at(P2,16,12)});
+  var t3=job('dj_t3',{kind:'strike',date:T,addr:'33 Model Road, Rayleigh',veh:L0,load:'empty',extra:{rpw:1},ch:s0,gang:[s1],notes:'Strike the front. The customer wants it gone today.',prop:{type:'Terraced',storeys:'2'},made:at(P2,16,14)});
+  var t4=job('dj_t4',{kind:'erect',date:T,addr:'7 Showcase Drive, Hockley',veh:L1,load:'full',extra:{ldl:2,lds:1,bt18:6,tie:1,net:1,fom:1,cap:1},ch:s2,gang:[s3],notes:'Shop front. Netting and foam on the pavement side.',prop:size('Flats','3',7.4,12.1,8.3,10.6,'Pavement licence is in the cab. Cones out before you start.'),made:at(P2,16,20)});
+  loaded(t1,at(P,15,50)); loaded(t2,at(P,15,52)); loaded(t3,at(P,15,53)); loaded(t4,at(P,16,5),['cap']);
+  checked(t1,at(T,6,48)); checked(t2,at(T,6,49)); checked(t3,at(T,6,49)); left([t1,t2,t3],at(T,7,6));
+  checked(t4,at(T,6,52),['cap']); left([t4],at(T,7,21));
+  if(finished(t1,at(T,11,36),2)) insp(t1.pk,at(T,11,44),s0);
+  finished(t2,at(T,13,52),1,extra(t2,at(T,13,30),'Handrail put round the flat roof at the back','Mrs Example'));
+  finished(t4,at(T,15,16),2); finished(t3,at(T,15,34),1);
+
+  /* the next working day: one big load still to do, one lorry loaded with netting missing */
+  var early=been(at(T,8,10)), madeN=early?at(T,7,45):at(P,13,30), ldN=spare?(early?at(T,8,10):at(P,16,20)):at(T,16,10);
+  job('dj_n1',{kind:'erect',date:N,addr:'2 Specimen Way, Wickford',veh:L0,load:'full',extra:{bq13:60,bm4:2,bm6:2,ldl:2,lds:1,bt12:4,bt18:6,bt24:4,bmj:2,bmp:8,str:6,gat:1,brk:4,rpw:1,cht:3,hop:1,ldf:1,trd:1,tie:1,net:1,fom:1,cap:1,ctt:1},ch:s0,gang:[s1],notes:'Big one. Front, back and both gables, a beam over the porch and a chute to the skip.',prop:size('Detached','3',10.8,9.1,7.9,11.2,'Narrow drive. Back the lorry in.'),made:madeN});
+  var n2=job('dj_n2',{kind:'erect',date:N,addr:'16 Sample Gardens, Benfleet',veh:L2,load:'half',extra:{ldl:1,bt18:2,tie:1,net:1,cap:1},ch:s2,gang:[s3],notes:'Gable end only, for the chimney.',prop:size('Semi','2',6.4,8.6,5,8.1),made:madeN+60000});
+  var n3=job('dj_n3',{kind:'strike',date:N,addr:'24 Practice Close, Rochford',veh:L2,load:'empty',extra:{ldl:1,rpw:1},ch:s2,gang:[s3],notes:'Strike after Sample Gardens.',prop:{type:'Bungalow',storeys:'1'},made:madeN+120000});
+  loaded(n2,ldN,['net']); loaded(n3,ldN+90000);
+
+  /* later in the week, for the calendar and the week planner */
+  job('dj_m1',{kind:'erect',date:N2,addr:'11 Example Rise, Hullbridge',veh:L0,load:'full',extra:{bm4:2,ldl:2,tie:1,cap:1},ch:s0,gang:[s1],notes:'Front and one side.',prop:size('Detached','2',8.9,7.7,5.2,8.2),made:at(P,16,30)});
+  job('dj_m2',{kind:'alter',date:N2,addr:'27 Example Avenue, Rayleigh',veh:L1,load:'quarter',extra:{bsh:1,ldf:1},ch:s2,gang:[s3],notes:'Add a lift for the chimney.',prop:size('Detached','2',9.6,8.2,5.2,8.4,'Dog in the back garden. Knock first.'),made:at(P,16,32)});
+  job('dj_m3',{kind:'strike',date:N3,addr:'30 Showcase Drive, Hockley',veh:L1,load:'empty',extra:{ldl:1,rpw:1},ch:s2,gang:[s3],notes:'Strike the lot.',prop:{type:'Semi',storeys:'2'},made:at(P,16,34)});
+  job('dj_m4',{kind:'erect',date:N4,addr:'14 Specimen Close, Wickford',veh:L0,load:'three',extra:{ldl:1,lds:1,net:1},ch:s0,gang:[s1],notes:'Rear only.',prop:size('Terraced','2',5.2,8.9,5,7.8),made:at(P,16,36)});
+
+  /* time off: one booked with plenty of notice, one asked for at short notice and waiting for the boss */
+  var h1=addDays(T,10), h2=addDays(T,14), ask=been(at(T,7,15))?at(T,7,15):at(P,18,40);
+  D.daysoff.do1={person:s3,from:h1,to:h2,reason:'Holiday',note:'',status:'approved',why:'',by:s3,at:at(P2,12,10)};
+  say(toBosses({k:'off',cal:'off',day:h1,t:'Time off booked',m:nameOf(s3)+': '+frange(h1,h2)+'. Holiday.'}),at(P2,12,10),s3);
+  D.daysoff.do2={person:s1,from:N3,to:N3,reason:'Appointment',note:'',status:'pending',why:'notice',by:s1,at:ask};
+  say(toBosses({k:'off',cal:'off',day:N3,t:'Time off to approve',m:nameOf(s1)+': '+frange(N3,N3)+'. Appointment. Less than a week’s notice.'}),ask,s1);
+
+  /* weekend work: asked for the coming Saturday, three names down, one picked */
+  var SAT=T; do{SAT=addDays(SAT,1);}while(pdate(SAT).getDay()!==6);
+  D.wkdays[SAT]={date:SAT,note:'Finish off Showcase Drive',by:boss,at:at(P2,15,0),closed:false};
+  say(toAll(siteIds(),{k:'wk',t:'Weekend work is going',m:fshort(SAT)+'. Finish off Showcase Drive. Put your name down if you want it.',cal:'wk',day:SAT}),at(P2,15,0),boss);
+  var name=function(p,t,picked){
+    D.wknames[SAT+'_'+p]=Object.assign({date:SAT,person:p,at:t,picked:!!picked},picked?{pickedAt:picked}:{});
+    say(toBosses({k:'wk',t:'Name down for weekend work',m:nameOf(p)+': '+fshort(SAT)+'.',cal:'wk',day:SAT}),t,p);
+    if(picked) say([{to:p,k:'wk',t:'You’re working the weekend',m:bossFirst()+' picked you for '+fshort(SAT)+'.',cal:'wk',day:SAT}],picked,boss);
+  };
+  name(s0,at(P2,15,20),at(P,12,30)); name(s1,at(P2,17,2)); name(s3,at(P,7,10));
+  job('dj_w1',{kind:'alter',date:SAT,addr:'7 Showcase Drive, Hockley',veh:L1,load:'quarter',extra:{net:1,cap:1},ch:s0,gang:[],notes:'Drop the pavement lift once the shop sign is up.',prop:size('Flats','3',7.4,12.1,8.3,10.6,'Pavement licence is in the cab. Cones out before you start.'),made:at(P,12,35)});
+  if(!wd(T)){ // the demo is being looked at on a weekend, so today's jobs are weekend work and everyone on them was picked
+    D.wkdays[T]={date:T,note:'Catching up',by:boss,at:ago(5,15,0),closed:false};
+    st.forEach(function(p,i){D.wknames[T+'_'+p]={date:T,person:p,at:ago(5,15,30+i),picked:true,pickedAt:ago(3,12,0)};});
+  }
+  return {data:D,pics:pics,ch:s0,man:s1};
+}
+function demoLate(D){ // the reminders the clock would have raised by now: inspections due today, and from 4 o'clock tomorrow's jobs. Call it with the example week in use.
+  var now=Date.now(), six=pdate(today(0)); six.setHours(6,0,0,0); var four=new Date(six); four.setHours(16,1,0,0);
+  dueAlerts().concat(tomorrowAlerts()).forEach(function(a,i){
+    var s=a.scaf&&S.scafs.get(a.scaf), t=a.scaf?Math.max(six.getTime(),(s&&s.upAt)||0,(s&&s.redoAt)||0)+60000:four.getTime(), doc=Object.assign({at:Math.min(t,now-30000)+i,by:'',read:false},a);
+    delete doc.id; D.alerts[a.id]=doc;
+  });
+  return D;
+}
 
 /* ---------- job sheet form ---------- */
 var DAYL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],load:'full',std:ALLSTD.slice(),stdOpen:false,extra:{},open:{},notes:'',err:''};}
-function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),load:j.load||'full',std:stdOf(j),stdOpen:false,extra:exOf(j),open:{},notes:j.notes||'',err:''};}
+function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],load:'full',extra:{},open:{},notes:'',err:''};}
+function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),load:j.load||'full',extra:exOf(j),open:{},notes:j.notes||'',err:''};}
 function staffOpt(id,f,sel){
   var off=offOn(id,f.date), busy=jobsOn(id,f.date,f.id), out=!!wkDay(f.date)&&!wkPicked(f.date,id)&&S.bosses.indexOf(id)<0;
   return '<option value="'+esc(id)+'"'+(sel?' selected':'')+((off||out)&&!sel?' disabled':'')+'>'+esc(nameOf(id)+(off?' (off: '+(off.reason||'time off').toLowerCase()+')':(out?' (not picked for '+DAYL[pdate(f.date).getDay()]+')':(busy.length?' ('+plural(busy.length,'job')+' that day)':''))))+'</option>';
@@ -2086,15 +2268,11 @@ function formHtml(f){
     (left.length?'<select id="f-gang" class="in" data-c="gang"><option value="">'+(f.gang.length?'Add someone else':'Add someone to the gang')+'</option>'+left.map(function(id){return staffOpt(id,f,false);}).join('')+'</select>':'')+'</div></section>';
   var stepRow=function(x){var q=f.extra[x[0]]||0;
     return '<div class="st'+(q?' has':'')+'"><span class="st-n">'+esc(x[1])+'</span><div class="st-c"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="-1" aria-label="One fewer '+esc(x[1])+'">−</button><input id="x-'+x[0]+'" type="number" inputmode="numeric" min="0" max="999" data-x="'+x[0]+'" value="'+(q||'')+'" placeholder="0" aria-label="'+esc(x[1])+'"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="1" aria-label="One more '+esc(x[1])+'">+</button></div></div>';};
-  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Load list</b><div class="small muted">Tube, boards, fittings and beams.</div></div></div><div class="ld"><div class="seg">'+LOADS.map(function(x){return '<button type="button" data-a="load" data-v="'+x[0]+'" aria-pressed="'+(f.load===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>';
-  if(f.load!=='empty'){
-    var n=f.std.length;
-    h+='<div class="card-h"><span class="hint">'+(n===ALLSTD.length?'All tube, boards and fittings.':(n?n+' of '+ALLSTD.length+' tube, board and fitting sizes.':'No tube, boards or fittings.'))+'</span><button type="button" class="link small" data-a="stdopen">'+(f.stdOpen?'Done':'Change')+'</button></div>';
-    if(f.stdOpen) h+=STD.map(function(g){return '<div class="fld"><span class="fl">'+g[0]+'</span><div class="chips">'+g[1].map(function(x){return '<button type="button" class="chip" data-a="std" data-i="'+x[0]+'" aria-pressed="'+(f.std.indexOf(x[0])>=0)+'">'+x[1]+'</button>';}).join('')+'</div></div>';}).join('');
-  }else h+='<span class="hint">No tube, boards or fittings. Only the beams and miscellaneous you add.</span>';
-  var nb=BEAMS.filter(function(x){return f.extra[x[0]]>0;}).length;
-  h+='</div><details class="grp" data-g="Beams"'+(f.open.Beams?' open':'')+'><summary>Beams'+(nb?'<span class="grp-n">'+nb+'</span>':'')+'</summary>'+BEAMS.map(stepRow).join('')+'</details></section>';
-  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Miscellaneous</b><div class="small muted">Everything that isn’t on the load list. Tap what this job needs. Open a group to put a number against the rest.</div></div></div>'+
+  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Load list</b><div class="small muted">What goes on the lorry.</div></div></div><div class="ld"><div class="seg">'+LOADS.map(function(x){return '<button type="button" data-a="load" data-v="'+x[0]+'" aria-pressed="'+(f.load===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
+    '<span class="hint">'+(f.load==='empty'?'No tube, boards or fittings. Only what you add here and under Miscellaneous.':'The yard knows what a '+esc((LOADNAME[f.load]||'load').toLowerCase())+' takes: tube, boards, fittings, base plates and sole boards. Add what else this job needs.')+'</span></div>'+
+    [LOADX[1],LOADX[2],LOADX[0]].map(function(g){var c=g[1].filter(function(x){return f.extra[x[0]]>0;}).length;
+      return '<details class="grp" data-g="'+esc(g[0])+'"'+(f.open[g[0]]?' open':'')+'><summary>'+esc(g[0])+(c?'<span class="grp-n">'+c+'</span>':'')+'</summary>'+(g[2]?'<p class="tip">'+esc(g[2])+'</p>':'')+g[1].map(stepRow).join('')+'</details>';}).join('')+'</section>';
+  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Miscellaneous</b><div class="small muted">The things that could get forgotten. Tap what this job needs. Open a group to put a number against the rest.</div></div></div>'+
     '<div class="chips mx" role="group" aria-label="Tap what this job needs">'+TICKS.map(function(x){return '<button type="button" class="chip" data-a="xtick" data-i="'+x[0]+'" aria-pressed="'+(f.extra[x[0]]>0)+'">'+esc(x[1])+'</button>';}).join('')+'</div>'+EXTRA.map(function(g){
     var c=g[1].filter(function(x){return f.extra[x[0]]>0;}).length;
     return '<details class="grp" data-g="'+esc(g[0])+'"'+(f.open[g[0]]?' open':'')+'><summary>'+esc(g[0])+(c?'<span class="grp-n">'+c+'</span>':'')+'</summary>'+g[1].map(stepRow).join('')+'</details>';}).join('')+'</section>';
@@ -2109,7 +2287,7 @@ async function saveJob(){
   var extra={}; Object.keys(f.extra).forEach(function(k){if(f.extra[k]>0)extra[k]=f.extra[k];});
   var p=f.prop, prop={type:p.type||'',storeys:p.storeys||'',note:String(p.note||'').trim(),ring:p.ring||'',w:p.w||0,d:p.d||0,run:p.run||0,area:p.area||0,ax:p.ax||0,front:!!p.front,eaves:p.w?(p.eaves||0):0,top:p.w?(p.top||0):0,src:p.w?(p.src||''):''}, pk=placeKey(addr);
   var seq=jobList().filter(function(o){return o.id!==f.id&&o.date===f.date&&o.ch===f.ch&&String(o.vehicle||'').toUpperCase()===String(f.vehicle).toUpperCase();}).reduce(function(m,o){return Math.max(m,o.seq||0);},0)+1;
-  var body={v:2,kind:f.kind||'erect',date:f.date,address:addr,line:String(f.line).trim(),tail:String(f.tail||'').trim(),lat:f.lat,lon:f.lon,exact:!!f.exact,pk:pk,prop:prop,vehicle:f.vehicle,load:f.load,std:f.load==='empty'?[]:f.std.slice(),extra:extra,crew:crew,ch:f.ch,notes:String(f.notes).trim()};
+  var body={v:2,kind:f.kind||'erect',date:f.date,address:addr,line:String(f.line).trim(),tail:String(f.tail||'').trim(),lat:f.lat,lon:f.lon,exact:!!f.exact,pk:pk,prop:prop,vehicle:f.vehicle,load:f.load,extra:extra,crew:crew,ch:f.ch,notes:String(f.notes).trim()};
   try{
     if(f.id){
       var old=S.jobs.get(f.id)||{}, sig=loadSig, changed=sig(old)!==sig(body)&&!(old.left&&old.left.at);
@@ -2124,7 +2302,7 @@ async function saveJob(){
       body.seq=seq; body.createdAt=Date.now(); body.createdBy=myCrew()||''; body.yard=null; body.chk=null; body.left=null; body.done=null;
       var ref=await S.db.collection('jobs').add(body), told=toldWords(tell(jobAlerts(null,Object.assign({id:ref.id},body))));
       if(S.demo&&S.demo.step===1){S.demo.job=ref.id;S.form=null;demoGo(2);return;}
-      S.page=null; S.tab=f.back||'jobs'; if(S.demo) toast('Sent to the yard'); else S.sheet={k:'sent',job:ref.id,told:told};
+      S.page=null; S.tab=f.back||'jobs'; if(walking()) toast('Sent to the yard'); else S.sheet={k:'sent',job:ref.id,told:told};
     }
     if(pk){try{await S.db.doc('places/'+pk).set(Object.assign({address:addr,lat:f.lat,lon:f.lon,exact:!!f.exact,at:Date.now(),by:myCrew()||''},prop));}catch(_){ }}
     S.form=null; S.nav=true; window.scrollTo(0,0); render(true);
@@ -2176,15 +2354,15 @@ function setHtml(){
     fl.map(function(v){return '<div class="li"><span class="plate">'+esc(String(v.reg).toUpperCase())+'</span><div class="li-t"><small>'+esc(v.name||'')+'</small></div><button class="link small bad" data-a="vandel" data-id="'+esc(v.id)+'">'+(S.confirm==='vn'+v.id?'Sure?':'Remove')+'</button></div>';}).join('')+'</div>':'')+
     '<form class="rowf" data-form="addvan" style="padding:12px 16px 16px;border-top:1px solid var(--line)"><input id="v-reg" class="in pc" placeholder="Reg" autocomplete="off" autocapitalize="characters" maxlength="10" aria-label="Reg" style="flex:0 1 110px"><input id="v-name" class="in" placeholder="Name (optional)" autocomplete="off" maxlength="24" aria-label="Name"><button class="btn" type="submit">Add</button></form></section>';
   h+='</div><div class="col">';
-  if(canSat()) h+='<section class="card"><div><b style="font-size:1.08rem">Address finder</b><div class="small muted">'+(k?'Using Royal Mail addresses: every house in a postcode is listed.':'Postcodes are checked, but houses aren’t listed until a Royal Mail address key is added.')+'</div></div>'+
+  if(canSat()&&!S.demo) h+='<section class="card"><div><b style="font-size:1.08rem">Address finder</b><div class="small muted">'+(k?'Using Royal Mail addresses: every house in a postcode is listed.':'Postcodes are checked, but houses aren’t listed until a Royal Mail address key is added.')+'</div></div>'+
     (k?'<div class="card-h"><span class="tag">Key ending '+esc(k.slice(-4))+'</span>'+(ADDR_KEY_BUILT&&k===ADDR_KEY_BUILT?'':'<button class="link small bad" data-a="keydel">'+(S.confirm==='key'?'Sure?':'Remove')+'</button>')+'</div>':'<form class="rowf" data-form="addrkey"><input id="k-in" class="in" placeholder="Paste the key (starts ak_)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Address key"><button class="btn" type="submit">Save</button></form>')+
     '<div class="fld"><span class="fl">House sizes from Ordnance Survey</span>'+(ok?'<div class="card-h"><span class="tag">Key ending '+esc(ok.slice(-4))+'</span><button class="link small bad" data-a="oskeydel">'+(S.confirm==='oskey'?'Sure?':'Remove')+'</button></div>':'<form class="rowf" data-form="oskey"><input id="ok-in" class="in" placeholder="Paste the Ordnance Survey key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Ordnance Survey key"><button class="btn" type="submit">Save</button></form>')+
       '<span class="hint">'+(ok?'The outline, the floors and the height to the eaves come from Ordnance Survey’s record of each building.':'Without a key, the outline is measured from a public map. With one, the outline, the floors and the height to the eaves come from Ordnance Survey’s record of each building.')+'</span></div>'+
     '<div class="rowf"><input id="t-pc" class="in pc" placeholder="Postcode to test" value="'+esc(T&&T.pc||'')+'" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Postcode to test"><button class="btn line" type="button" data-a="addrtest"'+(T&&T.busy?' disabled':'')+'>'+(T&&T.busy?'Testing…':'Test')+'</button></div>'+
     (T&&T.rows.length?'<div class="at">'+T.rows.map(function(r){return '<p class="'+(r.ok?'y':'n')+'"><b>'+(r.ok?'✓ ':'✗ ')+esc(r.n)+'</b><span>'+esc(r.d)+'</span></p>';}).join('')+'</div>':'')+'</section>';
-  if(!S.demo) h+='<section class="card"><div class="card-h"><div><b style="font-size:1.08rem">Demo</b><div class="small muted">Watch one job go all the way through: you, the yard, the charge hand, the gang, then the finish. Nothing in it is saved.</div></div><button class="btn sm" data-a="demo">'+IC.play+'Run it</button></div></section>';
-  h+='<section class="card"><div class="card-h"><div><b>'+esc(APP)+'</b><div class="small muted">Version '+VER+(FCS_BUILD.v!=='dev'?' · '+esc(FCS_BUILD.v):'')+(FCS_BUILD.at?' · '+esc(FCS_BUILD.at):'')+'</div></div>'+(S.standalone?'<button class="btn line sm" data-a="checkupdate">Check for update</button>':'')+'</div>'+
-    (S.standalone?'<p class="hint">This is the practice version. Everything, photos included, stays on this phone. Tap your name at the top to see the app as someone else.</p><button class="btn danger sm" data-a="reset" style="width:100%">'+(S.confirm==='reset'?'Tap again to wipe everything':'Start again from scratch')+'</button>':'<p class="hint">Share this app with each member of staff as an Editor. The first time they open it, they tap their name. The picture from above and the house measuring only work in the home-screen version.</p>')+'</section>';
+  if(!S.demo) h+='<section class="card"><div class="card-h"><div><b style="font-size:1.08rem">Demo</b><div class="small muted">A made-up week of jobs, so you can see every screen with something on it: yours, the yard’s, a charge hand’s and the gang’s. You can also follow one job step by step. Nothing in it is saved.</div></div><button class="btn sm" data-a="demo">'+IC.play+'Run it</button></div></section>';
+  h+='<section class="card"><div class="card-h"><div><b>'+esc(APP)+'</b><div class="small muted">Version '+VER+(FCS_BUILD.v!=='dev'?' · '+esc(FCS_BUILD.v):'')+(FCS_BUILD.at?' · '+esc(FCS_BUILD.at):'')+'</div></div>'+(S.standalone&&!S.demo?'<button class="btn line sm" data-a="checkupdate">Check for update</button>':'')+'</div>'+
+    (S.demo?'<p class="hint">This is the demo. Anything changed here is thrown away when it ends.</p>':S.standalone?'<p class="hint">This is the practice version. Everything, photos included, stays on this phone. Tap your name at the top to see the app as someone else.</p><button class="btn danger sm" data-a="reset" style="width:100%">'+(S.confirm==='reset'?'Tap again to wipe everything':'Start again from scratch')+'</button>':'<p class="hint">Share this app with each member of staff as an Editor. The first time they open it, they tap their name. The picture from above and the house measuring only work in the home-screen version.</p>')+'</section>';
   LAY='two'; return h+'</div>';
 }
 async function addrTest(){
@@ -2366,7 +2544,6 @@ var ACT={
   },
   earlier:function(){S.earlier=!S.earlier;render(true);},
   tick:function(b){var s=b.dataset.s,id=b.dataset.id,i=b.dataset.i,cur=ticksOf(s,id)[i]||'';setTick(s,id,i,cur===''?'ok':(cur==='ok'?'no':null));render(true);},
-  allon:function(b){var s=b.dataset.s,id=b.dataset.id,k=b.dataset.k||'std',j=S.jobs.get(id);if(!j)return;var t=ticksOf(s,id);rowsOf(j).forEach(function(r){if(r.sec===k&&!t[r.id])setTick(s,id,r.id,'ok');});render(true);},
   confirm:async function(b){
     var s=b.dataset.s,id=b.dataset.id,j=S.jobs.get(id);if(!j)return;
     var t=ticksOf(s,id), rows=rowsOf(j); if(rows.some(function(r){return !t[r.id];})){toast('Tick everything first');return;}
@@ -2441,8 +2618,8 @@ var ACT={
   ptype:function(b){var p=S.form.prop;p.type=p.type===b.dataset.v?'':b.dataset.v;render(true);},
   pstoreys:function(b){var p=S.form.prop;p.storeys=p.storeys===b.dataset.v?'':b.dataset.v;render(true);},
   gangrm:function(b){var f=S.form,i=f.gang.indexOf(b.dataset.id);if(i>=0)f.gang.splice(i,1);render(true);},
-  load:function(b){var f=S.form;f.load=b.dataset.v;f.loadSet=true;if(f.load!=='empty'&&!f.std.length)f.std=ALLSTD.slice();render(true);},
-  kind:function(b){var f=S.form;f.kind=b.dataset.v;if(!f.loadSet){f.load=f.kind==='strike'?'empty':'full';if(f.load!=='empty'&&!f.std.length)f.std=ALLSTD.slice();}render(true);},
+  load:function(b){var f=S.form;f.load=b.dataset.v;f.loadSet=true;render(true);},
+  kind:function(b){var f=S.form;f.kind=b.dataset.v;if(!f.loadSet)f.load=f.kind==='strike'?'empty':'full';render(true);},
   another:function(b){
     var j=S.jobs.get(b.dataset.id);if(!j){toast('Give it a second, then try again');return;}
     var f=blankForm(),n=daysTo(j.date);f.date=j.date;f.dmode=n===0?'today':(n===1?'tom':'pick');f.vehicle=j.vehicle||'';f.ch=j.ch||'';f.gang=(j.crew||[]).filter(function(x){return x!==j.ch;});if(S.tab==='cal')f.back='cal';S.sheet=null;S.form=f;go({k:'form'});
@@ -2500,11 +2677,11 @@ var ACT={
   wkclose:async function(b){var ds=b.dataset.v;if(!two('wk'+ds))return;try{await S.db.doc('wkdays/'+ds).update({closed:true});tell(toAll(wkNames(ds).map(function(n){return n.person;}),{k:'wk',t:'Weekend work is off',m:fshort(ds)+' has been called off.',cal:'wk',day:ds}));toast('Called off');}catch(e){fail(e);}},
   wkhide:function(){var h=wkHidden();wkOpenDays().forEach(function(w){if(h.indexOf(w.date)<0)h.push(w.date);});try{localStorage.setItem('fcs-wk-hide',JSON.stringify(h.slice(-40)));}catch(_){ }render(true);},
   wkgo:function(b){S.tab='cal';S.calMode='wk';S.day=b.dataset.v;S.month=b.dataset.v.slice(0,7);S.nav=true;window.scrollTo(0,0);render(true);},
-  demo:function(){demoStart();},
+  demo:function(b){demoStart(b&&b.dataset&&b.dataset.v==='1'?1:0);},
   demonext:function(){demoAuto();},
+  demowalk:function(){demoWalk();},
+  demolook:function(){demoLook();},
   demoend:function(){demoEnd();},
-  stdopen:function(){S.form.stdOpen=!S.form.stdOpen;render(true);},
-  std:function(b){var f=S.form,i=f.std.indexOf(b.dataset.i);if(i>=0)f.std.splice(i,1);else f.std.push(b.dataset.i);render(true);},
   step:function(b){var f=S.form,i=b.dataset.i,q=Math.max(0,Math.min(999,(f.extra[i]||0)+(+b.dataset.d)));if(q)f.extra[i]=q;else delete f.extra[i];render(true);},
   xtick:function(b){var f=S.form,i=b.dataset.i;if(f.extra[i]>0)delete f.extra[i];else f.extra[i]=1;render(true);},
   save:function(){saveJob();},
