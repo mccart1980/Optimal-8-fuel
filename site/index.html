@@ -561,7 +561,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'847c0d4a',at:'21 Nov, 18:21'};
+var FCS_BUILD={v:'0cb68693',at:'21 Nov, 18:24'};
 var ADDR_KEY_BUILT='';
 var COMPANY='First Choice Scaffolding', APP='Load Check', VER='12';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
@@ -2511,11 +2511,12 @@ async function saveOff(){
 /* ---------- set-up ---------- */
 function setHtml(){
   var staff=crewList(), fl=fleet(), k=addrKey(), ok=osKey(), T=S.addrTest, h='';
-  h+='<div class="col">'+(S.demo?'':'<section class="card eg"><div><b>Example jobs</b><span class="small muted">The demo: a made-up week of jobs, so you can see every screen with something on it: yours, the yard’s, a charge hand’s and the gang’s. You can also follow one job step by step. Nothing in it is saved.</span></div><button class="btn sm" data-a="demo">'+IC.play+'Show example jobs</button></section>')+'<section class="card flush"><div class="sh-h"><div><b class="t">Staff</b><div class="small muted">Everyone who gets the app. Tick Yard for whoever loads the lorries. Tick Supervisor for anyone who should see everything '+(isOwnBoss()?'you see':esc(bossFirst())+' sees')+'. Everyone else only sees the jobs they are put on, a day at a time.</div></div></div><div class="list">'+
+  var canRole=local()?isOwnBoss():!!S.owner;   // who may say who is a supervisor: the boss. Inside Claude only the owner of the shared app can save that
+  h+='<div class="col">'+(S.demo?'':'<section class="card eg"><div><b>Example jobs</b><span class="small muted">The demo: a made-up week of jobs, so you can see every screen with something on it: yours, the yard’s, a charge hand’s and the gang’s. You can also follow one job step by step. Nothing in it is saved.</span></div><button class="btn sm" data-a="demo">'+IC.play+'Show example jobs</button></section>')+'<section class="card flush"><div class="sh-h"><div><b class="t">Staff</b><div class="small muted">Everyone who gets the app. Tick Yard for whoever loads the lorries. '+(canRole?'Tick Supervisor for anyone who should see everything you see. ':'')+'Everyone else only sees the jobs they are put on, a day at a time.</div></div></div><div class="list">'+
     staff.map(function(c){var boss=S.bosses.indexOf(c.id)>=0, sup=isSup(c.id), linked=!S.standalone&&Array.from(S.people.values()).some(function(p){return p.crewId===c.id;});
       return '<div class="li st-r"><span class="av soft">'+esc(initials(c.name))+'</span><div class="li-t"><b>'+esc(c.name)+'</b><small>'+esc(roleOf(c.id))+(!S.standalone?(linked?' · logged on':' · not logged on yet'):'')+'</small></div><div class="st-b">'+
         (boss?'':'<button class="chip" data-a="yard" data-id="'+esc(c.id)+'" aria-pressed="'+!!c.yard+'">Yard</button>')+
-        (boss||!isOwnBoss()?'':'<button class="chip" data-a="sup" data-id="'+esc(c.id)+'" aria-pressed="'+sup+'">Supervisor</button>')+
+        (boss||!canRole?'':'<button class="chip" data-a="sup" data-id="'+esc(c.id)+'" aria-pressed="'+sup+'">Supervisor</button>')+
         (!S.standalone&&S.owner?'<button class="chip" data-a="boss" data-id="'+esc(c.id)+'" aria-pressed="'+boss+'">Boss</button>':'')+
         (boss||c.id===myCrew()?'':'<button class="link small bad" data-a="staffdel" data-id="'+esc(c.id)+'">'+(S.confirm==='st'+c.id?'Sure?':'Remove')+'</button>')+'</div></div>';}).join('')+
     '</div><form class="rowf" data-form="addstaff" style="padding:12px 16px 16px;border-top:1px solid var(--line)"><input id="s-name" class="in" placeholder="Add a name" autocomplete="off" autocapitalize="words" maxlength="40" aria-label="Name"><button class="btn" type="submit">Add</button></form></section>';
