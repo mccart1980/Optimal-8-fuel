@@ -217,6 +217,10 @@ button.need{appearance:none;border-top:0;border-right:0;border-bottom:0;width:10
 .what p{margin:0;font-size:1.05rem;line-height:1.4;overflow-wrap:anywhere}
 .what.none{border-left-color:var(--line)}
 .what.none p{font-size:.95rem;color:var(--ink2)}
+.card.eg{gap:10px;border:1.5px dashed var(--line);box-shadow:none}
+.card.eg > div:first-child{display:flex;flex-direction:column;gap:2px}
+.card.eg b{font-size:1.02rem}
+.card.eg .btn{align-self:flex-start}
 .chips.qw{gap:6px}
 .chips.qw .chip{min-height:38px;padding:0 12px;font-size:.88rem}
 .hint.kit{display:block;margin-top:6px}
@@ -544,9 +548,9 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'b94ce863',at:'21 Nov, 16:29'};
+var FCS_BUILD={v:'35e2de7d',at:'21 Nov, 17:26'};
 var ADDR_KEY_BUILT='';
-var COMPANY='First Choice Scaffolding', APP='Load Check', VER='10';
+var COMPANY='First Choice Scaffolding', APP='Load Check', VER='11';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
 var $app=document.getElementById('app'), $toast=document.getElementById('toast');
 
@@ -644,6 +648,7 @@ function nameOf(id){var c=S.crew.get(id);return c&&c.name?c.name:'Someone';}
 function firstOf(id){return nameOf(id).trim().split(/\s+/)[0];}
 function initials(n){var p=String(n||'').trim().split(/\s+/);return ((p[0]||'?')[0]+(p.length>1?p[p.length-1][0]:'')).toUpperCase();}
 function local(){return S.standalone||!!S.demo;}   // data kept on this phone, where you can be anyone
+function canDemo(){return !S.demo&&(S.standalone||isBoss());}   // who gets the Show example jobs button: the boss, and in the practice version whoever you are looking as
 function walking(){return !!(S.demo&&S.demo.step);}   // the demo is following one job step by step (step 0 is looking round the example week)
 function myCrew(){
   if(local()){return S.viewAs&&S.crew.has(S.viewAs)&&!S.crew.get(S.viewAs).removed?S.viewAs:null;}
@@ -1290,7 +1295,7 @@ function jobListHtml(){
   }
   var up=all.filter(function(j){return j.date>=t0;}).sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.createdAt||0)-(b.createdAt||0));});
   if(!up.length){
-    h+='<div class="card empty">'+IC.box+'<b>'+(boss?'No jobs yet':(yard?'Nothing to load':'No jobs for you yet'))+'</b><span>'+(boss?'Tap New job to send a load sheet to the yard. Or watch a job go all the way through first.':(yard?'When '+esc(bossFirst())+' sends a job, the load sheet shows here.':'When '+esc(bossFirst())+' puts you on a job, it shows here.'))+'</span>'+(boss&&!S.demo?'<button class="btn soft sm" data-a="demo" style="margin-top:8px">'+IC.play+'Show me how it works</button>':'')+'</div>';
+    h+='<div class="card empty">'+IC.box+'<b>'+(boss?'No jobs yet':(yard?'Nothing to load':'No jobs for you yet'))+'</b><span>'+(boss?'Tap New job to send a load sheet to the yard. Or look at a week of example jobs first.':(yard?'When '+esc(bossFirst())+' sends a job, the load sheet shows here.':'When '+esc(bossFirst())+' puts you on a job, it shows here.'))+'</span>'+(canDemo()?'<button class="btn soft sm" data-a="demo" style="margin-top:8px">'+IC.play+'Show example jobs</button>':'')+'</div>';
   }else{
     var days=[]; up.forEach(function(j){if(!days.length||days[days.length-1].d!==j.date)days.push({d:j.date,l:[]});days[days.length-1].l.push(j);});
     days.forEach(function(g){
@@ -1306,8 +1311,10 @@ function jobListHtml(){
   }
   var past=all.filter(function(j){return j.date<t0;}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,30);
   if(past.length) h+='<div class="sec"><button class="link" data-a="earlier">'+(S.earlier?'Hide earlier jobs':'Show earlier jobs ('+past.length+')')+'</button>'+(S.earlier?past.map(function(j){return '<span class="lab">'+esc(fshort(j.date))+'</span>'+jobCard(j);}).join(''):'')+'</div>';
+  if(canDemo()&&all.length) h+=egCard();   // with no jobs at all, the empty card above already has the button
   return h;
 }
+function egCard(){return '<section class="card eg"><div><b>Example jobs</b><span class="small muted">A made-up week of jobs, to see every screen with something on it. Nothing in it is saved.</span></div><button class="btn soft sm" data-a="demo">'+IC.play+'Show example jobs</button></section>';}
 function jobsTab(){
   var side, srch='', list;
   if(isBoss()){
@@ -1640,12 +1647,12 @@ function coachHtml(){
   var d=S.demo; if(!d) return '';
   if(!d.step){ // looking round the example week: four buttons, one for each kind of screen. The one lit up is the kind of screen showing now.
     var me=myCrew(), t0=today(0), isCh=!!me&&jobList().some(function(j){return j.ch===me&&j.date>=t0;}), kind=!me?'':(S.bosses.indexOf(me)>=0?'Boss':(isYard()?'Yard':(isCh?'Charge hand':'Gang')));
-    return '<div class="coach look"><div class="coach-in"><div class="coach-t"><small>Demo · a made-up week · nothing here is saved</small></div><div class="coach-r">'+
+    return '<div class="coach look"><div class="coach-in"><div class="coach-t"><small>Demo · example jobs · nothing here is saved</small></div><div class="coach-r">'+
       '<div class="coach-w" role="group" aria-label="See the app as">'+[[d.boss,'Boss'],[d.yard,'Yard'],[d.ch,'Charge hand'],[d.man,'Gang']].filter(function(x){return x[0];}).map(function(x){return '<button class="coach-c" data-a="be" data-id="'+esc(x[0])+'" aria-pressed="'+(x[1]===kind)+'">'+x[1]+'</button>';}).join('')+'</div>'+
       '<div class="coach-b"><button class="link small" data-a="demowalk">Follow one job step by step</button><button class="link small" data-a="demoend">End demo</button></div></div></div></div>';
   }
   var T=demoText(d);
-  return '<div class="coach"><div class="coach-in"><div class="coach-t"><small>Demo · step '+d.step+' of 6 · nothing here is saved</small><b>'+esc(T.who)+'</b><span>'+esc(T.what)+'</span></div><div class="coach-b">'+(T.btn?'<button class="btn sm" data-a="demonext">'+esc(T.btn)+'</button>':'<button class="btn sm" data-a="demolook">Back to the example week</button>')+'<button class="link small" data-a="demoend">End demo</button></div></div></div>';
+  return '<div class="coach"><div class="coach-in"><div class="coach-t"><small>Demo · step '+d.step+' of 6 · nothing here is saved</small><b>'+esc(T.who)+'</b><span>'+esc(T.what)+'</span></div><div class="coach-b">'+(T.btn?'<button class="btn sm" data-a="demonext">'+esc(T.btn)+'</button><button class="link small" data-a="demolook">Example jobs</button>':'<button class="btn sm" data-a="demolook">Back to the example jobs</button>')+'<button class="link small" data-a="demoend">End demo</button></div></div></div>';
 }
 function demoStart(step){ // step 1 goes straight to following one job
   if(S.demo) return;
@@ -1728,7 +1735,7 @@ function guideTopics(){
       '**The charge hand** sees his jobs, checks the load in the morning, and marks the job as it goes.',
       '**The gang** just see the job: where it is, the house, who they are with.',
       local()?'To look at any of the four, tap your name at the top right and pick a person.':null,
-      'The **Demo** under Set-up shows all four with a made-up week of jobs on them.'],'ul'],
+      '**Show example jobs**, under your jobs on the Jobs screen, shows all four with a made-up week of jobs on them.'],'ul'],
     ['Put a job on','One sheet, then it goes to the yard.',[
       'Tap **Jobs**, then **New job**.',
       'Tap **Erect**, **Alter** or **Strike**. Then tap the day.',
@@ -1806,11 +1813,11 @@ function guideTopics(){
       'Type a name and tap **Add** to put someone on the staff list. Tap **Yard** next to whoever loads the lorries.',
       'Type a reg and tap **Add** to put a lorry on.',
       '**Remove** takes a person or a lorry off. Their old jobs stay.']],
-    ['Watch it work first','The demo. Nothing in it is saved.',[
-      'Tap **Set-up**, then **Run it** next to Demo.',
+    ['See it with example jobs','The demo. Nothing in it is saved.',[
+      'Tap **Show example jobs**. It is under your jobs on the Jobs screen, at the top of this Guide and at the top of **Set-up**.',
       'It opens on a made-up week of jobs, so every screen has something on it.',
       'The yellow strip at the top has four buttons: **Boss**, **Yard**, **Charge hand** and **Gang**. Tap one to see that person’s screen.',
-      '**Follow one job step by step** takes one new job from start to finish, as each person in turn. One button does each step for you.',
+      '**Follow one job step by step** takes one new job from start to finish, as each person in turn. One button does each step for you. **Example jobs** on the yellow strip takes you back to the made-up week.',
       '**End demo** stops it. Your real jobs are not touched.']]],
    yard:[
     ['Load a lorry','Tick the sheet, then confirm.',[
@@ -1877,7 +1884,8 @@ function guideHtml(){
   var T=guideTopics(), boss=isBoss(), n=0, groups;
   if(boss) groups=[['Your part',T.boss.concat([T.cal]).filter(Boolean)],['What the yard does',T.yard],['What the charge hand and the gang do',T.ch],['What everyone can do',T.all]];
   else groups=[['Your part',isYard()?T.yard:T.ch],['Everyone',T.all.concat([T.cal])]];
-  var h='<section class="card"><div><h1 class="h1 gd-h">How to use '+esc(APP)+'</h1><p class="sub">Short steps for each thing you do. Tap one to open it.</p></div>'+(boss&&!S.demo?'<button class="btn soft sm" data-a="demo" data-v="1" style="align-self:flex-start">'+IC.play+'Watch a job go through</button>':'')+'</section>';
+  var h='<section class="card"><div><h1 class="h1 gd-h">How to use '+esc(APP)+'</h1><p class="sub">Short steps for each thing you do. Tap one to open it.</p></div>'+'</section>';
+  if(canDemo()) h+='<section class="card eg"><div><b>Example jobs</b><span class="small muted">A made-up week of jobs, to see every screen with something on it. Or follow one job from start to finish. Nothing in it is saved.</span></div><div class="btns fit"><button class="btn soft sm" data-a="demo">'+IC.play+'Show example jobs</button><button class="btn line sm" data-a="demo" data-v="1">Follow one job</button></div></section>';
   groups.forEach(function(g){
     h+='<div class="sec"><span class="lab">'+esc(g[0])+'</span><section class="card flush">'+g[1].map(function(t){
       var k='g-'+(boss?'b':(isYard()?'y':'s'))+(n++), tag=t[3]==='ul'?'ul':'ol';
@@ -2386,7 +2394,7 @@ async function saveOff(){
 /* ---------- set-up ---------- */
 function setHtml(){
   var staff=crewList(), fl=fleet(), k=addrKey(), ok=osKey(), T=S.addrTest, h='';
-  h+='<div class="col"><section class="card flush"><div class="sh-h"><div><b class="t">Staff</b><div class="small muted">Everyone who gets the app. Tick Yard for whoever loads the lorries.</div></div></div><div class="list">'+
+  h+='<div class="col">'+(S.demo?'':'<section class="card eg"><div><b>Example jobs</b><span class="small muted">The demo: a made-up week of jobs, so you can see every screen with something on it: yours, the yard’s, a charge hand’s and the gang’s. You can also follow one job step by step. Nothing in it is saved.</span></div><button class="btn sm" data-a="demo">'+IC.play+'Show example jobs</button></section>')+'<section class="card flush"><div class="sh-h"><div><b class="t">Staff</b><div class="small muted">Everyone who gets the app. Tick Yard for whoever loads the lorries.</div></div></div><div class="list">'+
     staff.map(function(c){var boss=S.bosses.indexOf(c.id)>=0, linked=!S.standalone&&Array.from(S.people.values()).some(function(p){return p.crewId===c.id;});
       return '<div class="li"><span class="av soft">'+esc(initials(c.name))+'</span><div class="li-t"><b>'+esc(c.name)+'</b><small>'+(boss?'Boss':(c.yard?'Yard':'Staff'))+(!S.standalone?(linked?' · logged on':' · not logged on yet'):'')+'</small></div>'+
         (boss?'':'<button class="chip" data-a="yard" data-id="'+esc(c.id)+'" aria-pressed="'+!!c.yard+'">Yard</button>')+
@@ -2403,7 +2411,6 @@ function setHtml(){
       '<span class="hint">'+(ok?'The outline, the floors and the height to the eaves come from Ordnance Survey’s record of each building.':'Without a key, the outline is measured from a public map. With one, the outline, the floors and the height to the eaves come from Ordnance Survey’s record of each building.')+'</span></div>'+
     '<div class="rowf"><input id="t-pc" class="in pc" placeholder="Postcode to test" value="'+esc(T&&T.pc||'')+'" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Postcode to test"><button class="btn line" type="button" data-a="addrtest"'+(T&&T.busy?' disabled':'')+'>'+(T&&T.busy?'Testing…':'Test')+'</button></div>'+
     (T&&T.rows.length?'<div class="at">'+T.rows.map(function(r){return '<p class="'+(r.ok?'y':'n')+'"><b>'+(r.ok?'✓ ':'✗ ')+esc(r.n)+'</b><span>'+esc(r.d)+'</span></p>';}).join('')+'</div>':'')+'</section>';
-  if(!S.demo) h+='<section class="card"><div class="card-h"><div><b style="font-size:1.08rem">Demo</b><div class="small muted">A made-up week of jobs, so you can see every screen with something on it: yours, the yard’s, a charge hand’s and the gang’s. You can also follow one job step by step. Nothing in it is saved.</div></div><button class="btn sm" data-a="demo">'+IC.play+'Run it</button></div></section>';
   h+='<section class="card"><div class="card-h"><div><b>'+esc(APP)+'</b><div class="small muted">Version '+VER+(FCS_BUILD.v!=='dev'?' · '+esc(FCS_BUILD.v):'')+(FCS_BUILD.at?' · '+esc(FCS_BUILD.at):'')+'</div></div>'+(S.standalone&&!S.demo?'<button class="btn line sm" data-a="checkupdate">Check for update</button>':'')+'</div>'+
     (S.demo?'<p class="hint">This is the demo. Anything changed here is thrown away when it ends.</p>':S.standalone?'<p class="hint">This is the practice version. Everything, photos included, stays on this phone. Tap your name at the top to see the app as someone else.</p><button class="btn danger sm" data-a="reset" style="width:100%">'+(S.confirm==='reset'?'Tap again to wipe everything':'Start again from scratch')+'</button>':'<p class="hint">Share this app with each member of staff as an Editor. The first time they open it, they tap their name. The picture from above and the house measuring only work in the home-screen version.</p>')+'</section>';
   LAY='two'; return h+'</div>';
