@@ -128,6 +128,7 @@ button.li{appearance:none;border-left:0;border-right:0;border-bottom:0;backgroun
 .li-t{flex:1;min-width:0;display:flex;flex-direction:column}
 .li-t b{font-weight:600}
 .li-t small{color:var(--ink2);font-size:.84rem}
+.li-t .li-w{color:var(--ink);font-size:.88rem;line-height:1.35;margin-top:2px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .empty{text-align:center;padding:34px 20px;color:var(--ink2);display:flex;flex-direction:column;gap:6px;align-items:center}
 .empty svg{width:40px;height:40px;color:var(--ink3);margin-bottom:4px}
 .empty b{color:var(--ink);font-size:1.05rem}
@@ -173,6 +174,7 @@ button.li{appearance:none;border-left:0;border-right:0;border-bottom:0;backgroun
 .job:active{transform:scale(.992)}
 .job-top{display:flex;align-items:flex-start;justify-content:space-between;gap:10px}
 .job-a{font-weight:700;font-size:1.05rem;line-height:1.3;letter-spacing:-.01em}
+.job-w{font-size:.92rem;line-height:1.35;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
 .job-m{display:flex;flex-wrap:wrap;align-items:center;gap:7px 10px;color:var(--ink2);font-size:.9rem}
 .job-s{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:.84rem;color:var(--ink2)}
 .job-s b{font-weight:600;color:var(--ink)}
@@ -211,6 +213,13 @@ button.need{appearance:none;border-top:0;border-right:0;border-bottom:0;width:10
 /* job page */
 .hero-b{padding:16px;display:flex;flex-direction:column;gap:14px}
 .hero-a{font-size:1.35rem;font-weight:700;line-height:1.25;letter-spacing:-.015em;text-wrap:balance}
+.what{display:flex;flex-direction:column;gap:3px;border-left:4px solid var(--brand);padding:2px 0 2px 12px}
+.what p{margin:0;font-size:1.05rem;line-height:1.4;overflow-wrap:anywhere}
+.what.none{border-left-color:var(--line)}
+.what.none p{font-size:.95rem;color:var(--ink2)}
+.chips.qw{gap:6px}
+.chips.qw .chip{min-height:38px;padding:0 12px;font-size:.88rem}
+.hint.kit{display:block;margin-top:6px}
 .kv{display:grid;grid-template-columns:auto minmax(0,1fr);gap:9px 14px;font-size:.95rem;align-items:baseline}
 .kv dt{color:var(--ink3);font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase}
 .kv dd{margin:0}
@@ -271,6 +280,8 @@ button.need{appearance:none;border-top:0;border-right:0;border-bottom:0;width:10
 .ck-n{flex:1;min-width:0;font-weight:500}
 .ck-n small{display:block;font-size:.82rem;font-weight:400;color:var(--ink2);line-height:1.3}
 .ck-q{font-weight:700;font-variant-numeric:tabular-nums;background:var(--bg);border-radius:8px;padding:3px 9px;font-size:.95rem}
+.ck.ok{background:var(--go-soft)}
+.ck.no{background:var(--bad-soft)}
 .ck.ok .ck-b{background:var(--go);border-color:var(--go);color:var(--on-go)}
 .ck.no .ck-b{background:var(--bad);border-color:var(--bad);color:var(--on-bad)}
 .ck.no .ck-n{color:var(--bad)}
@@ -313,7 +324,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .rowf .btn{width:auto;flex:none;min-height:50px}
 .seg{display:flex;background:var(--bg);border-radius:12px;padding:4px;gap:4px}
 .seg button{appearance:none;border:0;background:none;flex:1;min-height:42px;border-radius:9px;font-weight:600;color:var(--ink2);font-size:.95rem;padding:0 6px}
-.seg button[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 3px var(--lift)}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand);box-shadow:0 1px 3px var(--lift)}
 .chips{display:flex;flex-wrap:wrap;gap:8px}
 .chip{appearance:none;border:1.5px solid var(--line);background:var(--card);border-radius:999px;min-height:40px;padding:0 14px;font-weight:600;font-size:.92rem;display:inline-flex;align-items:center;gap:8px}
 .chip[aria-pressed="true"]{background:var(--brand);border-color:var(--brand);color:var(--on-brand)}
@@ -343,7 +354,9 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .st-c button{appearance:none;border:1.5px solid var(--line);background:var(--card);width:40px;height:40px;border-radius:11px;font-size:1.25rem;font-weight:600;line-height:1;display:grid;place-items:center;padding:0}
 .st-c input{width:52px;height:40px;text-align:center;border:1.5px solid var(--line);border-radius:11px;background:var(--field);font-weight:700;font-variant-numeric:tabular-nums;-moz-appearance:textfield;padding:0}
 .st-c input::-webkit-outer-spin-button,.st-c input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-.st.has .st-c input{border-color:var(--brand2);background:var(--brand-soft)}
+.st.has{background:var(--brand-soft)}
+.st.has .st-n{font-weight:700}
+.st.has .st-c input{border-color:var(--brand);background:var(--brand);color:var(--on-brand)}
 
 /* calendar */
 .cal-h{display:flex;align-items:center;justify-content:space-between;gap:8px}
@@ -531,9 +544,9 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'52a0c726',at:'21 Nov, 14:42'};
+var FCS_BUILD={v:'b94ce863',at:'21 Nov, 16:29'};
 var ADDR_KEY_BUILT='';
-var COMPANY='First Choice Scaffolding', APP='Load Check', VER='9';
+var COMPANY='First Choice Scaffolding', APP='Load Check', VER='10';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
 var $app=document.getElementById('app'), $toast=document.getElementById('toast');
 
@@ -548,10 +561,14 @@ var LOADX=[['Change the boards',[['bq8','8ft boards'],['bq10','10ft boards'],['b
 LOADX.forEach(function(g){g[1].forEach(function(x){LOADID[x[0]]=1;});});
 var EXTRA=[['Butts',[['bt12','1ft butts'],['bt18','18in butts'],['bt24','2ft butts'],['bt36','3ft butts'],['bt48','4ft butts']]],
   ['Beam joiners and pins',[['bmj','Beam joiners'],['bmp','Pins']]],
-  ['Stair treads and gates',[['str','Stair treads'],['gat','Gates']]],
-  ['Brackets and jacks',[['brk','Brackets'],['sjk','Screw jacks']]],
+  ['Stair treads, brackets and jacks',[['str','Stair treads'],['brk','Brackets'],['sjk','Screw jacks']]],
   ['Lifting and rubbish',[['rpw','Rope and wheel'],['cht','Chutes'],['hop','Hoppers'],['chb','Chute brackets']]]];
-var TICKS=[['ldf','Ladder safes'],['trd','Treaders'],['tie','Tie gear'],['xcb','Excalibur bolts'],['net','Netting'],['fom','Foam'],['cap','Caps'],['ctt','Cable ties'],['fbc','Board clips'],['bsh','Short boards']];
+var TICKS=[['cap','Caps'],['fbc','Board clips'],['net','Netting'],['fom','Foam'],['gat','Gates'],['ldf','Ladder safes'],['trd','Treaders'],['tie','Tie gear'],['xcb','Excalibur bolts'],['ctt','Cable ties'],['bsh','Short boards']];
+// The kit that goes on every lorry, whatever the job. It starts on the first job sheet for a lorry each day; the gang's later jobs on that lorry don't repeat it.
+var KIT={cap:1,fbc:1,net:1,fom:1,gat:1,ldf:1,trd:1,ldl:2,lds:2};
+var KITSAYS='caps, board clips, netting, foam, gates, ladder safes, treaders, 2 long ladders and 2 short ladders';
+// words Gerry can tap to say what a job is, instead of typing them
+var QUICK=['Front','Back','Left side','Right side','All round','1 lift','2 lifts','3 lifts','4 lifts','Roof','Chimney','Windows','Loading bay','Bridge'];
 // names of things earlier versions ticked one by one, so an old job's record still reads properly
 var OLDNAME={t5:'5ft tube',t6:'6ft tube',t8:'8ft tube',t10:'10ft tube',t13:'13ft tube',t16:'16ft tube',t21:'Long tube',b8:'8ft boards',b10:'10ft boards',b13:'13ft boards',fdb:'Doubles',fsg:'Singles',fsw:'Swivels',fsl:'Sleeves',fbp:'Base plates',fsb:'Sole boards'};
 var LOADS=[['full','Full'],['three','¾'],['half','Half'],['quarter','¼'],['empty','Empty']];
@@ -660,8 +677,8 @@ function rowsOf(j){ // what the yard and the charge hand tick: the load in one l
   var out=[], ex=exOf(j);
   if(j.load&&j.load!=='empty') out.push({id:'load',name:LOADNAME[j.load]||'Load',sub:LOADSAYS,sec:'load'});
   LOADX.forEach(function(g){g[1].forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sub:j.load&&j.load!=='empty'?(g[3]||''):'',qty:ex[x[0]],sec:'load'});});});
+  TICKS.forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sec:'extra'});});   // the tapped-on items first: most of them are the every-lorry kit, so the top of the list is the same each time
   EXTRA.forEach(function(g){g[1].forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],qty:ex[x[0]],sec:'extra'});});});
-  TICKS.forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sec:'extra'});});
   return out;
 }
 function statusOf(j){return j.done&&j.done.at?'done':(j.left&&j.left.at?'out':(j.chk&&j.chk.at?'checked':(j.yard&&j.yard.at?'loaded':'toload')));}
@@ -671,6 +688,14 @@ function missingOf(j){ // only things still on this job's load sheet count as mi
   m.forEach(function(id){if(OLDNAME[id])id='load';if(on[id]&&out.indexOf(id)<0)out.push(id);});   // a size of tube ticked missing on an older job counts against the load
   return out;
 }
+function loadWords(j){ // the load in a sentence: "Full load with 4m beams × 2 and long ladders × 2, and 9 miscellaneous items"
+  var e=exOf(j), on=[], n=0;
+  LOADX.forEach(function(g){g[1].forEach(function(x){if(e[x[0]]>0)on.push(x[1].charAt(0).toLowerCase()+x[1].slice(1)+' × '+e[x[0]]);});});
+  Object.keys(e).forEach(function(k){if(!LOADID[k])n++;});
+  var misc=n?plural(n,'miscellaneous item'):'';
+  return j.load==='empty'?(on.length||n?'Empty apart from '+andList(on.concat(n?[misc]:[])):'Empty'):(LOADNAME[j.load]||'Load')+(on.length?' with '+andList(on):'')+(n?(on.length?', and ':' and ')+misc:'');
+}
+function hasWord(text,w){return String(text||'').split(',').some(function(x){return x.trim().replace(/\.$/,'').toLowerCase()===w.toLowerCase();});}
 function sheetSum(j,rows){var n=rows.filter(function(r){return r.id!=='load';}).length;return (LOADNAME[j.load]||'Load')+(n?' · '+plural(n,j.load==='empty'?'item':'other item'):'');}
 function itemName(id){var n=OLDNAME[id]||id;if(id==='load')return 'Tube, boards or fittings (load short)';EXTRA.concat(LOADX).forEach(function(g){g[1].forEach(function(x){if(x[0]===id)n=x[1];});});TICKS.forEach(function(x){if(x[0]===id)n=x[1];});return n;}
 function onJob(j){var c=myCrew();return !!c&&(j.crew||[]).indexOf(c)>=0;}
@@ -1192,7 +1217,7 @@ function jobsBadge(){
   var c=myCrew(); return jobList().filter(function(j){return j.date>=t0&&j.date<=t1&&j.ch===c&&statusOf(j)!=='done';}).length+inspDue().length;
 }
 function barHtml(){
-  var back=!!S.page, pk=back&&S.page.k, title=back?(pk==='job'?'Job sheet':(pk==='scaf'?'Scaffold record':(S.form&&S.form.id?'Change job':'New job'))):(S.tab==='jobs'?tabName():(S.tab==='cal'?'Calendar':(S.tab==='guide'?'Guide':(S.tab==='alerts'?'Alerts':'Set-up')))), c=myCrew();
+  var back=!!S.page, pk=back&&S.page.k, title=back?(pk==='job'?'Job':(pk==='scaf'?'Scaffold record':(S.form&&S.form.id?'Change job':'New job'))):(S.tab==='jobs'?tabName():(S.tab==='cal'?'Calendar':(S.tab==='guide'?'Guide':(S.tab==='alerts'?'Alerts':'Set-up')))), c=myCrew();
   var h='<header class="bar"><div class="bar-in">'+(back?'<button class="bar-back" data-a="back" aria-label="Back">'+IC.back+'</button>':'<img class="bar-logo" src="'+LOGO+'" alt="">');
   h+='<div class="bar-t"><small>'+esc(COMPANY)+'</small><b>'+esc(title)+'</b></div>';
   if(!back&&c) h+=(S.standalone&&!S.demo)||(S.demo&&!S.demo.step)?'<button class="who" data-a="who" aria-label="Viewing as '+esc(nameOf(c))+'. Change person"><span class="av">'+esc(initials(nameOf(c)))+'</span><span>'+esc(firstOf(c))+'</span>'+IC.down+'</button>':'<div class="who plain" title="'+esc(nameOf(c))+'"><span class="av">'+esc(initials(nameOf(c)))+'</span></div>';
@@ -1224,6 +1249,7 @@ function jobCard(j,pos){
   if(ex) bits.push('<span>'+plural(ex,'extra')+'</span>');
   if(ph) bits.push('<span>'+plural(ph,'photo')+'</span>');
   return '<button class="job" data-a="open" data-id="'+esc(j.id)+'"><div class="job-top"><span class="job-a">'+esc(j.address)+'</span>'+pillOf(j)+'</div>'+
+    (j.what&&!(isYard()&&!isBoss())?'<div class="job-w">'+esc(j.what)+'</div>':'')+
     '<div class="job-m">'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'')+kindTag(j)+(pos.n>1?'<span class="seq">'+(pos.i+1)+' of '+pos.n+'</span>':'')+'<span>'+esc(LOADNAME[j.load]||'')+'</span><span>'+esc(crewLine(j))+'</span></div>'+
     (bits.length?'<div class="job-s">'+bits.join('')+'</div>':'')+
     '<div class="steps" aria-hidden="true"><i class="on"></i><i class="'+(y?((j.yard.missing||[]).length?'bad':'on'):'')+'"></i><i class="'+(c?((j.chk.missing||[]).length?'bad':'on'):'')+'"></i><i class="'+(l?'on':'')+'"></i><i class="'+(d?'on':'')+'"></i></div></button>';
@@ -1258,7 +1284,7 @@ function wkCard(){ // tells staff that weekend work is going
 function jobListHtml(){
   var boss=isBoss(), yard=isYard(), t0=today(0), all=visJobs(), h='', q=String(S.q||'').trim().toLowerCase();
   if(q){
-    var words=q.split(/\s+/), hits=all.filter(function(j){var hay=(j.address+' '+(j.vehicle||'')+' '+(j.crew||[]).map(nameOf).join(' ')).toLowerCase();return words.every(function(w){return hay.indexOf(w)>=0;});}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,40);
+    var words=q.split(/\s+/), hits=all.filter(function(j){var hay=(j.address+' '+(j.vehicle||'')+' '+(j.crew||[]).map(nameOf).join(' ')+' '+(j.what||'')).toLowerCase();return words.every(function(w){return hay.indexOf(w)>=0;});}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,40);
     if(!hits.length) return '<div class="card empty">'+IC.search+'<b>Nothing found</b><span>Try part of the road name or the postcode.</span></div>';
     return '<div class="sec"><span class="lab">'+plural(hits.length,'job')+' found</span>'+hits.map(function(j){return '<span class="lab">'+esc(fwhen(j.date))+'</span>'+jobCard(j);}).join('')+'</div>';
   }
@@ -1303,8 +1329,10 @@ function heroHtml(j){
   var pos=runPos(j), pv=pos.list[pos.i-1], nx=pos.list[pos.i+1];
   h+='<div class="hero-b"><div class="card-h"><span class="lab">'+esc(fwhen(j.date))+'</span>'+pillOf(j)+'</div><h2 class="hero-a">'+esc(j.address)+'</h2>';
   if(j.kind||pos.n>1) h+='<div class="tags">'+kindTag(j)+(pos.n>1?'<span class="seq">Job '+(pos.i+1)+' of '+pos.n+' for this gang</span><span class="seq-n"><button class="seq-b" data-a="open" data-id="'+esc(pv?pv.id:'')+'" aria-label="The job before"'+(pv?'':' disabled')+'>'+IC.prev+'</button><button class="seq-b" data-a="open" data-id="'+esc(nx?nx.id:'')+'" aria-label="The job after"'+(nx?'':' disabled')+'>'+IC.next+'</button></span>':'')+'</div>';
+  if(j.what) h+='<div class="what"><span class="lab">The job</span><p>'+esc(j.what)+'</p></div>';
+  else if(isBoss()&&!(j.done&&j.done.at)) h+='<div class="what none"><span class="lab">The job</span><p>Nothing written about the job yet. <button class="link" data-a="edit" data-id="'+esc(j.id)+'">Say what it is</button></p></div>';
   if(!yardOnly) h+=actsHtml(j,true);
-  h+='<dl class="kv"><dt>Lorry</dt><dd>'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span> ':'')+'<span>'+esc((v&&v.name?v.name+' · ':'')+(LOADNAME[j.load]||''))+'</span></dd><dt>Charge hand</dt><dd>'+esc(j.ch?nameOf(j.ch):'Not set')+'</dd>'+(gang.length?'<dt>Gang</dt><dd>'+esc(gang.map(nameOf).join(', '))+'</dd>':'');
+  h+='<dl class="kv"><dt>Lorry</dt><dd>'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'Not set')+(v&&v.name?' <span>'+esc(v.name)+'</span>':'')+'</dd><dt>Load</dt><dd>'+esc(loadWords(j))+'</dd><dt>Charge hand</dt><dd>'+esc(j.ch?nameOf(j.ch):'Not set')+'</dd>'+(gang.length?'<dt>Gang</dt><dd>'+esc(gang.map(nameOf).join(', '))+'</dd>':'');
   if(house&&!yardOnly) h+='<dt>House</dt><dd>'+esc(house)+'</dd>';
   h+='</dl>';
   if(p.w&&p.d&&!yardOnly) h+='<div class="size"><b>'+esc(sizeText(p))+'</b><span>'+esc(sizeSub(p))+'</span>'+(highText(p)?'<span>'+esc(highText(p))+'</span>':'')+'<span>'+(p.src==='os'?'From Ordnance Survey’s record of the building.':(p.src==='demo'?'Made-up sizes for the demo. On a real job they come from the building’s record.':'A guide, measured from the map.'))+'</span></div>';
@@ -1393,6 +1421,7 @@ function shareText(j){ // the whole job as plain words, for WhatsApp or a text
   var rows=rowsOf(j), gang=(j.crew||[]).filter(function(x){return x!==j.ch;}), p=j.prop||{}, pick=function(k){return rows.filter(function(r){return r.sec===k;});};
   var L=[COMPANY.toUpperCase(),fshort(j.date)+' · '+(j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]+' · ':'')+j.address,'Lorry: '+(j.vehicle||'not set')+' · '+(LOADNAME[j.load]||''),'Charge hand: '+(j.ch?nameOf(j.ch):'not set')];
   if(gang.length) L.push('Gang: '+gang.map(nameOf).join(', '));
+  if(j.what) L.push('','THE JOB',j.what);
   if(pick('load').length){L.push('','LOAD LIST');pick('load').forEach(function(r){L.push(r.id==='load'?r.name+': '+LOADSAYS.toLowerCase():'- '+r.name+' x '+r.qty+(r.sub?' ('+r.sub.toLowerCase()+')':''));});}
   if(pick('extra').length){L.push('','MISCELLANEOUS');pick('extra').forEach(function(r){L.push('- '+r.name+(r.qty?' x '+r.qty:''));});}
   if(houseText(p)||p.w) L.push('','THE PROPERTY',[houseText(p),p.w?sizeText(p):'',p.w?highText(p):''].filter(Boolean).join(' · '));
@@ -1426,7 +1455,7 @@ function calData(from,to){ // what falls on each day, by kind
 }
 function calJobRow(j){
   var p=runPos(j);
-  return '<button class="li" data-a="open" data-id="'+esc(j.id)+'">'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'')+'<div class="li-t"><b>'+esc(j.line||j.address)+'</b><small>'+esc([j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]:'',crewLine(j),p.n>1?'job '+(p.i+1)+' of '+p.n:''].filter(Boolean).join(' · '))+'</small></div>'+pillOf(j)+'</button>';
+  return '<button class="li" data-a="open" data-id="'+esc(j.id)+'">'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'')+'<div class="li-t"><b>'+esc(j.line||j.address)+'</b><small>'+esc([j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]:'',crewLine(j),p.n>1?'job '+(p.i+1)+' of '+p.n:''].filter(Boolean).join(' · '))+'</small>'+(j.what&&!(isYard()&&!isBoss())?'<small class="li-w">'+esc(j.what)+'</small>':'')+'</div>'+pillOf(j)+'</button>';
 }
 function byLorry(a,b){var x=String(a.vehicle||''),y=String(b.vehicle||'');return x<y?-1:(x>y?1:bySeq(a,b));}
 function wkBlock(ds){ // one weekend day: names down, and who the boss has picked
@@ -1662,8 +1691,8 @@ async function demoAuto(){ // "Do it for me": carry out the step exactly as that
   try{
     if(n===1){
       var staff=crewList().filter(function(c){return !c.yard&&S.bosses.indexOf(c.id)<0;}), v=fleet()[0], addr='12 Sample Street, Rayleigh';
-      var ref=await S.db.collection('jobs').add({v:2,kind:'erect',seq:1,date:today(0),address:addr,line:addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(addr),prop:Object.assign(blankProp(),{type:'Semi',storeys:'2',note:'Side gate on the left.'}),vehicle:String(v.reg).toUpperCase(),load:'full',extra:{bm4:2,ldl:2,rpw:1,ldf:1,net:1,cap:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id,notes:'Scaffold the front for new windows.',createdAt:now,createdBy:d.boss,yard:null,chk:null,left:null,done:null});
-      tell(jobAlerts(null,Object.assign({id:ref.id},{date:today(0),address:addr,vehicle:String(v.reg).toUpperCase(),load:'full',extra:{bm4:2,ldl:2,rpw:1,ldf:1,net:1,cap:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id})));
+      var ref=await S.db.collection('jobs').add({v:2,kind:'erect',seq:1,date:today(0),address:addr,line:addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(addr),prop:Object.assign(blankProp(),{type:'Semi',storeys:'2',note:'Side gate on the left.'}),vehicle:String(v.reg).toUpperCase(),what:'Front and back, 2 lifts, for the roof.',load:'full',extra:Object.assign({},KIT,{bm4:2,rpw:1}),crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id,notes:'Scaffold the front for new windows.',createdAt:now,createdBy:d.boss,yard:null,chk:null,left:null,done:null});
+      tell(jobAlerts(null,Object.assign({id:ref.id},{date:today(0),address:addr,vehicle:String(v.reg).toUpperCase(),what:'Front and back, 2 lifts, for the roof.',load:'full',extra:Object.assign({},KIT,{bm4:2,rpw:1}),crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id})));
       d.job=ref.id; S.busy=''; demoGo(2); return;
     }
     if(!j){S.busy='';return;}
@@ -1704,12 +1733,14 @@ function guideTopics(){
       'Tap **Jobs**, then **New job**.',
       'Tap **Erect**, **Alter** or **Strike**. Then tap the day.',
       map?'Type the postcode and tap **Find**. Then type the house number and road.':'Type the address.',
+      'Under **What the job is**, tap the words that fit, such as **Front**, **Back** and **2 lifts**, or type it. Everyone on the job sees this.',
       map?'A picture from above comes up. Tap the house to mark it and measure it. The size goes on the job for the gang to see.':null,
       'Tap the type of house and the storeys. Add a note if the crew need one.',
       'Pick the lorry, the charge hand and the gang from the lists.',
       'Under **Load list**, tap the load: **Full**, **¾**, **Half**, **¼** or **Empty**. The yard knows what tube, boards, fittings, base plates and sole boards that takes.',
-      'Open **Beams** or **Ladders** to put a number against any this job needs. Open **Change the boards** only when this job needs a different amount of boards from usual.',
-      'Under **Miscellaneous**, tap the things that could get forgotten, such as caps or netting. Open a group, such as Butts, to put a number against the rest.',
+      'What goes on every lorry is already on the sheet: caps, board clips, netting, foam, gates, ladder safes, treaders, 2 long ladders and 2 short ladders. Take one off, or change a ladder number, if a job is different. A gang’s second job on the same lorry doesn’t repeat them.',
+      'Open **Beams** to put a number against any this job needs. Open **Change the boards** only when this job needs a different amount of boards from usual.',
+      'Under **Miscellaneous**, tap what else could get forgotten, such as tie gear. Open a group, such as Butts, to put a number against the rest.',
       'Tap **Send to the yard**.']],
     ['Give a gang more than one job in a day','It works for every gang.',[
       'Send the first job as normal.',
@@ -1838,7 +1869,8 @@ function guideTopics(){
       '**Inspections** are blue-green squares. Red means overdue or not safe.',
       '**Time off** is a purple circle. **Weekend work** is an orange square with a W.',
       'Tap a key to show just that kind. Tap **All** for everything.',
-      'Tap a day to see what is on it.'],'ul']
+      'Tap a day to see what is on it.',
+      'Tap a job in the list to open it: what the job is, who is on it, the lorry, the load and where it has got to.'],'ul']
   };
 }
 function guideHtml(){
@@ -1883,11 +1915,10 @@ function pruneAlerts(){ // keep the store small: read alerts over a month old go
 }
 function jobAlerts(old,nw){ // a job put on (no old), changed, or taken off (no nw): who needs telling, and what
   var out=[], yard=yardIds(), when=function(j){return fshort(j.date);};
-  var chMsg=function(j){var g=(j.crew||[]).filter(function(x){return x!==j.ch;}).map(firstOf);return when(j)+': '+j.address+'. Lorry '+vehOf(j)+(g.length?', with '+andList(g):'')+'.';};
-  var gangMsg=function(j){return when(j)+': '+j.address+'. '+firstOf(j.ch)+' is charge hand, lorry '+vehOf(j)+'.';};
-  var loadMsg=function(j){var e=exOf(j),on=[],n=0;LOADX.forEach(function(g){g[1].forEach(function(x){if(e[x[0]]>0)on.push(x[1].charAt(0).toLowerCase()+x[1].slice(1)+' × '+e[x[0]]);});});Object.keys(e).forEach(function(k){if(!LOADID[k])n++;});
-    var misc=n?plural(n,'miscellaneous item'):'', says=j.load==='empty'?(on.length||n?'Empty apart from '+andList(on.concat(n?[misc]:[])):'Empty'):(LOADNAME[j.load]||'Load')+(on.length?' with '+andList(on):'')+(n?(on.length?', and ':' and ')+misc:'');
-    return vehOf(j)+' for '+when(j)+': '+j.address+'. '+says+'.';};
+  var what=function(j){return j.what?' '+String(j.what).replace(/[.\s]+$/,'')+'.':'';};
+  var chMsg=function(j){var g=(j.crew||[]).filter(function(x){return x!==j.ch;}).map(firstOf);return when(j)+': '+j.address+'. Lorry '+vehOf(j)+(g.length?', with '+andList(g):'')+'.'+what(j);};
+  var gangMsg=function(j){return when(j)+': '+j.address+'. '+firstOf(j.ch)+' is charge hand, lorry '+vehOf(j)+'.'+what(j);};
+  var loadMsg=function(j){return vehOf(j)+' for '+when(j)+': '+j.address+'. '+loadWords(j)+'.';};
   var sig=loadSig;
   if(!old&&nw){
     out.push({to:nw.ch,k:'job',t:'You’re charge hand',m:chMsg(nw),job:nw.id});
@@ -1904,12 +1935,13 @@ function jobAlerts(old,nw){ // a job put on (no old), changed, or taken off (no 
     if(vehOf(old)!==vehOf(nw)) ch.push('lorry is now '+vehOf(nw));
     if(old.address!==nw.address) ch.push('address is now '+nw.address);
     if((old.kind||'')!==(nw.kind||'')&&KINDNAME[nw.kind]) ch.push('now '+(nw.kind==='strike'?'a strike':(nw.kind==='alter'?'an alter':'an erect')));
+    if(String(old.what||'')!==String(nw.what||'')&&nw.what) ch.push('the job is now: '+String(nw.what).replace(/[.\s]+$/,''));
     nc.forEach(function(c){
       var was=oc.indexOf(c)>=0, isCh=c===nw.ch, wasCh=c===old.ch, base=ch;
       if(isCh&&sig(old)!==sig(nw)) ch=base.concat(['the load sheet has changed']);   // only the charge hand needs to know the load changed
       if(!was) out.push(isCh?{to:c,k:'job',t:'You’re charge hand',m:chMsg(nw),job:nw.id}:{to:c,k:'job',t:'You’re on a job',m:gangMsg(nw),job:nw.id});
       else if(isCh&&!wasCh) out.push({to:c,k:'job',t:'You’re now charge hand',m:chMsg(nw),job:nw.id});
-      else if(ch.length) out.push({to:c,k:'job',t:'Job changed',m:old.address+': '+ch.join(', ')+'.'+(nw.ch!==old.ch?' '+firstOf(nw.ch)+' is charge hand now.':''),job:nw.id});
+      else if(ch.length) out.push({to:c,k:'job',t:'Job changed',m:old.address+': '+ch.join('; ')+'.'+(nw.ch!==old.ch?' '+firstOf(nw.ch)+' is charge hand now.':''),job:nw.id});
       else if(nw.ch!==old.ch) out.push({to:c,k:'job',t:'Charge hand changed',m:when(nw)+': '+nw.address+'. '+firstOf(nw.ch)+' is charge hand now.',job:nw.id});
       ch=base;
     });
@@ -1980,7 +2012,7 @@ function plannerRows(days){ // the site staff by name, so a row never moves when
 function planChip(j,boss){ // one job on the planner: the address, then the lorry, the kind of job and where it has got to. A gang's jobs stack in the order they are done
   var p=runPos(j), st=statusOf(j), m=missingOf(j).length, fixed=!!((j.left&&j.left.at)||(j.done&&j.done.at)), bad=m&&st!=='out'&&st!=='done';
   var word=bad?m+' missing':(st==='done'?'Finished':(st==='out'?'Left '+clock(j.left.at):(st==='checked'?'Checked':(st==='loaded'?'Loaded':'To load'))));
-  var say=[j.address,(KINDNAME[j.kind]||'Job')+(p.n>1?', job '+(p.i+1)+' of '+p.n:''),j.vehicle?'lorry '+vehOf(j):'',word].filter(Boolean).join('. ');
+  var say=[j.address,(KINDNAME[j.kind]||'Job')+(p.n>1?', job '+(p.i+1)+' of '+p.n:''),String(j.what||'').replace(/[.\s]+$/,''),j.vehicle?'lorry '+vehOf(j):'',word].filter(Boolean).join('. ');
   return '<div class="pj '+esc(j.kind||'')+(st==='done'?' done':'')+'" role="button" tabindex="0" data-a="open" data-id="'+esc(j.id)+'"'+(boss&&!fixed?' draggable="true" data-job="'+esc(j.id)+'"':'')+' title="'+esc(say)+'" aria-label="'+esc(say)+'"><b class="pj-a">'+esc(j.line||j.address)+'</b><span class="pj-m">'+(j.vehicle?'<span class="plate">'+esc(vehOf(j))+'</span>':'')+'<span class="pj-k">'+esc(KINDNAME[j.kind]||'')+'</span><i class="pj-s '+(bad?'bad':st)+'">'+esc(word)+'</i></span></div>';
 }
 function weekHtml(){
@@ -2117,10 +2149,11 @@ function demoWeek(base){ // base: the staff and lorries. Call it with that store
     if(!a||!a.to||a.to===by||!S.crew.has(a.to)) return; var k=a.to+'|'+a.t+'|'+a.m; if(seen[k]) return; seen[k]=1;
     D.alerts['da'+(an++)]=Object.assign({at:t+an,by:by||'',read:t<day0},a);});};
 
-  var seqs={};
+  var seqs={}, kits={};
   var job=function(id,o){
     var k=o.date+'|'+o.veh+'|'+o.ch; seqs[k]=(seqs[k]||0)+1;
-    var j={id:id,v:2,kind:o.kind,seq:seqs[k],date:o.date,address:o.addr,line:o.addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(o.addr),prop:Object.assign(blankProp(),o.prop||{}),vehicle:o.veh,load:o.load,extra:o.extra||{},crew:[o.ch].concat(o.gang||[]),ch:o.ch,notes:o.notes||'',createdAt:o.made,createdBy:boss,yard:null,chk:null,left:null,done:null};
+    var first=!kits[o.date+'|'+o.veh]; kits[o.date+'|'+o.veh]=1;   // the every-lorry kit is on the first sheet for a lorry each day, as it is on a real job
+    var j={id:id,v:2,kind:o.kind,seq:seqs[k],date:o.date,address:o.addr,line:o.addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(o.addr),prop:Object.assign(blankProp(),o.prop||{}),vehicle:o.veh,what:o.what||'',load:o.load,extra:Object.assign({},first?KIT:{},o.extra||{}),crew:[o.ch].concat(o.gang||[]),ch:o.ch,notes:o.notes||'',createdAt:o.made,createdBy:boss,yard:null,chk:null,left:null,done:null};
     D.jobs[id]=j; D.places[j.pk]=Object.assign({address:j.address,lat:null,lon:null,exact:false,at:o.made,by:boss},j.prop);
     say(jobAlerts(null,j),o.made,boss); return j;
   };
@@ -2167,9 +2200,9 @@ function demoWeek(base){ // base: the staff and lorries. Call it with that store
   if(bad) photo('','insp',s0,at(P,15,44),3,{insp:bad});
 
   /* the last working day: three jobs, all finished */
-  var p1=job('dj_p1',{kind:'erect',date:P,addr:'27 Example Avenue, Rayleigh',veh:L0,load:'full',extra:{bm4:2,ldl:2,lds:1,bt18:4,rpw:1,ldf:1,tie:1,net:1,cap:1},ch:s0,gang:[s1],notes:'Front and both sides for a re-roof. Keep the drive clear.',prop:size('Detached','2',9.6,8.2,5.2,8.4,'Dog in the back garden. Knock first.'),made:at(P3,16,5)});
-  var p2=job('dj_p2',{kind:'strike',date:P,addr:'8 Demo Lane, Hockley',veh:L1,load:'empty',extra:{ldl:1,rpw:1},ch:s2,gang:[s3],notes:'Strike the lot. Stack it by the garage until the lorry is backed in.',prop:{type:'Semi',storeys:'2'},made:at(P3,16,8)});
-  var p3=job('dj_p3',{kind:'alter',date:P,addr:'41 Practice Road, Rochford',veh:L1,load:'quarter',extra:{bsh:1,fbc:1,tie:1},ch:s2,gang:[s3],notes:'Drop the top lift on the gable end.',prop:size('Semi','2',6.1,8.8,5,7.9),made:at(P3,16,10)});
+  var p1=job('dj_p1',{kind:'erect',date:P,addr:'27 Example Avenue, Rayleigh',veh:L0,what:'Front and both sides, 2 lifts, for a re-roof.',load:'full',extra:{bm4:2,bt18:4,rpw:1,tie:1},ch:s0,gang:[s1],notes:'Keep the drive clear.',prop:size('Detached','2',9.6,8.2,5.2,8.4,'Dog in the back garden. Knock first.'),made:at(P3,16,5)});
+  var p2=job('dj_p2',{kind:'strike',date:P,addr:'8 Demo Lane, Hockley',veh:L1,what:'Strike the lot.',load:'empty',extra:{rpw:1},ch:s2,gang:[s3],notes:'Stack it by the garage until the lorry is backed in.',prop:{type:'Semi',storeys:'2'},made:at(P3,16,8)});
+  var p3=job('dj_p3',{kind:'alter',date:P,addr:'41 Practice Road, Rochford',veh:L1,what:'Drop the top lift on the gable end.',load:'quarter',extra:{bsh:1,tie:1},ch:s2,gang:[s3],notes:'',prop:size('Semi','2',6.1,8.8,5,7.9),made:at(P3,16,10)});
   loaded(p1,at(P2,15,40)); loaded(p2,at(P2,15,55)); loaded(p3,at(P2,15,56));
   checked(p1,at(P,6,46)); left([p1],at(P,7,2)); checked(p2,at(P,6,55)); checked(p3,at(P,6,55)); left([p2,p3],at(P,7,15));
   finished(p2,at(P,11,48),1);
@@ -2177,10 +2210,10 @@ function demoWeek(base){ // base: the staff and lorries. Call it with that store
   finished(p3,at(P,15,38),2,extra(p3,at(P,14,40),'Loading bay put on the front for the bricklayers','the site manager',at(P,17,5))); insp(p3.pk,at(P,15,46),s2);
 
   /* today: one gang with three jobs on one lorry, the other gang on one job with caps missing */
-  var t1=job('dj_t1',{kind:'erect',date:T,addr:'5 Trial Close, Rayleigh',veh:L0,load:'three',extra:{bm5:2,ldl:1,bt24:2,ldf:1,tie:1,cap:1,ctt:1},ch:s0,gang:[s1],notes:'Rear extension. Bridge the conservatory with the beams.',prop:size('Semi','2',5.9,9.4,5.1,8,'Side gate on the left. Park on the road.'),made:at(P2,16,10)});
-  var t2=job('dj_t2',{kind:'alter',date:T,addr:'19 Test Road, Rayleigh',veh:L0,load:'quarter',extra:{bsh:1,fbc:1},ch:s0,gang:[s1],notes:'Add a lift at the back for the roofers.',prop:size('Bungalow','1',11.2,7.6,2.6,5.4),made:at(P2,16,12)});
-  var t3=job('dj_t3',{kind:'strike',date:T,addr:'33 Model Road, Rayleigh',veh:L0,load:'empty',extra:{rpw:1},ch:s0,gang:[s1],notes:'Strike the front. The customer wants it gone today.',prop:{type:'Terraced',storeys:'2'},made:at(P2,16,14)});
-  var t4=job('dj_t4',{kind:'erect',date:T,addr:'7 Showcase Drive, Hockley',veh:L1,load:'full',extra:{ldl:2,lds:1,bt18:6,tie:1,net:1,fom:1,cap:1},ch:s2,gang:[s3],notes:'Shop front. Netting and foam on the pavement side.',prop:size('Flats','3',7.4,12.1,8.3,10.6,'Pavement licence is in the cab. Cones out before you start.'),made:at(P2,16,20)});
+  var t1=job('dj_t1',{kind:'erect',date:T,addr:'5 Trial Close, Rayleigh',veh:L0,what:'Back, 2 lifts, for the extension. Bridge the conservatory with the beams.',load:'three',extra:{bm5:2,bt24:2,tie:1,ctt:1},ch:s0,gang:[s1],notes:'',prop:size('Semi','2',5.9,9.4,5.1,8,'Side gate on the left. Park on the road.'),made:at(P2,16,10)});
+  var t2=job('dj_t2',{kind:'alter',date:T,addr:'19 Test Road, Rayleigh',veh:L0,what:'Add a lift at the back for the roofers.',load:'quarter',extra:{bsh:1},ch:s0,gang:[s1],notes:'',prop:size('Bungalow','1',11.2,7.6,2.6,5.4),made:at(P2,16,12)});
+  var t3=job('dj_t3',{kind:'strike',date:T,addr:'33 Model Road, Rayleigh',veh:L0,what:'Strike the front.',load:'empty',extra:{rpw:1},ch:s0,gang:[s1],notes:'The customer wants it gone today.',prop:{type:'Terraced',storeys:'2'},made:at(P2,16,14)});
+  var t4=job('dj_t4',{kind:'erect',date:T,addr:'7 Showcase Drive, Hockley',veh:L1,what:'Shop front, 3 lifts. Netting and foam on the pavement side.',load:'full',extra:{bt18:6,tie:1},ch:s2,gang:[s3],notes:'',prop:size('Flats','3',7.4,12.1,8.3,10.6,'Pavement licence is in the cab. Cones out before you start.'),made:at(P2,16,20)});
   loaded(t1,at(P,15,50)); loaded(t2,at(P,15,52)); loaded(t3,at(P,15,53)); loaded(t4,at(P,16,5),['cap']);
   checked(t1,at(T,6,48)); checked(t2,at(T,6,49)); checked(t3,at(T,6,49)); left([t1,t2,t3],at(T,7,6));
   checked(t4,at(T,6,52),['cap']); left([t4],at(T,7,21));
@@ -2190,16 +2223,16 @@ function demoWeek(base){ // base: the staff and lorries. Call it with that store
 
   /* the next working day: one big load still to do, one lorry loaded with netting missing */
   var early=been(at(T,8,10)), madeN=early?at(T,7,45):at(P,13,30), ldN=spare?(early?at(T,8,10):at(P,16,20)):at(T,16,10);
-  job('dj_n1',{kind:'erect',date:N,addr:'2 Specimen Way, Wickford',veh:L0,load:'full',extra:{bq13:60,bm4:2,bm6:2,ldl:2,lds:1,bt12:4,bt18:6,bt24:4,bmj:2,bmp:8,str:6,gat:1,brk:4,rpw:1,cht:3,hop:1,ldf:1,trd:1,tie:1,net:1,fom:1,cap:1,ctt:1},ch:s0,gang:[s1],notes:'Big one. Front, back and both gables, a beam over the porch and a chute to the skip.',prop:size('Detached','3',10.8,9.1,7.9,11.2,'Narrow drive. Back the lorry in.'),made:madeN});
-  var n2=job('dj_n2',{kind:'erect',date:N,addr:'16 Sample Gardens, Benfleet',veh:L2,load:'half',extra:{ldl:1,bt18:2,tie:1,net:1,cap:1},ch:s2,gang:[s3],notes:'Gable end only, for the chimney.',prop:size('Semi','2',6.4,8.6,5,8.1),made:madeN+60000});
-  var n3=job('dj_n3',{kind:'strike',date:N,addr:'24 Practice Close, Rochford',veh:L2,load:'empty',extra:{ldl:1,rpw:1},ch:s2,gang:[s3],notes:'Strike after Sample Gardens.',prop:{type:'Bungalow',storeys:'1'},made:madeN+120000});
+  job('dj_n1',{kind:'erect',date:N,addr:'2 Specimen Way, Wickford',veh:L0,what:'Front, back and both gables, 3 lifts. Beam over the porch and a chute to the skip.',load:'full',extra:{bq13:60,bm4:2,bm6:2,ldl:3,bt12:4,bt18:6,bt24:4,bmj:2,bmp:8,str:6,brk:4,rpw:1,cht:3,hop:1,tie:1,ctt:1},ch:s0,gang:[s1],notes:'Big one. Load the 6m beams first.',prop:size('Detached','3',10.8,9.1,7.9,11.2,'Narrow drive. Back the lorry in.'),made:madeN});
+  var n2=job('dj_n2',{kind:'erect',date:N,addr:'16 Sample Gardens, Benfleet',veh:L2,what:'Gable end only, 2 lifts, for the chimney.',load:'half',extra:{bt18:2,tie:1},ch:s2,gang:[s3],notes:'',prop:size('Semi','2',6.4,8.6,5,8.1),made:madeN+60000});
+  var n3=job('dj_n3',{kind:'strike',date:N,addr:'24 Practice Close, Rochford',veh:L2,what:'Strike the lot.',load:'empty',extra:{rpw:1},ch:s2,gang:[s3],notes:'Do this one after Sample Gardens.',prop:{type:'Bungalow',storeys:'1'},made:madeN+120000});
   loaded(n2,ldN,['net']); loaded(n3,ldN+90000);
 
   /* later in the week, for the calendar and the week planner */
-  job('dj_m1',{kind:'erect',date:N2,addr:'11 Example Rise, Hullbridge',veh:L0,load:'full',extra:{bm4:2,ldl:2,tie:1,cap:1},ch:s0,gang:[s1],notes:'Front and one side.',prop:size('Detached','2',8.9,7.7,5.2,8.2),made:at(P,16,30)});
-  job('dj_m2',{kind:'alter',date:N2,addr:'27 Example Avenue, Rayleigh',veh:L1,load:'quarter',extra:{bsh:1,ldf:1},ch:s2,gang:[s3],notes:'Add a lift for the chimney.',prop:size('Detached','2',9.6,8.2,5.2,8.4,'Dog in the back garden. Knock first.'),made:at(P,16,32)});
-  job('dj_m3',{kind:'strike',date:N3,addr:'30 Showcase Drive, Hockley',veh:L1,load:'empty',extra:{ldl:1,rpw:1},ch:s2,gang:[s3],notes:'Strike the lot.',prop:{type:'Semi',storeys:'2'},made:at(P,16,34)});
-  job('dj_m4',{kind:'erect',date:N4,addr:'14 Specimen Close, Wickford',veh:L0,load:'three',extra:{ldl:1,lds:1,net:1},ch:s0,gang:[s1],notes:'Rear only.',prop:size('Terraced','2',5.2,8.9,5,7.8),made:at(P,16,36)});
+  job('dj_m1',{kind:'erect',date:N2,addr:'11 Example Rise, Hullbridge',veh:L0,what:'Front and one side, 2 lifts.',load:'full',extra:{bm4:2,tie:1},ch:s0,gang:[s1],notes:'',prop:size('Detached','2',8.9,7.7,5.2,8.2),made:at(P,16,30)});
+  job('dj_m2',{kind:'alter',date:N2,addr:'27 Example Avenue, Rayleigh',veh:L1,what:'Add a lift for the chimney.',load:'quarter',extra:{bsh:1},ch:s2,gang:[s3],notes:'',prop:size('Detached','2',9.6,8.2,5.2,8.4,'Dog in the back garden. Knock first.'),made:at(P,16,32)});
+  job('dj_m3',{kind:'strike',date:N3,addr:'30 Showcase Drive, Hockley',veh:L1,what:'Strike the lot.',load:'empty',extra:{rpw:1},ch:s2,gang:[s3],notes:'',prop:{type:'Semi',storeys:'2'},made:at(P,16,34)});
+  job('dj_m4',{kind:'erect',date:N4,addr:'14 Specimen Close, Wickford',veh:L0,what:'Back only, 2 lifts.',load:'three',extra:{},ch:s0,gang:[s1],notes:'',prop:size('Terraced','2',5.2,8.9,5,7.8),made:at(P,16,36)});
 
   /* time off: one booked with plenty of notice, one asked for at short notice and waiting for the boss */
   var h1=addDays(T,10), h2=addDays(T,14), ask=been(at(T,7,15))?at(T,7,15):at(P,18,40);
@@ -2218,7 +2251,7 @@ function demoWeek(base){ // base: the staff and lorries. Call it with that store
     if(picked) say([{to:p,k:'wk',t:'You’re working the weekend',m:bossFirst()+' picked you for '+fshort(SAT)+'.',cal:'wk',day:SAT}],picked,boss);
   };
   name(s0,at(P2,15,20),at(P,12,30)); name(s1,at(P2,17,2)); name(s3,at(P,7,10));
-  job('dj_w1',{kind:'alter',date:SAT,addr:'7 Showcase Drive, Hockley',veh:L1,load:'quarter',extra:{net:1,cap:1},ch:s0,gang:[],notes:'Drop the pavement lift once the shop sign is up.',prop:size('Flats','3',7.4,12.1,8.3,10.6,'Pavement licence is in the cab. Cones out before you start.'),made:at(P,12,35)});
+  job('dj_w1',{kind:'alter',date:SAT,addr:'7 Showcase Drive, Hockley',veh:L1,what:'Drop the pavement lift.',load:'quarter',extra:{},ch:s0,gang:[],notes:'Wait until the shop sign is up.',prop:size('Flats','3',7.4,12.1,8.3,10.6,'Pavement licence is in the cab. Cones out before you start.'),made:at(P,12,35)});
   if(!wd(T)){ // the demo is being looked at on a weekend, so today's jobs are weekend work and everyone on them was picked
     D.wkdays[T]={date:T,note:'Catching up',by:boss,at:ago(5,15,0),closed:false};
     st.forEach(function(p,i){D.wknames[T+'_'+p]={date:T,person:p,at:ago(5,15,30+i),picked:true,pickedAt:ago(3,12,0)};});
@@ -2236,13 +2269,20 @@ function demoLate(D){ // the reminders the clock would have raised by now: inspe
 
 /* ---------- job sheet form ---------- */
 var DAYL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],load:'full',extra:{},open:{},notes:'',err:''};}
-function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),load:j.load||'full',extra:exOf(j),open:{},notes:j.notes||'',err:''};}
+function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],what:'',load:'full',extra:Object.assign({},KIT),kit:true,open:{},notes:'',err:''};}
+function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),what:j.what||'',load:j.load||'full',extra:exOf(j),kit:false,open:{},notes:j.notes||'',err:''};}
 function staffOpt(id,f,sel){
   var off=offOn(id,f.date), busy=jobsOn(id,f.date,f.id), out=!!wkDay(f.date)&&!wkPicked(f.date,id)&&S.bosses.indexOf(id)<0;
   return '<option value="'+esc(id)+'"'+(sel?' selected':'')+((off||out)&&!sel?' disabled':'')+'>'+esc(nameOf(id)+(off?' (off: '+(off.reason||'time off').toLowerCase()+')':(out?' (not picked for '+DAYL[pdate(f.date).getDay()]+')':(busy.length?' ('+plural(busy.length,'job')+' that day)':''))))+'</option>';
 }
+function kitSync(f){ // On a new job sheet the every-lorry kit is on to start with, unless that lorry already has a job that day (its kit is on that sheet). Once Gerry changes a kit item by hand it is left alone.
+  if(f.id||!f.kit) return;
+  var first=!(f.vehicle&&vanOn(String(f.vehicle).toUpperCase(),f.date,f.id).some(function(o){var e=exOf(o),n=0;Object.keys(KIT).forEach(function(k){if(e[k]>0)n++;});return n>=5;}));   // is the kit already on another sheet for that lorry that day?
+  Object.keys(KIT).forEach(function(k){if(first)f.extra[k]=KIT[k];else delete f.extra[k];});
+  f.kitOn=first;
+}
 function formHtml(f){
+  kitSync(f);
   var r=f.pcRes, staff=crewList().filter(function(c){return !c.yard;}).map(function(c){return c.id;}), fl=fleet(), h='';
   h+='<div class="col"><section class="card"><span class="lab">What and when</span><div class="seg" role="group" aria-label="Type of job">'+KINDS.map(function(x){return '<button type="button" data-a="kind" data-v="'+x[0]+'" aria-pressed="'+(f.kind===x[0])+'">'+x[1]+'</button>';}).join('')+'</div><div class="seg" role="group" aria-label="Which day">'+[['today','Today'],['tom','Tomorrow'],['pick','Other day']].map(function(x){return '<button type="button" data-a="dmode" data-v="'+x[0]+'" aria-pressed="'+(f.dmode===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
     (f.dmode==='pick'?'<input id="f-date" class="in" type="date" data-c="date" value="'+esc(f.date)+'" min="'+today(0)+'" aria-label="Date">':'<span class="hint">'+esc(fshort(f.date))+'</span>')+'</section>';
@@ -2257,6 +2297,8 @@ function formHtml(f){
   h+='<div class="fld"><label for="f-line">'+(f.tail?'House number and road':'Address')+'</label><input id="f-line" class="in" data-f="line" value="'+esc(f.line)+'" placeholder="'+(f.tail?'e.g. 14 Station Road':(canSat()?'House number, road and town':'House number, road, town and postcode'))+'" autocomplete="off" spellcheck="false"><div id="sugg" class="addr-list" hidden></div>'+
     (f.tail?'<div><span class="tag">'+esc(f.tail)+'</span> <button type="button" class="link small" data-a="cleartail">Remove</button></div>':'')+'</div></section>';
   h+=propHtml(f)+'</div><div class="col">';
+  h+='<section class="card"><div class="fld"><label for="f-what">What the job is</label><textarea id="f-what" class="in" data-f="what" rows="2" placeholder="e.g. Front and back, 2 lifts, for the roof">'+esc(f.what)+'</textarea>'+
+    '<div class="chips qw" role="group" aria-label="Words to add">'+QUICK.map(function(w){return '<button type="button" class="chip" data-a="qw" data-w="'+esc(w)+'" aria-pressed="'+hasWord(f.what,w)+'">'+esc(w)+'</button>';}).join('')+'</div><span class="hint">Tap words to add them, or type your own. Everyone on the job sees this.</span></div></section>';
   h+='<section class="card"><span class="lab">Lorry and crew</span><div class="fld"><label for="f-van">Lorry</label>';
   h+=fl.length?'<select id="f-van" class="in" data-c="vehicle"><option value="">Pick a lorry</option>'+fl.map(function(v){var reg=String(v.reg).toUpperCase(),u=vanOn(reg,f.date,f.id);return '<option value="'+esc(reg)+'"'+(reg===String(f.vehicle).toUpperCase()?' selected':'')+'>'+esc(reg+(v.name?' · '+v.name:'')+(u.length?' ('+plural(u.length,'job')+' that day)':''))+'</option>';}).join('')+'</select>':'<p class="hint">No lorries yet. Add them in Set-up.</p>';
   h+='</div><div class="fld"><label for="f-ch">Charge hand</label>'+(staff.length?'<select id="f-ch" class="in" data-c="ch"><option value="">Pick the charge hand</option>'+staff.map(function(id){return staffOpt(id,f,id===f.ch);}).join('')+'</select>':'<p class="hint">No staff yet. Add them in Set-up.</p>')+'</div>';
@@ -2269,10 +2311,11 @@ function formHtml(f){
   var stepRow=function(x){var q=f.extra[x[0]]||0;
     return '<div class="st'+(q?' has':'')+'"><span class="st-n">'+esc(x[1])+'</span><div class="st-c"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="-1" aria-label="One fewer '+esc(x[1])+'">−</button><input id="x-'+x[0]+'" type="number" inputmode="numeric" min="0" max="999" data-x="'+x[0]+'" value="'+(q||'')+'" placeholder="0" aria-label="'+esc(x[1])+'"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="1" aria-label="One more '+esc(x[1])+'">+</button></div></div>';};
   h+='<section class="card flush"><div class="sh-h"><div><b class="t">Load list</b><div class="small muted">What goes on the lorry.</div></div></div><div class="ld"><div class="seg">'+LOADS.map(function(x){return '<button type="button" data-a="load" data-v="'+x[0]+'" aria-pressed="'+(f.load===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
-    '<span class="hint">'+(f.load==='empty'?'No tube, boards or fittings. Only what you add here and under Miscellaneous.':'The yard knows what a '+esc((LOADNAME[f.load]||'load').toLowerCase())+' takes: tube, boards, fittings, base plates and sole boards. Add what else this job needs.')+'</span></div>'+
+    '<span class="hint">'+(f.load==='empty'?'No tube, boards or fittings. Only what you add here and under Miscellaneous.':'The yard knows what a '+esc((LOADNAME[f.load]||'load').toLowerCase())+' takes: tube, boards, fittings, base plates and sole boards. Add what else this job needs.')+'</span>'+
+    (!f.id&&f.kit?'<span class="hint kit">'+(f.kitOn?'Already on, because they go on every lorry: '+KITSAYS+'. Take one off or change a number if this job is different.':'This lorry already has a job that day with the every-lorry kit on its sheet, so the kit isn’t repeated here.')+'</span>':'')+'</div>'+
     [LOADX[1],LOADX[2],LOADX[0]].map(function(g){var c=g[1].filter(function(x){return f.extra[x[0]]>0;}).length;
       return '<details class="grp" data-g="'+esc(g[0])+'"'+(f.open[g[0]]?' open':'')+'><summary>'+esc(g[0])+(c?'<span class="grp-n">'+c+'</span>':'')+'</summary>'+(g[2]?'<p class="tip">'+esc(g[2])+'</p>':'')+g[1].map(stepRow).join('')+'</details>';}).join('')+'</section>';
-  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Miscellaneous</b><div class="small muted">The things that could get forgotten. Tap what this job needs. Open a group to put a number against the rest.</div></div></div>'+
+  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Miscellaneous</b><div class="small muted">The things that could get forgotten. Tap what else this job needs. Open a group to put a number against the rest.</div></div></div>'+
     '<div class="chips mx" role="group" aria-label="Tap what this job needs">'+TICKS.map(function(x){return '<button type="button" class="chip" data-a="xtick" data-i="'+x[0]+'" aria-pressed="'+(f.extra[x[0]]>0)+'">'+esc(x[1])+'</button>';}).join('')+'</div>'+EXTRA.map(function(g){
     var c=g[1].filter(function(x){return f.extra[x[0]]>0;}).length;
     return '<details class="grp" data-g="'+esc(g[0])+'"'+(f.open[g[0]]?' open':'')+'><summary>'+esc(g[0])+(c?'<span class="grp-n">'+c+'</span>':'')+'</summary>'+g[1].map(stepRow).join('')+'</details>';}).join('')+'</section>';
@@ -2287,7 +2330,7 @@ async function saveJob(){
   var extra={}; Object.keys(f.extra).forEach(function(k){if(f.extra[k]>0)extra[k]=f.extra[k];});
   var p=f.prop, prop={type:p.type||'',storeys:p.storeys||'',note:String(p.note||'').trim(),ring:p.ring||'',w:p.w||0,d:p.d||0,run:p.run||0,area:p.area||0,ax:p.ax||0,front:!!p.front,eaves:p.w?(p.eaves||0):0,top:p.w?(p.top||0):0,src:p.w?(p.src||''):''}, pk=placeKey(addr);
   var seq=jobList().filter(function(o){return o.id!==f.id&&o.date===f.date&&o.ch===f.ch&&String(o.vehicle||'').toUpperCase()===String(f.vehicle).toUpperCase();}).reduce(function(m,o){return Math.max(m,o.seq||0);},0)+1;
-  var body={v:2,kind:f.kind||'erect',date:f.date,address:addr,line:String(f.line).trim(),tail:String(f.tail||'').trim(),lat:f.lat,lon:f.lon,exact:!!f.exact,pk:pk,prop:prop,vehicle:f.vehicle,load:f.load,extra:extra,crew:crew,ch:f.ch,notes:String(f.notes).trim()};
+  var body={v:2,kind:f.kind||'erect',date:f.date,address:addr,line:String(f.line).trim(),tail:String(f.tail||'').trim(),lat:f.lat,lon:f.lon,exact:!!f.exact,pk:pk,prop:prop,vehicle:f.vehicle,what:String(f.what||'').trim(),load:f.load,extra:extra,crew:crew,ch:f.ch,notes:String(f.notes).trim()};
   try{
     if(f.id){
       var old=S.jobs.get(f.id)||{}, sig=loadSig, changed=sig(old)!==sig(body)&&!(old.left&&old.left.at);
@@ -2682,8 +2725,13 @@ var ACT={
   demowalk:function(){demoWalk();},
   demolook:function(){demoLook();},
   demoend:function(){demoEnd();},
-  step:function(b){var f=S.form,i=b.dataset.i,q=Math.max(0,Math.min(999,(f.extra[i]||0)+(+b.dataset.d)));if(q)f.extra[i]=q;else delete f.extra[i];render(true);},
-  xtick:function(b){var f=S.form,i=b.dataset.i;if(f.extra[i]>0)delete f.extra[i];else f.extra[i]=1;render(true);},
+  step:function(b){var f=S.form,i=b.dataset.i,q=Math.max(0,Math.min(999,(f.extra[i]||0)+(+b.dataset.d)));if(KIT[i])f.kit=false;if(q)f.extra[i]=q;else delete f.extra[i];render(true);},
+  xtick:function(b){var f=S.form,i=b.dataset.i;if(KIT[i])f.kit=false;if(f.extra[i]>0)delete f.extra[i];else f.extra[i]=1;render(true);},
+  qw:function(b){ // a tapped word goes on the end of what the job is; tapped again, it comes off
+    var f=S.form,w=b.dataset.w,parts=String(f.what||'').split(',').map(function(x){return x.trim();}).filter(Boolean),at=-1;
+    parts.forEach(function(x,k){if(x.replace(/\.$/,'').toLowerCase()===w.toLowerCase())at=k;});
+    if(at>=0)parts.splice(at,1);else parts.push(w);
+    f.what=parts.map(function(x,k){return k?x.charAt(0).toLowerCase()+x.slice(1):x.charAt(0).toUpperCase()+x.slice(1);}).join(', ');render(true);},
   save:function(){saveJob();},
   month:function(b){var m=S.month||today(0).slice(0,7),d=new Date(+m.slice(0,4),+m.slice(5,7)-1+(+b.dataset.d),1,12);S.month=dstr(d).slice(0,7);render(true);},
   day:function(b){S.day=b.dataset.v;render(true);},
@@ -2727,7 +2775,7 @@ document.addEventListener('input',function(e){
   if(t.id==='q'){S.q=t.value;var el=document.getElementById('joblist');if(el){el.innerHTML=jobListHtml();fillThumbs();}return;}
   if(d.f&&S.form){S.form[d.f]=t.value;S.form.err='';S.deferred=true;if(d.f==='line')suggest(t.value);return;}
   if(d.p&&S.form){S.form.prop[d.p]=t.value;return;}
-  if(d.x&&S.form){var q=Math.max(0,Math.min(999,parseInt(t.value,10)||0));if(q)S.form.extra[d.x]=q;else delete S.form.extra[d.x];S.deferred=true;return;}
+  if(d.x&&S.form){var q=Math.max(0,Math.min(999,parseInt(t.value,10)||0));if(KIT[d.x])S.form.kit=false;if(q)S.form.extra[d.x]=q;else delete S.form.extra[d.x];S.deferred=true;return;}
   if(d.o&&S.sheet&&(t.tagName==='TEXTAREA'||(t.tagName==='INPUT'&&t.type!=='date'))){
     S.sheet[d.o]=t.value;
     if(S.sheet.err){S.sheet.err='';var er=document.querySelector('.sheet .err');if(er)er.parentNode.removeChild(er);}
