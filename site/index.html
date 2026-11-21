@@ -139,6 +139,7 @@ button.li{appearance:none;border-left:0;border-right:0;border-bottom:0;backgroun
 .btns .btn{flex:1}
 .btns.fit{flex-wrap:wrap}
 .btns.fit .btn{flex:1 1 auto;white-space:nowrap}
+.card-h > .btn{flex:none;white-space:nowrap}
 .link{appearance:none;border:0;background:none;padding:6px 0;color:var(--brand-ink);font-weight:600;text-decoration:underline;text-underline-offset:3px}
 .link.bad{color:var(--bad)}
 .acts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
@@ -420,7 +421,7 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'c11b22b9',at:'21 Nov, 06:19'};
+var FCS_BUILD={v:'052e5d8a',at:'21 Nov, 06:28'};
 var ADDR_KEY_BUILT='';
 var COMPANY='First Choice Scaffolding', APP='Load Check', VER='4';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
@@ -1270,6 +1271,8 @@ function calHtml(){
   var D=calData(dstr(new Date(y,mo,1-lead,12)),dstr(new Date(y,mo,cells-lead,12))), cats=CATS.filter(function(c){return c[0]!=='insp'||boss||myScafs().length;});
   var mode=cats.some(function(c){return c[0]===S.calMode;})?S.calMode:'all', show=function(k){return mode==='all'||mode===k;}, np=boss?pendingOff().length:0, h='';
   h+='<div class="keys" role="group" aria-label="What the calendar shows">'+cats.map(function(c){return '<button type="button" class="key" data-a="calmode" data-v="'+c[0]+'" aria-pressed="'+(mode===c[0])+'">'+(c[0]==='all'?'':'<i class="kd '+c[0]+'"></i>')+c[1]+(c[0]==='off'&&np?' ('+np+')':'')+'</button>';}).join('')+'</div>';
+  if(mode==='wk'&&boss) h+='<button class="btn" data-a="wknew">'+IC.plus+'Ask for weekend volunteers</button>';   // the main thing to do in a filtered view sits at the top
+  if(mode==='off'&&(me||boss)) h+='<button class="btn" data-a="offnew">'+IC.plus+(boss?'Book time off':'Ask for time off')+'</button>';
   if(boss&&show('off')) h+=pendingOff().map(offAsk).join('');
   h+='<section class="card"><div class="cal-h"><button class="cal-nav" data-a="month" data-d="-1" aria-label="Previous month">'+IC.prev+'</button><b>'+MONL[mo]+' '+y+'</b><button class="cal-nav" data-a="month" data-d="1" aria-label="Next month">'+IC.next+'</button></div><div class="cal">'+['M','T','W','T','F','S','S'].map(function(d){return '<span class="cal-d">'+d+'</span>';}).join('');
   for(var i=0;i<cells;i++){
@@ -1289,7 +1292,7 @@ function calHtml(){
   if(mode==='wk'){
     var days=wkOpenDays().filter(function(w){return w.date!==sel;});
     days.forEach(function(w){h+='<section class="card flush"><div class="sh-h"><div><b class="t">'+esc(fshort(w.date))+'</b><div class="small muted">Weekend work</div></div></div>'+wkBlock(w.date)+'</section>';});
-    if(!wkOpenDays().length) h+='<div class="card empty">'+IC.cal+'<b>No weekend work going</b><span>'+(boss?'Tap the button below when there is some. Staff are told, and can put their names down for the Saturday, the Sunday or both.':'When '+esc(bossFirst())+' has weekend work, it shows here and on your jobs screen.')+'</span></div>';
+    if(!wkOpenDays().length) h+='<div class="card empty">'+IC.cal+'<b>No weekend work going</b><span>'+(boss?'Tap the button at the top when there is some. Staff are told, and can put their names down for the Saturday, the Sunday or both.':'When '+esc(bossFirst())+' has weekend work, it shows here and on your jobs screen.')+'</span></div>';
   }
   if(mode==='insp') h+=registerHtml();
   if(mode==='off'){
@@ -1298,9 +1301,9 @@ function calHtml(){
   }
   if(show('jobs')) h+=agendaHtml();
   var acts=[];
-  if((mode==='all'||mode==='off')&&(me||boss)) acts.push('<button class="btn '+(mode==='off'?'':'line ')+'sm" data-a="offnew">'+IC.plus+(boss?'Book time off':'Ask for time off')+'</button>');
-  if((mode==='all'||mode==='wk')&&boss) acts.push('<button class="btn '+(mode==='wk'?'':'line ')+'sm" data-a="wknew">'+IC.plus+'Ask for weekend volunteers</button>');
-  return h+(acts.length?'<div class="btns" style="flex-wrap:wrap">'+acts.join('')+'</div>':'');
+  if(mode==='all'&&(me||boss)) acts.push('<button class="btn line sm" data-a="offnew">'+IC.plus+(boss?'Book time off':'Ask for time off')+'</button>');
+  if(mode==='all'&&boss) acts.push('<button class="btn line sm" data-a="wknew">'+IC.plus+'Ask for weekend volunteers</button>');
+  return h+(acts.length?'<div class="btns fit">'+acts.join('')+'</div>':'');
 }
 
 /* ---------- one standing scaffold: its details and its inspection record ---------- */
