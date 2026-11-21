@@ -318,6 +318,8 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .addr-list button:active{background:var(--brand-soft)}
 .grp{border-top:1px solid var(--line)}
 .grp:first-of-type{border-top:0}
+.chips.mx{padding:2px 16px 16px}
+.chips.mx + .grp{border-top:1px solid var(--line)}
 .grp > summary,.fold > summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;font-weight:600;cursor:pointer;min-height:54px}
 .grp > summary::-webkit-details-marker,.fold > summary::-webkit-details-marker{display:none}
 .grp > summary::after,.fold > summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);margin-right:4px;flex:none;transition:transform .15s ease}
@@ -520,22 +522,23 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'7178a567',at:'21 Nov, 09:51'};
+var FCS_BUILD={v:'30b24510',at:'21 Nov, 10:25'};
 var ADDR_KEY_BUILT='';
-var COMPANY='First Choice Scaffolding', APP='Load Check', VER='6';
+var COMPANY='First Choice Scaffolding', APP='Load Check', VER='7';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
 var $app=document.getElementById('app'), $toast=document.getElementById('toast');
 
 /* ---------- what goes on a load ---------- */
 var STD=[['Tube',[['t5','5ft'],['t6','6ft'],['t8','8ft'],['t10','10ft'],['t13','13ft'],['t16','16ft'],['t21','21ft']]],
   ['Boards',[['b8','8ft'],['b10','10ft'],['b13','13ft'],['bsh','Short']]],
-  ['Fittings',[['fdb','Doubles'],['fsg','Singles'],['fsw','Swivels'],['fsl','Sleeves']]]];
+  ['Fittings',[['fdb','Doubles'],['fsg','Singles'],['fsw','Swivels'],['fsl','Sleeves'],['fbp','Base plates'],['fsb','Sole boards']]]];
 var EXTRA=[['Beams',[['bm3','3m beams'],['bm4','4m beams'],['bm5','5m beams'],['bm6','6m beams'],['bm8','8m beams'],['bmj','Beam joiners'],['bmp','Pins']]],
   ['Butts',[['bt12','1ft butts'],['bt18','18in butts'],['bt24','2ft butts'],['bt36','3ft butts'],['bt48','4ft butts']]],
   ['Ladders and access',[['lds','Short ladders'],['ldl','Long ladders'],['str','Stair treads'],['gat','Gates']]],
   ['Brackets and jacks',[['brk','Brackets'],['sjk','Screw jacks']]],
   ['Lifting and rubbish',[['rpw','Rope and wheel'],['cht','Chutes'],['hop','Hoppers'],['chb','Chute brackets']]]];
-var ALWAYS=[['ldf','Ladder safes'],['trd','Treads'],['tie','Tie gear'],['xcb','Excalibur bolts'],['net','Netting'],['fom','Foam'],['cap','Caps'],['ctt','Cable ties'],['fbc','Board clips']];
+// Miscellaneous is everything that isn't tube, boards or standard fittings: EXTRA takes a number, TICKS are needed or not.
+var TICKS=[['ldf','Ladder safes'],['trd','Treads'],['tie','Tie gear'],['xcb','Excalibur bolts'],['net','Netting'],['fom','Foam'],['cap','Caps'],['ctt','Cable ties'],['fbc','Board clips']];
 var LOADS=[['full','Full'],['three','¾'],['half','Half'],['quarter','¼'],['empty','Empty']];
 var LOADNAME={full:'Full load',three:'Three-quarter load',half:'Half load',quarter:'Quarter load',empty:'Empty'};
 var ALLSTD=[]; STD.forEach(function(g){g[1].forEach(function(x){ALLSTD.push(x[0]);});});
@@ -628,16 +631,21 @@ function pendingOff(){return offList().filter(function(o){return o.status==='pen
 /* ---------- jobs ---------- */
 function jobList(){return Array.from(S.jobs.values()).filter(function(j){return j.date&&j.v===2;});}
 function visJobs(){var all=isBoss()||isYard();return jobList().filter(function(j){return all||onJob(j);});}
+function exOf(j){var o={},e=(j&&j.extra)||{};Object.keys(e).forEach(function(k){if(e[k]>0)o[k]=e[k];});return o;}   // the miscellaneous items a job really has: anything taken off again is stored as 0
+function loadSig(j){var e=exOf(j);return JSON.stringify([(j.std||[]).slice().sort(),Object.keys(e).sort().map(function(k){return k+':'+e[k];}),j.load]);}   // has the load sheet changed?
 function rowsOf(j){
-  var out=[], ex=j.extra||{}, std=j.std||[];
+  var out=[], ex=exOf(j), std=j.std||[];
   EXTRA.forEach(function(g){g[1].forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],qty:ex[x[0]],sec:'extra'});});});
-  ALWAYS.forEach(function(x){out.push({id:x[0],name:x[1],sec:'always'});});
+  TICKS.forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sec:'extra'});});
   STD.forEach(function(g){g[1].forEach(function(x){if(std.indexOf(x[0])>=0)out.push({id:x[0],name:g[0]==='Fittings'?x[1]:x[1]+' '+g[0].toLowerCase(),sec:'std',grp:g[0]});});});
   return out;
 }
 function statusOf(j){return j.done&&j.done.at?'done':(j.left&&j.left.at?'out':(j.chk&&j.chk.at?'checked':(j.yard&&j.yard.at?'loaded':'toload')));}
-function missingOf(j){return (j.chk&&j.chk.at?j.chk.missing:(j.yard&&j.yard.at?j.yard.missing:null))||[];}
-function itemName(id){var n=id;EXTRA.concat(STD).forEach(function(g){g[1].forEach(function(x){if(x[0]===id)n=(g[0]==='Tube'||g[0]==='Boards')?x[1]+' '+g[0].toLowerCase():x[1];});});ALWAYS.forEach(function(x){if(x[0]===id)n=x[1];});return n;}
+function missingOf(j){ // only things still on this job's load sheet count as missing
+  var m=(j.chk&&j.chk.at?j.chk.missing:(j.yard&&j.yard.at?j.yard.missing:null))||[]; if(!m.length) return m;
+  var on={}; rowsOf(j).forEach(function(r){on[r.id]=1;}); return m.filter(function(id){return on[id];});
+}
+function itemName(id){var n=id;EXTRA.concat(STD).forEach(function(g){g[1].forEach(function(x){if(x[0]===id)n=(g[0]==='Tube'||g[0]==='Boards')?x[1]+' '+g[0].toLowerCase():x[1];});});TICKS.forEach(function(x){if(x[0]===id)n=x[1];});return n;}
 function onJob(j){var c=myCrew();return !!c&&(j.crew||[]).indexOf(c)>=0;}
 function isCh(j){var c=myCrew();return !!c&&j.ch===c;}
 function canStep(j){return isCh(j)||(isBoss()&&S.self===j.id);}   // may move the job on a step
@@ -1234,16 +1242,17 @@ function sheetRows(j,stage,t){
       return '<button class="ck '+(v==='ok'?'ok':(v==='no'?'no':''))+(live?'':' ro')+'"'+(live?' data-a="tick" data-s="'+stage+'" data-id="'+esc(j.id)+'" data-i="'+r.id+'"':' tabindex="-1"')+' aria-label="'+esc(r.name)+(r.qty?' times '+r.qty:'')+(v==='ok'?', on':(v==='no'?', missing':', not ticked'))+'"><span class="ck-b">'+(v==='no'?IC.no:IC.ok)+'</span><span class="ck-n">'+esc(r.name)+'</span>'+(v==='no'?'<span class="ck-s">Missing</span>':'')+(r.qty?'<span class="ck-q">× '+r.qty+'</span>':'')+'</button>';}).join('');
   };
   var left=function(k){return rows.some(function(r){return r.sec===k&&!t[r.id];});}, all=function(k){return '<button class="link small" data-a="allon" data-k="'+k+'" data-s="'+stage+'" data-id="'+esc(j.id)+'" style="padding:0;text-transform:none;letter-spacing:0">Tick all of these</button>';};
-  return sec('extra','Forgotten items')+sec('always','Always on the lorry',live&&left('always')&&runPos(j).i>0?all('always'):'')+sec('std','Tube, boards and fittings',live&&left('std')?all('std'):'');
+  return sec('extra','Miscellaneous')+sec('std','Tube, boards and fittings',live&&left('std')?all('std'):'');
 }
 function sheetHtml(j,stage){
   var rows=rowsOf(j), t=ticksOf(stage,j.id), done=rows.filter(function(r){return t[r.id];}).length;
+  if(!rows.length) return '<section class="card flush"><div class="sh-h"><div><b class="t">'+(stage==='yard'?'Load the lorry':'Morning check')+'</b><div class="small muted">'+esc(LOADNAME[j.load]||'')+' · nothing to load</div></div></div><p class="tip">Nothing is down for this job, so the lorry goes out empty. Tap <b>'+(stage==='yard'?'Confirm loaded':'Confirm checked')+'</b> to say it’s ready.</p></section>';
   return '<section class="card flush"><div class="sh-h"><div><b class="t">'+(stage==='yard'?'Load the lorry':'Morning check')+'</b><div class="small muted">'+esc(LOADNAME[j.load]||'')+' · '+plural(rows.length,'item')+'</div></div><span class="tag">'+done+' of '+rows.length+'</span></div>'+
     '<div style="padding:0 16px 12px"><div class="prog"><i style="width:'+(rows.length?Math.round(done/rows.length*100):0)+'%"></i></div></div><p class="tip">Tap once when it’s on. Tap again if it’s missing.'+(stage==='chk'&&statusOf(j)==='toload'?' The yard hasn’t confirmed this load yet.':'')+'</p>'+sheetRows(j,stage,t)+'</section>';
 }
 function sheetFold(j){
   var rows=rowsOf(j), src=j.chk&&j.chk.at?'chk':'yard', t=ticksOf(src,j.id), m=missingOf(j), k='sheet'+j.id, open=S.open[k]!=null?S.open[k]:(m.length>0&&!(j.left&&j.left.at));
-  return '<section class="card flush"><details class="fold" data-o="'+esc(k)+'"'+(open?' open':'')+'><summary><span><b>Load sheet</b><small>'+esc(LOADNAME[j.load]||'')+' · '+plural(rows.length,'item')+(m.length?' · '+m.length+' missing':'')+'</small></span></summary>'+sheetRows(j,null,t)+'</details></section>';
+  return '<section class="card flush"><details class="fold" data-o="'+esc(k)+'"'+(open?' open':'')+'><summary><span><b>Load sheet</b><small>'+esc(LOADNAME[j.load]||'')+' · '+plural(rows.length,'item')+(m.length?' · '+m.length+' missing':'')+'</small></span></summary>'+(rows.length?sheetRows(j,null,t):'<p class="tip">Nothing is down for this job. The lorry goes out empty.</p>')+'</details></section>';
 }
 function galHtml(list,cls){return '<div class="gal'+(cls?' '+cls:'')+'">'+list.map(function(p,i){return '<button class="th" data-a="lb" data-id="'+esc(p.id)+'" aria-label="Photo '+(i+1)+' of '+list.length+'">'+photoImg(p)+'</button>';}).join('')+'</div>';}
 function siteHtml(j){
@@ -1290,8 +1299,7 @@ function shareText(j){ // the whole job as plain words, for WhatsApp or a text
   var rows=rowsOf(j), gang=(j.crew||[]).filter(function(x){return x!==j.ch;}), p=j.prop||{}, pick=function(k){return rows.filter(function(r){return r.sec===k;});};
   var L=[COMPANY.toUpperCase(),fshort(j.date)+' · '+(j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]+' · ':'')+j.address,'Lorry: '+(j.vehicle||'not set')+' · '+(LOADNAME[j.load]||''),'Charge hand: '+(j.ch?nameOf(j.ch):'not set')];
   if(gang.length) L.push('Gang: '+gang.map(nameOf).join(', '));
-  if(pick('extra').length){L.push('','FORGOTTEN ITEMS');pick('extra').forEach(function(r){L.push('- '+r.name+' x '+r.qty);});}
-  L.push('','ALWAYS ON THE LORRY',pick('always').map(function(r){return r.name;}).join(', '));
+  if(pick('extra').length){L.push('','MISCELLANEOUS');pick('extra').forEach(function(r){L.push('- '+r.name+(r.qty?' x '+r.qty:''));});}
   if(pick('std').length) L.push('','TUBE, BOARDS AND FITTINGS',pick('std').length===ALLSTD.length?'All sizes':pick('std').map(function(r){return r.name;}).join(', '));
   if(houseText(p)||p.w) L.push('','THE PROPERTY',[houseText(p),p.w?sizeText(p):''].filter(Boolean).join(' · '));
   if(p.note) L.push('Good to know: '+p.note);
@@ -1538,8 +1546,8 @@ async function demoAuto(){ // "Do it for me": carry out the step exactly as that
   try{
     if(n===1){
       var staff=crewList().filter(function(c){return !c.yard&&S.bosses.indexOf(c.id)<0;}), v=fleet()[0], addr='12 Sample Street, Rayleigh';
-      var ref=await S.db.collection('jobs').add({v:2,kind:'erect',seq:1,date:today(0),address:addr,line:addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(addr),prop:Object.assign(blankProp(),{type:'Semi',storeys:'2',note:'Side gate on the left.'}),vehicle:String(v.reg).toUpperCase(),load:'full',std:ALLSTD.slice(),extra:{bm4:2,rpw:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id,notes:'Scaffold the front for new windows.',createdAt:now,createdBy:d.boss,yard:null,chk:null,left:null,done:null});
-      tell(jobAlerts(null,Object.assign({id:ref.id},{date:today(0),address:addr,vehicle:String(v.reg).toUpperCase(),load:'full',extra:{bm4:2,rpw:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id})));
+      var ref=await S.db.collection('jobs').add({v:2,kind:'erect',seq:1,date:today(0),address:addr,line:addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(addr),prop:Object.assign(blankProp(),{type:'Semi',storeys:'2',note:'Side gate on the left.'}),vehicle:String(v.reg).toUpperCase(),load:'full',std:ALLSTD.slice(),extra:{bm4:2,rpw:1,ldf:1,net:1,cap:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id,notes:'Scaffold the front for new windows.',createdAt:now,createdBy:d.boss,yard:null,chk:null,left:null,done:null});
+      tell(jobAlerts(null,Object.assign({id:ref.id},{date:today(0),address:addr,vehicle:String(v.reg).toUpperCase(),load:'full',extra:{bm4:2,rpw:1,ldf:1,net:1,cap:1},crew:staff.slice(0,3).map(function(c){return c.id;}),ch:staff[0].id})));
       d.job=ref.id; S.busy=''; demoGo(2); return;
     }
     if(!j){S.busy='';return;}
@@ -1577,7 +1585,7 @@ function guideTopics(){
       'Tap the type of house and the storeys. Add a note if the crew need one.',
       'Pick the lorry, the charge hand and the gang from the lists.',
       'Tap the load: **Full**, **¾**, **Half**, **¼** or **Empty**.',
-      'Under **Forgotten items**, open a group and put a number against anything this job needs.',
+      'Under **Miscellaneous**, tap anything this job needs, such as caps or netting. Open a group, such as Beams, to put a number against the rest.',
       'Tap **Send to the yard**.']],
     ['Give a gang more than one job in a day','It works for every gang.',[
       'Send the first job as normal.',
@@ -1644,7 +1652,7 @@ function guideTopics(){
    yard:[
     ['Load a lorry','Tick the sheet, then confirm.',[
       'Open the app. Every job that needs loading is on the **Loads** screen.',
-      'Tap a job. Forgotten items are at the top of the load sheet.',
+      'Tap a job. Miscellaneous items are at the top of the load sheet, then the tube, boards and fittings.',
       'Tap an item once when it’s on the lorry. Tap it again if it’s missing.',
       '**Tick all of these** ticks the tube, boards and fittings in one go.',
       'Tap **Confirm loaded**. '+boss+' and the charge hand can see it straight away.']],
@@ -1744,8 +1752,8 @@ function jobAlerts(old,nw){ // a job put on (no old), changed, or taken off (no 
   var out=[], yard=yardIds(), when=function(j){return fshort(j.date);};
   var chMsg=function(j){var g=(j.crew||[]).filter(function(x){return x!==j.ch;}).map(firstOf);return when(j)+': '+j.address+'. Lorry '+vehOf(j)+(g.length?', with '+andList(g):'')+'.';};
   var gangMsg=function(j){return when(j)+': '+j.address+'. '+firstOf(j.ch)+' is charge hand, lorry '+vehOf(j)+'.';};
-  var loadMsg=function(j){var n=Object.keys(j.extra||{}).length;return vehOf(j)+' for '+when(j)+': '+j.address+'. '+(LOADNAME[j.load]||'')+(n?', '+plural(n,'forgotten item'):'')+'.';};
-  var sig=function(j){return JSON.stringify([(j.std||[]).slice().sort(),j.extra||{},j.load]);};
+  var loadMsg=function(j){var n=Object.keys(exOf(j)).length;return vehOf(j)+' for '+when(j)+': '+j.address+'. '+(LOADNAME[j.load]||'')+(n?', '+plural(n,'miscellaneous item'):'')+'.';};
+  var sig=loadSig;
   if(!old&&nw){
     out.push({to:nw.ch,k:'job',t:'You’re charge hand',m:chMsg(nw),job:nw.id});
     (nw.crew||[]).forEach(function(c){if(c!==nw.ch)out.push({to:c,k:'job',t:'You’re on a job',m:gangMsg(nw),job:nw.id});});
@@ -1956,7 +1964,7 @@ setInterval(clockAlerts,60000);
 /* ---------- job sheet form ---------- */
 var DAYL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],load:'full',std:ALLSTD.slice(),stdOpen:false,extra:{},open:{},notes:'',err:''};}
-function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),load:j.load||'full',std:(j.std||[]).slice(),stdOpen:false,extra:Object.assign({},j.extra||{}),open:{},notes:j.notes||'',err:''};}
+function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),load:j.load||'full',std:(j.std||[]).slice(),stdOpen:false,extra:exOf(j),open:{},notes:j.notes||'',err:''};}
 function staffOpt(id,f,sel){
   var off=offOn(id,f.date), busy=jobsOn(id,f.date,f.id), out=!!wkDay(f.date)&&!wkPicked(f.date,id)&&S.bosses.indexOf(id)<0;
   return '<option value="'+esc(id)+'"'+(sel?' selected':'')+((off||out)&&!sel?' disabled':'')+'>'+esc(nameOf(id)+(off?' (off: '+(off.reason||'time off').toLowerCase()+')':(out?' (not picked for '+DAYL[pdate(f.date).getDay()]+')':(busy.length?' ('+plural(busy.length,'job')+' that day)':''))))+'</option>';
@@ -1992,11 +2000,11 @@ function formHtml(f){
     if(f.stdOpen) h+=STD.map(function(g){return '<div class="fld"><span class="fl">'+g[0]+'</span><div class="chips">'+g[1].map(function(x){return '<button type="button" class="chip" data-a="std" data-i="'+x[0]+'" aria-pressed="'+(f.std.indexOf(x[0])>=0)+'">'+x[1]+'</button>';}).join('')+'</div></div>';}).join('');
   }else h+='<span class="hint">Nothing from the racks. Only what you add below.</span>';
   h+='</section>';
-  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Forgotten items</b><div class="small muted">The things that get left behind. Put a number against anything this job needs.</div></div></div>'+EXTRA.map(function(g){
+  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Miscellaneous</b><div class="small muted">Everything that isn’t tube, boards or fittings. Tap what this job needs. Open a group to put a number against the rest.</div></div></div>'+
+    '<div class="chips mx" role="group" aria-label="Tap what this job needs">'+TICKS.map(function(x){return '<button type="button" class="chip" data-a="xtick" data-i="'+x[0]+'" aria-pressed="'+(f.extra[x[0]]>0)+'">'+esc(x[1])+'</button>';}).join('')+'</div>'+EXTRA.map(function(g){
     var c=g[1].filter(function(x){return f.extra[x[0]]>0;}).length;
     return '<details class="grp" data-g="'+esc(g[0])+'"'+(f.open[g[0]]?' open':'')+'><summary>'+esc(g[0])+(c?'<span class="grp-n">'+c+'</span>':'')+'</summary>'+g[1].map(function(x){var q=f.extra[x[0]]||0;
-      return '<div class="st'+(q?' has':'')+'"><span class="st-n">'+esc(x[1])+'</span><div class="st-c"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="-1" aria-label="One fewer '+esc(x[1])+'">−</button><input id="x-'+x[0]+'" type="number" inputmode="numeric" min="0" max="999" data-x="'+x[0]+'" value="'+(q||'')+'" placeholder="0" aria-label="'+esc(x[1])+'"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="1" aria-label="One more '+esc(x[1])+'">+</button></div></div>';}).join('')+'</details>';}).join('')+
-    '<p class="tip" style="padding-top:12px">'+ALWAYS.map(function(x){return x[1];}).join(', ')+' are on every load sheet already.</p></section>';
+      return '<div class="st'+(q?' has':'')+'"><span class="st-n">'+esc(x[1])+'</span><div class="st-c"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="-1" aria-label="One fewer '+esc(x[1])+'">−</button><input id="x-'+x[0]+'" type="number" inputmode="numeric" min="0" max="999" data-x="'+x[0]+'" value="'+(q||'')+'" placeholder="0" aria-label="'+esc(x[1])+'"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="1" aria-label="One more '+esc(x[1])+'">+</button></div></div>';}).join('')+'</details>';}).join('')+'</section>';
   h+='<section class="card"><div class="fld"><label for="f-notes">Notes for the yard and crew</label><textarea id="f-notes" class="in" data-f="notes" placeholder="Anything they need to know">'+esc(f.notes)+'</textarea></div></section>';
   LAY='two'; return h+'</div>';
 }
@@ -2011,7 +2019,8 @@ async function saveJob(){
   var body={v:2,kind:f.kind||'erect',date:f.date,address:addr,line:String(f.line).trim(),tail:String(f.tail||'').trim(),lat:f.lat,lon:f.lon,exact:!!f.exact,pk:pk,prop:prop,vehicle:f.vehicle,load:f.load,std:f.load==='empty'?[]:f.std.slice(),extra:extra,crew:crew,ch:f.ch,notes:String(f.notes).trim()};
   try{
     if(f.id){
-      var old=S.jobs.get(f.id)||{}, sig=function(j){return JSON.stringify([(j.std||[]).slice().sort(),j.extra||{},j.load]);}, changed=sig(old)!==sig(body)&&!(old.left&&old.left.at);
+      var old=S.jobs.get(f.id)||{}, sig=loadSig, changed=sig(old)!==sig(body)&&!(old.left&&old.left.at);
+      Object.keys(old.extra||{}).forEach(function(k){if(!(k in body.extra))body.extra[k]=0;});   // saving merges into what is stored, so an item taken off has to be written as none
       if(changed){body.yard=null;body.chk=null;}
       if(runKey(old)!==runKey(body)) body.seq=seq;
       await S.db.doc('jobs/'+f.id).update(body);
@@ -2399,6 +2408,7 @@ var ACT={
   stdopen:function(){S.form.stdOpen=!S.form.stdOpen;render(true);},
   std:function(b){var f=S.form,i=f.std.indexOf(b.dataset.i);if(i>=0)f.std.splice(i,1);else f.std.push(b.dataset.i);render(true);},
   step:function(b){var f=S.form,i=b.dataset.i,q=Math.max(0,Math.min(999,(f.extra[i]||0)+(+b.dataset.d)));if(q)f.extra[i]=q;else delete f.extra[i];render(true);},
+  xtick:function(b){var f=S.form,i=b.dataset.i;if(f.extra[i]>0)delete f.extra[i];else f.extra[i]=1;render(true);},
   save:function(){saveJob();},
   month:function(b){var m=S.month||today(0).slice(0,7),d=new Date(+m.slice(0,4),+m.slice(5,7)-1+(+b.dataset.d),1,12);S.month=dstr(d).slice(0,7);render(true);},
   day:function(b){S.day=b.dataset.v;render(true);},
