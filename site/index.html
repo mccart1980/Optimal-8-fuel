@@ -255,7 +255,7 @@ button.need{appearance:none;border-top:0;border-right:0;border-bottom:0;width:10
 /* load sheet */
 .sh-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px 10px}
 .sh-h b.t{font-size:1.08rem}
-.sh-g{padding:10px 16px 6px;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.sh-g{padding:10px 16px 6px;font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink3);border-top:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:4px 8px;flex-wrap:wrap}
 .sh-g:first-of-type{border-top:0}
 .ck{appearance:none;border:0;background:none;width:100%;text-align:left;display:flex;align-items:center;gap:13px;padding:11px 16px;min-height:54px;border-top:1px solid var(--line)}
 .sh-g + .ck{border-top:0}
@@ -319,7 +319,8 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .grp{border-top:1px solid var(--line)}
 .grp:first-of-type{border-top:0}
 .chips.mx{padding:2px 16px 16px}
-.chips.mx + .grp{border-top:1px solid var(--line)}
+.chips.mx + .grp,.ld + .grp{border-top:1px solid var(--line)}
+.ld{padding:2px 16px 14px;display:flex;flex-direction:column;gap:12px}
 .grp > summary,.fold > summary{list-style:none;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 16px;font-weight:600;cursor:pointer;min-height:54px}
 .grp > summary::-webkit-details-marker,.fold > summary::-webkit-details-marker{display:none}
 .grp > summary::after,.fold > summary::after{content:"";width:9px;height:9px;border-right:2px solid var(--ink3);border-bottom:2px solid var(--ink3);transform:rotate(45deg);margin-right:4px;flex:none;transition:transform .15s ease}
@@ -522,23 +523,26 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'30b24510',at:'21 Nov, 10:25'};
+var FCS_BUILD={v:'aa5fe9cd',at:'21 Nov, 13:22'};
 var ADDR_KEY_BUILT='';
-var COMPANY='First Choice Scaffolding', APP='Load Check', VER='7';
+var COMPANY='First Choice Scaffolding', APP='Load Check', VER='8';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
 var $app=document.getElementById('app'), $toast=document.getElementById('toast');
 
 /* ---------- what goes on a load ---------- */
-var STD=[['Tube',[['t5','5ft'],['t6','6ft'],['t8','8ft'],['t10','10ft'],['t13','13ft'],['t16','16ft'],['t21','21ft']]],
-  ['Boards',[['b8','8ft'],['b10','10ft'],['b13','13ft'],['bsh','Short']]],
+// The load list is tube, boards, standard fittings and beams. Everything else is Miscellaneous.
+var STD=[['Tube',[['t5','5ft'],['t6','6ft'],['t8','8ft'],['t10','10ft'],['t13','13ft'],['t16','16ft'],['t21','Long']]],
+  ['Boards',[['b8','8ft'],['b10','10ft'],['b13','13ft']]],
   ['Fittings',[['fdb','Doubles'],['fsg','Singles'],['fsw','Swivels'],['fsl','Sleeves'],['fbp','Base plates'],['fsb','Sole boards']]]];
-var EXTRA=[['Beams',[['bm3','3m beams'],['bm4','4m beams'],['bm5','5m beams'],['bm6','6m beams'],['bm8','8m beams'],['bmj','Beam joiners'],['bmp','Pins']]],
+var BEAMS=[['bm3','3m beams'],['bm4','4m beams'],['bm5','5m beams'],['bm6','6m beams'],['bm8','8m beams']], BEAMID={};   // on the load list, each with a number
+BEAMS.forEach(function(x){BEAMID[x[0]]=1;});
+var EXTRA=[['Beam joiners and pins',[['bmj','Beam joiners'],['bmp','Pins']]],
   ['Butts',[['bt12','1ft butts'],['bt18','18in butts'],['bt24','2ft butts'],['bt36','3ft butts'],['bt48','4ft butts']]],
   ['Ladders and access',[['lds','Short ladders'],['ldl','Long ladders'],['str','Stair treads'],['gat','Gates']]],
   ['Brackets and jacks',[['brk','Brackets'],['sjk','Screw jacks']]],
   ['Lifting and rubbish',[['rpw','Rope and wheel'],['cht','Chutes'],['hop','Hoppers'],['chb','Chute brackets']]]];
-// Miscellaneous is everything that isn't tube, boards or standard fittings: EXTRA takes a number, TICKS are needed or not.
-var TICKS=[['ldf','Ladder safes'],['trd','Treads'],['tie','Tie gear'],['xcb','Excalibur bolts'],['net','Netting'],['fom','Foam'],['cap','Caps'],['ctt','Cable ties'],['fbc','Board clips']];
+// Miscellaneous: EXTRA takes a number, TICKS are needed or not.
+var TICKS=[['ldf','Ladder safes'],['trd','Treads'],['tie','Tie gear'],['xcb','Excalibur bolts'],['net','Netting'],['fom','Foam'],['cap','Caps'],['ctt','Cable ties'],['fbc','Board clips'],['bsh','Short boards']];
 var LOADS=[['full','Full'],['three','¾'],['half','Half'],['quarter','¼'],['empty','Empty']];
 var LOADNAME={full:'Full load',three:'Three-quarter load',half:'Half load',quarter:'Quarter load',empty:'Empty'};
 var ALLSTD=[]; STD.forEach(function(g){g[1].forEach(function(x){ALLSTD.push(x[0]);});});
@@ -621,6 +625,14 @@ function isBoss(){var c=myCrew();if(c&&S.bosses.indexOf(c)>=0)return true;return
 function isYard(){var c=myCrew(),o=c&&S.crew.get(c);return !!(o&&o.yard);}
 function bossFirst(){for(var i=0;i<S.bosses.length;i++){if(S.crew.has(S.bosses[i])&&!S.crew.get(S.bosses[i]).removed)return firstOf(S.bosses[i]);}return 'the boss';}
 function roleOf(id){var c=S.crew.get(id)||{};return S.bosses.indexOf(id)>=0?'Boss':(c.yard?'Yard':'Staff');}
+function screenOf(id){ // which of the four screens this person gets: the boss, the yard, a charge hand, or one of the gang
+  if(S.bosses.indexOf(id)>=0) return 'The boss. Sees everything and has control of it.';
+  if((S.crew.get(id)||{}).yard) return 'The yard. Sees the load list and miscellaneous for each lorry.';
+  var t0=today(0), js=jobList().filter(function(j){return j.date>=t0&&!(j.done&&j.done.at);}), ch=js.filter(function(j){return j.ch===id;}).length, gg=js.filter(function(j){return j.ch!==id&&(j.crew||[]).indexOf(id)>=0;}).length;
+  if(ch) return 'Charge hand on '+plural(ch,'job')+'. Checks the load and sees his jobs.'+(gg?' In the gang on '+plural(gg,'other')+'.':'');
+  if(gg) return 'In the gang on '+plural(gg,'job')+'. Just sees the job.';
+  return 'Site staff. Not on a job yet.';
+}
 function fleet(){return Array.from(S.vans.values()).filter(function(v){return !v.removed&&v.reg;}).sort(function(a,b){return String(a.reg).localeCompare(String(b.reg));});}
 
 /* ---------- time off ---------- */
@@ -632,12 +644,14 @@ function pendingOff(){return offList().filter(function(o){return o.status==='pen
 function jobList(){return Array.from(S.jobs.values()).filter(function(j){return j.date&&j.v===2;});}
 function visJobs(){var all=isBoss()||isYard();return jobList().filter(function(j){return all||onJob(j);});}
 function exOf(j){var o={},e=(j&&j.extra)||{};Object.keys(e).forEach(function(k){if(e[k]>0)o[k]=e[k];});return o;}   // the miscellaneous items a job really has: anything taken off again is stored as 0
-function loadSig(j){var e=exOf(j);return JSON.stringify([(j.std||[]).slice().sort(),Object.keys(e).sort().map(function(k){return k+':'+e[k];}),j.load]);}   // has the load sheet changed?
+function stdOf(j){return ((j&&j.std)||[]).filter(function(id){return ALLSTD.indexOf(id)>=0;});}   // sizes still on the load list
+function loadSig(j){var e=exOf(j);return JSON.stringify([stdOf(j).sort(),Object.keys(e).sort().map(function(k){return k+':'+e[k];}),j.load]);}   // has the load sheet changed?
 function rowsOf(j){
-  var out=[], ex=exOf(j), std=j.std||[];
+  var out=[], ex=exOf(j), std=stdOf(j);   // the load list first (beams, then tube, boards and fittings), then miscellaneous
+  BEAMS.forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],qty:ex[x[0]],sec:'beam'});});
+  STD.forEach(function(g){g[1].forEach(function(x){if(std.indexOf(x[0])>=0)out.push({id:x[0],name:g[0]==='Fittings'?x[1]:x[1]+' '+g[0].toLowerCase(),sec:'std',grp:g[0]});});});
   EXTRA.forEach(function(g){g[1].forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],qty:ex[x[0]],sec:'extra'});});});
   TICKS.forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sec:'extra'});});
-  STD.forEach(function(g){g[1].forEach(function(x){if(std.indexOf(x[0])>=0)out.push({id:x[0],name:g[0]==='Fittings'?x[1]:x[1]+' '+g[0].toLowerCase(),sec:'std',grp:g[0]});});});
   return out;
 }
 function statusOf(j){return j.done&&j.done.at?'done':(j.left&&j.left.at?'out':(j.chk&&j.chk.at?'checked':(j.yard&&j.yard.at?'loaded':'toload')));}
@@ -645,7 +659,7 @@ function missingOf(j){ // only things still on this job's load sheet count as mi
   var m=(j.chk&&j.chk.at?j.chk.missing:(j.yard&&j.yard.at?j.yard.missing:null))||[]; if(!m.length) return m;
   var on={}; rowsOf(j).forEach(function(r){on[r.id]=1;}); return m.filter(function(id){return on[id];});
 }
-function itemName(id){var n=id;EXTRA.concat(STD).forEach(function(g){g[1].forEach(function(x){if(x[0]===id)n=(g[0]==='Tube'||g[0]==='Boards')?x[1]+' '+g[0].toLowerCase():x[1];});});TICKS.forEach(function(x){if(x[0]===id)n=x[1];});return n;}
+function itemName(id){var n=id;EXTRA.concat(STD).forEach(function(g){g[1].forEach(function(x){if(x[0]===id)n=(g[0]==='Tube'||g[0]==='Boards')?x[1]+' '+g[0].toLowerCase():x[1];});});TICKS.concat(BEAMS).forEach(function(x){if(x[0]===id)n=x[1];});return n;}
 function onJob(j){var c=myCrew();return !!c&&(j.crew||[]).indexOf(c)>=0;}
 function isCh(j){var c=myCrew();return !!c&&j.ch===c;}
 function canStep(j){return isCh(j)||(isBoss()&&S.self===j.id);}   // may move the job on a step
@@ -746,6 +760,53 @@ function parseMap(js){
 }
 var OVERPASS=['https://overpass-api.de/api/interpreter','https://overpass.private.coffee/api/interpreter','https://overpass.kumi.systems/api/interpreter'];
 async function overpass(q){for(var i=0;i<OVERPASS.length;i++){var p=await probe(OVERPASS[i]+'?data='+encodeURIComponent(q),15000);if(p.ok&&p.js&&Array.isArray(p.js.elements))return p.js;}throw new Error('no map data');}
+/* ---------- Ordnance Survey's own record of each building: its outline, how many floors, and its heights.
+   It needs the firm's own key (Set-up). Without one, or if it doesn't answer, the outlines come from the public map above. ---------- */
+var OSAPI='https://api.os.uk/features/ngd/ofa/v1/collections/', OSCOLS=['bld-fts-building-4','bld-fts-building-3','bld-fts-building-2','bld-fts-building-1'];
+function osRing(g){ // the outer edge of a shape as [lat,lon] points. A building drawn in several pieces gives its biggest piece
+  if(!g||!g.coordinates) return null;
+  var polys=g.type==='Polygon'?[g.coordinates]:(g.type==='MultiPolygon'?g.coordinates:[]), best=null, bestA=0;
+  polys.forEach(function(poly){
+    var r=((poly&&poly[0])||[]).map(function(c){return [+c[1],+c[0]];}).filter(function(c){return !isNaN(c[0])&&!isNaN(c[1]);});
+    if(r.length>3){var a=r[0],z=r[r.length-1];if(a[0]===z[0]&&a[1]===z[1])r.pop();}
+    if(r.length<3) return;
+    var A=Math.abs(pArea(ringXY(r,{lat:r[0][0],lon:r[0][1]}))); if(A>bestA){bestA=A;best=r;}
+  });
+  return best;
+}
+function parseOs(js){
+  var num=function(v){v=parseFloat(v);return isNaN(v)?0:v;}, blds=[];
+  ((js&&js.features)||[]).forEach(function(ft){
+    var r=osRing(ft.geometry), q=ft.properties||{}; if(!r) return;
+    var area=num(q.geometry_area_m2), desc=String(q.description||''), small=(area>0&&area<20)||/garage|shed|glasshouse|greenhouse|conservatory|outbuilding|carport/i.test(desc);
+    blds.push({ring:r,tags:{building:small?'shed':'yes'},os:{floors:Math.round(num(q.numberoffloors)),conn:String(q.connectivity||''),eaves:num(q.height_relativeroofbase_m),top:num(q.height_relativemax_m),homes:Math.round(num(q.buildinguse_addresscount_residential))}});
+  });
+  return blds;
+}
+function osProblem(p){
+  if(!p) return 'No answer';
+  if(p.status===401||p.status===403) return 'Ordnance Survey didn’t accept the key. Check the key’s project has OS NGD API – Features added to it';
+  if(p.status===429) return 'Too many lookups in one minute. Try again shortly';
+  if(p.status===404) return 'Ordnance Survey doesn’t have the buildings list this app asks for';
+  return p.err||('Error '+p.status);
+}
+async function osBuildings(lat,lon,key){
+  var dy=75/110574, dx=75/(111320*Math.cos(lat*Math.PI/180)), box=[lon-dx,lat-dy,lon+dx,lat+dy].map(function(v){return v.toFixed(6);}).join(','), last=null;
+  for(var i=0;i<OSCOLS.length;i++){
+    last=await probe(OSAPI+OSCOLS[i]+'/items?key='+encodeURIComponent(key)+'&bbox='+box+'&limit=100',15000);
+    if(last.ok&&last.js&&Array.isArray(last.js.features)) return {blds:parseOs(last.js),col:OSCOLS[i],ms:last.ms};
+    if(last.status!==404) break;   // an older list is only worth trying when the newer one isn't there
+  }
+  throw new Error(osProblem(last));
+}
+function borrowNumbers(os,osm){ // Ordnance Survey's outlines carry no house numbers. The public map sometimes has them, so match them up by position
+  (osm||[]).forEach(function(b){
+    var n=b.tags&&b.tags['addr:housenumber']; if(!n) return;
+    var c=centLL(b.ring), o={lat:c[0],lon:c[1]};
+    for(var i=0;i<os.length;i++){var t=os[i].tags; if(t['addr:housenumber']||SMALL[t.building]) continue;
+      if(pInPoly([0,0],ringXY(os[i].ring,o))){t['addr:housenumber']=n; if(b.tags['addr:street'])t['addr:street']=b.tags['addr:street']; break;}}
+  });
+}
 function mapQuery(lat,lon){var at=lat.toFixed(6)+','+lon.toFixed(6);return '[out:json][timeout:20];(way["building"](around:110,'+at+');way["highway"~"^(residential|unclassified|tertiary|secondary|primary|trunk|living_street|service|pedestrian)$"](around:140,'+at+'););out geom;';}
 
 /* ---------- photos: kept on this phone in the practice version, in shared storage in the live one ---------- */
@@ -927,6 +988,7 @@ async function boot(){
 
 /* ---------- address finder ---------- */
 function addrKey(){var k='';try{k=(localStorage.getItem('fcs-addr-key')||'').trim();}catch(_){ }return k||ADDR_KEY_BUILT;}
+function osKey(){var k='';try{k=(localStorage.getItem('fcs-os-key')||'').trim();}catch(_){ }return k;}   // the firm's Ordnance Survey key, kept on this phone only
 function normPc(v){return String(v||'').toUpperCase().replace(/[^A-Z0-9]/g,'');}
 function fmtPc(n){n=normPc(n);return n.length>3?n.slice(0,-3)+' '+n.slice(-3):n;}
 function titleCase(t){return String(t||'').toLowerCase().replace(/(^|[\s\-'])([a-z])/g,function(m,a,b){return a+b.toUpperCase();});}
@@ -989,8 +1051,10 @@ function suggest(q){
 /* ---------- the property: aerial picture, the house outline and its size ---------- */
 var SAT={W:360,H:270,S:1.4,ZMIN:16,ZMAX:20}, TILES='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/';
 function canSat(){return S.net;}   // pictures and map lookups are blocked inside Claude's own viewer
-function blankProp(){return {type:'',storeys:'',note:'',ring:'',w:0,d:0,run:0,area:0,ax:0,front:false};}
-function clearSize(p){p.ring='';p.w=0;p.d=0;p.run=0;p.area=0;p.ax=0;p.front=false;}
+function blankProp(){return {type:'',storeys:'',note:'',ring:'',w:0,d:0,run:0,area:0,ax:0,front:false,eaves:0,top:0,src:''};}
+function clearSize(p){p.ring='';p.w=0;p.d=0;p.run=0;p.area=0;p.ax=0;p.front=false;p.eaves=0;p.top=0;p.src='';}
+function highText(p){return p.eaves?'Eaves about '+fm(p.eaves)+' ('+fft(p.eaves)+')'+(p.top>p.eaves?' · highest point '+fm(p.top)+' ('+fft(p.top)+')':''):'';}   // heights only come from Ordnance Survey
+function srcText(p){return p.src==='os'?'From Ordnance Survey’s record of the building.':'Measured from the map, so use it as a guide.';}
 function sizeText(p){return p.front?'About '+fm(p.w)+' wide × '+fm(p.d)+' deep':'About '+fm(p.w)+' × '+fm(p.d);}
 function sizeSub(p){return fft(p.w)+' × '+fft(p.d)+(p.run?' · '+p.run+' m ('+fft(p.run)+') all the way round':'');}
 function houseText(p){return [p.type||'',p.storeys?(p.storeys==='1'?'1 storey':p.storeys+' storeys'):''].filter(Boolean).join(', ');}
@@ -1025,7 +1089,7 @@ function useRecord(f){ // if we have been to this address before, bring back wha
   if(!rec){if(f.recKey&&f.recKey!==k){f.recKey='';f.recAt=0;}return 0;}
   if(f.recKey===k) return 0;
   f.recKey=k; f.recAt=rec.at||0;
-  f.prop={type:rec.type||'',storeys:rec.storeys||'',note:rec.note||'',ring:rec.ring||'',w:rec.w||0,d:rec.d||0,run:rec.run||0,area:rec.area||0,ax:rec.ax||0,front:!!rec.front};
+  f.prop={type:rec.type||'',storeys:rec.storeys||'',note:rec.note||'',ring:rec.ring||'',w:rec.w||0,d:rec.d||0,run:rec.run||0,area:rec.area||0,ax:rec.ax||0,front:!!rec.front,eaves:rec.eaves||0,top:rec.top||0,src:rec.src||''};
   if(rec.lat!=null&&rec.exact){f.lat=rec.lat;f.lon=rec.lon;f.exact=true;f.z=19;return 2;}
   return 1;
 }
@@ -1040,22 +1104,33 @@ function byNumber(f,m){ // the map sometimes knows the house numbers
   return hits.length===1?hits[0]:null;
 }
 function setBuilding(f,b,m){
-  var ms=measure(b,m), c=centLL(b.ring), p=f.prop;
+  var ms=measure(b,m), c=centLL(b.ring), p=f.prop, o=b.os;
   f.lat=+c[0].toFixed(6); f.lon=+c[1].toFixed(6); f.exact=true; if(f.z<19) f.z=19;
   if(ms){p.ring=ringStr(b.ring);p.w=ms.w;p.d=ms.d;p.run=ms.run;p.area=ms.area;p.ax=ms.ax;p.front=ms.front;} else clearSize(p);
-  if(!p.type){var t=tagType(b.tags);if(t)p.type=t;}
-  if(!p.storeys){var st=tagStoreys(b.tags);if(st)p.storeys=st;}
+  p.src=ms?(o?'os':'map'):''; p.eaves=ms&&o&&o.eaves>0?r1(o.eaves):0; p.top=ms&&o&&o.top>0?r1(o.top):0;
+  if(o){ // Ordnance Survey knows the floors and how the building joins its neighbours, so fill those in. They can still be changed by hand
+    var fl=o.floors>=4?'4+':(o.floors>=1?String(o.floors):''), ty=o.homes>=3?'Flats':(o.floors===1?'Bungalow':(/stand/i.test(o.conn)?'Detached':(/semi/i.test(o.conn)?'Semi':(/end|mid/i.test(o.conn)?'Terraced':''))));
+    if(fl)p.storeys=fl; if(ty)p.type=ty;
+  }else{
+    if(!p.type){var t=tagType(b.tags);if(t)p.type=t;}
+    if(!p.storeys){var st=tagStoreys(b.tags);if(st)p.storeys=st;}
+  }
 }
 function loadMap(f){
   if(!canSat()||f.lat==null) return;
-  var m=f.map={status:'busy',o:{lat:f.lat,lon:f.lon},blds:[],roads:[],want:null};
-  overpass(mapQuery(f.lat,f.lon)).then(function(js){
+  var m=f.map={status:'busy',o:{lat:f.lat,lon:f.lon},blds:[],roads:[],want:null,src:'',osErr:''}, key=osKey();
+  var pub=overpass(mapQuery(f.lat,f.lon)).then(parseMap,function(){return null;});   // the public map: roads, house numbers, and outlines to fall back on
+  var os=key?osBuildings(f.lat,f.lon,key).then(function(r){return r.blds;},function(e){m.osErr=String((e&&e.message)||e);return null;}):Promise.resolve(null);
+  Promise.all([pub,os]).then(function(a){
     if(S.form!==f||f.map!==m) return;
-    var r=parseMap(js), w=m.want; m.blds=r.blds; m.roads=r.roads; m.status='ok'; m.want=null;
+    var r=a[0], ob=a[1];
+    if(!r&&!(ob&&ob.length)){m.status='fail';render();return;}
+    if(ob&&ob.length){borrowNumbers(ob,r?r.blds:[]);m.blds=ob;m.src='os';}else{m.blds=r?r.blds:[];m.src='map';}
+    m.roads=r?r.roads:[]; m.status='ok'; var w=m.want; m.want=null;
     if(w){var b=hitBuilding(m,w.lat,w.lon,6);if(b)setBuilding(f,b,m);}
     else if(!f.exact){var n=byNumber(f,m);if(n)setBuilding(f,n,m);}
     render();
-  },function(){if(f.map===m){m.status='fail';render();}});
+  });
 }
 function pickAt(f,lat,lon){ // the boss tapped the picture
   var m=f.map;
@@ -1079,8 +1154,9 @@ function propHtml(f){
     if(S.satFail) h+='<p class="hint">The picture from above won’t load just now. Check your signal. The buttons below still work.</p>';
     else h+=satHtml({lat:f.lat,lon:f.lon,z:f.z,ring:ring,ax:p.ax,w:p.w,d:p.d,blds:m&&m.status==='ok'?m.blds:null,pick:true,pin:f.exact});
   }
-  if(ring&&p.w) h+='<div class="size"><b>'+esc(sizeText(p))+'</b><span>'+esc(sizeSub(p))+'</span></div><div class="card-h"><span class="hint">Measured from the map, so use it as a guide.'+(canSat()&&!S.satFail?' Tap another house to change it.':'')+'</span><button type="button" class="link small" data-a="sizerm">Remove</button></div>';
+  if(ring&&p.w) h+='<div class="size"><b>'+esc(sizeText(p))+'</b><span>'+esc(sizeSub(p))+'</span>'+(highText(p)?'<span>'+esc(highText(p))+'</span>':'')+'</div><div class="card-h"><span class="hint">'+srcText(p)+(p.src==='os'?' © Crown copyright and database rights '+new Date().getFullYear()+' OS.':'')+(canSat()&&!S.satFail?' Tap another house to change it.':'')+'</span><button type="button" class="link small" data-a="sizerm">Remove</button></div>';
   else if(canSat()&&f.lat!=null&&!S.satFail) h+='<p class="hint">'+(m&&m.status==='busy'?'Finding the house outlines…':(m&&m.status==='ok'&&m.blds.length?'Tap the house on the picture to mark it and measure it.':(f.exact?'House marked. There’s no outline on the map here to measure.':'Tap the house on the picture to mark it.')))+'</p>';
+  if(osKey()&&m&&m.status==='ok'&&m.src!=='os') h+='<p class="hint">Ordnance Survey didn’t answer'+(m.osErr?' ('+esc(m.osErr)+')':'')+', so the outlines here are from the public map.</p>';
   h+=actsHtml(spot,false);
   h+='<div class="fld"><span class="fl">Type of house</span><div class="chips">'+TYPES.map(function(t){return '<button type="button" class="chip" data-a="ptype" data-v="'+t+'" aria-pressed="'+(p.type===t)+'">'+t+'</button>';}).join('')+'</div></div>';
   h+='<div class="fld"><span class="fl">Storeys</span><div class="seg">'+STOREYS.map(function(t){return '<button type="button" data-a="pstoreys" data-v="'+t+'" aria-pressed="'+(p.storeys===t)+'">'+t+'</button>';}).join('')+'</div></div>';
@@ -1212,7 +1288,7 @@ function heroHtml(j){
   h+='<dl class="kv"><dt>Lorry</dt><dd>'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span> ':'')+'<span>'+esc((v&&v.name?v.name+' · ':'')+(LOADNAME[j.load]||''))+'</span></dd><dt>Charge hand</dt><dd>'+esc(j.ch?nameOf(j.ch):'Not set')+'</dd>'+(gang.length?'<dt>Gang</dt><dd>'+esc(gang.map(nameOf).join(', '))+'</dd>':'');
   if(house&&!yardOnly) h+='<dt>House</dt><dd>'+esc(house)+'</dd>';
   h+='</dl>';
-  if(p.w&&p.d&&!yardOnly) h+='<div class="size"><b>'+esc(sizeText(p))+'</b><span>'+esc(sizeSub(p))+'. A guide, measured from the map.</span></div>';
+  if(p.w&&p.d&&!yardOnly) h+='<div class="size"><b>'+esc(sizeText(p))+'</b><span>'+esc(sizeSub(p))+'</span>'+(highText(p)?'<span>'+esc(highText(p))+'</span>':'')+'<span>'+(p.src==='os'?'From Ordnance Survey’s record of the building.':'A guide, measured from the map.')+'</span></div>';
   if(p.note&&!yardOnly) h+='<div class="note know"><b>Good to know</b>'+esc(p.note)+'</div>';
   if(j.notes) h+='<div class="note"><b>From '+esc(bossFirst())+'</b>'+esc(j.notes)+'</div>';
   return h+'</div></section>';
@@ -1236,13 +1312,13 @@ function trackHtml(j){
 }
 function sheetRows(j,stage,t){
   var rows=rowsOf(j), live=!!stage;
-  var sec=function(k,title,extra){
-    var list=rows.filter(function(r){return r.sec===k;}); if(!list.length) return '';
+  var sec=function(keys,title,extra){
+    var list=rows.filter(function(r){return keys.indexOf(r.sec)>=0;}); if(!list.length) return '';
     return '<div class="sh-g"><span>'+title+'</span>'+(extra||'')+'</div>'+list.map(function(r){var v=t[r.id]||'';
       return '<button class="ck '+(v==='ok'?'ok':(v==='no'?'no':''))+(live?'':' ro')+'"'+(live?' data-a="tick" data-s="'+stage+'" data-id="'+esc(j.id)+'" data-i="'+r.id+'"':' tabindex="-1"')+' aria-label="'+esc(r.name)+(r.qty?' times '+r.qty:'')+(v==='ok'?', on':(v==='no'?', missing':', not ticked'))+'"><span class="ck-b">'+(v==='no'?IC.no:IC.ok)+'</span><span class="ck-n">'+esc(r.name)+'</span>'+(v==='no'?'<span class="ck-s">Missing</span>':'')+(r.qty?'<span class="ck-q">× '+r.qty+'</span>':'')+'</button>';}).join('');
   };
-  var left=function(k){return rows.some(function(r){return r.sec===k&&!t[r.id];});}, all=function(k){return '<button class="link small" data-a="allon" data-k="'+k+'" data-s="'+stage+'" data-id="'+esc(j.id)+'" style="padding:0;text-transform:none;letter-spacing:0">Tick all of these</button>';};
-  return sec('extra','Miscellaneous')+sec('std','Tube, boards and fittings',live&&left('std')?all('std'):'');
+  var left=function(k){return rows.some(function(r){return r.sec===k&&!t[r.id];});}, all=function(k){return '<button class="link small" data-a="allon" data-k="'+k+'" data-s="'+stage+'" data-id="'+esc(j.id)+'" style="padding:0;text-transform:none;letter-spacing:0">Tick tube, boards and fittings</button>';};   // beams and miscellaneous are ticked one by one
+  return sec(['beam','std'],'Load list',live&&left('std')?all('std'):'')+sec(['extra'],'Miscellaneous');
 }
 function sheetHtml(j,stage){
   var rows=rowsOf(j), t=ticksOf(stage,j.id), done=rows.filter(function(r){return t[r.id];}).length;
@@ -1299,9 +1375,12 @@ function shareText(j){ // the whole job as plain words, for WhatsApp or a text
   var rows=rowsOf(j), gang=(j.crew||[]).filter(function(x){return x!==j.ch;}), p=j.prop||{}, pick=function(k){return rows.filter(function(r){return r.sec===k;});};
   var L=[COMPANY.toUpperCase(),fshort(j.date)+' · '+(j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]+' · ':'')+j.address,'Lorry: '+(j.vehicle||'not set')+' · '+(LOADNAME[j.load]||''),'Charge hand: '+(j.ch?nameOf(j.ch):'not set')];
   if(gang.length) L.push('Gang: '+gang.map(nameOf).join(', '));
+  if(pick('std').length||pick('beam').length){
+    L.push('','LOAD LIST'); if(pick('std').length) L.push(pick('std').length===ALLSTD.length?'All tube, boards and fittings':pick('std').map(function(r){return r.name;}).join(', '));
+    pick('beam').forEach(function(r){L.push('- '+r.name+' x '+r.qty);});
+  }
   if(pick('extra').length){L.push('','MISCELLANEOUS');pick('extra').forEach(function(r){L.push('- '+r.name+(r.qty?' x '+r.qty:''));});}
-  if(pick('std').length) L.push('','TUBE, BOARDS AND FITTINGS',pick('std').length===ALLSTD.length?'All sizes':pick('std').map(function(r){return r.name;}).join(', '));
-  if(houseText(p)||p.w) L.push('','THE PROPERTY',[houseText(p),p.w?sizeText(p):''].filter(Boolean).join(' · '));
+  if(houseText(p)||p.w) L.push('','THE PROPERTY',[houseText(p),p.w?sizeText(p):'',p.w?highText(p):''].filter(Boolean).join(' · '));
   if(p.note) L.push('Good to know: '+p.note);
   if(j.notes) L.push('','FROM '+bossFirst().toUpperCase(),j.notes);
   L.push('','Map: '+(j.lat!=null&&j.lon!=null?'https://maps.google.com/?q='+j.lat+','+j.lon:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(j.address||'')));
@@ -1577,15 +1656,21 @@ function guideTopics(){
   var map=canSat(), boss=bossFirst();
   return {
    boss:[
+    ['Who sees what','Four screens, one for each kind of person.',[
+      '**You** see every job and have control of it: you put jobs on, change them and pick who goes where.',
+      '**The yard** sees the load list and the miscellaneous for each lorry, ticks it off and confirms it is loaded.',
+      '**The charge hand** sees his jobs, checks the load in the morning, and marks the job as it goes.',
+      '**The gang** just see the job: where it is, the house, who they are with.',
+      local()?'To look at any of the four, tap your name at the top right and pick a person.':null],'ul'],
     ['Put a job on','One sheet, then it goes to the yard.',[
       'Tap **Jobs**, then **New job**.',
       'Tap **Erect**, **Alter** or **Strike**. Then tap the day.',
       map?'Type the postcode and tap **Find**. Then type the house number and road.':'Type the address.',
-      map?'A picture from above comes up. Tap the house to mark it and measure it.':null,
+      map?'A picture from above comes up. Tap the house to mark it and measure it. The size goes on the job for the gang to see.':null,
       'Tap the type of house and the storeys. Add a note if the crew need one.',
       'Pick the lorry, the charge hand and the gang from the lists.',
-      'Tap the load: **Full**, **¾**, **Half**, **¼** or **Empty**.',
-      'Under **Miscellaneous**, tap anything this job needs, such as caps or netting. Open a group, such as Beams, to put a number against the rest.',
+      'Under **Load list**, tap the load: **Full**, **¾**, **Half**, **¼** or **Empty**. That is the tube, boards and fittings. Open **Beams** to put a number against any beams.',
+      'Under **Miscellaneous**, tap anything else this job needs, such as caps or netting. Open a group, such as Butts, to put a number against the rest.',
       'Tap **Send to the yard**.']],
     ['Give a gang more than one job in a day','It works for every gang.',[
       'Send the first job as normal.',
@@ -1640,6 +1725,12 @@ function guideTopics(){
       '**Not safe** stays in front of you until it is inspected again.',
       'To see them all: **Calendar**, **Inspections** in the key, then **Standing scaffolds**. **Add a scaffold that’s already up** puts on the ones standing today.',
       'A finished **Strike** job takes the scaffold off the record.']],
+    map?['House sizes','Where the size on a job comes from.',[
+      'On the job sheet, tap the house on the picture. The app measures its outline: the width, the depth and the distance all the way round.',
+      'Without a key, the outline comes from a public map, so use the size as a guide.',
+      'With the firm’s Ordnance Survey key, the outline, the number of floors and the height to the eaves come from Ordnance Survey’s record of the building.',
+      'The key goes in **Set-up**, under **Address finder**, in the box marked **House sizes from Ordnance Survey**. **Test** checks it.',
+      'The size is kept on file for the address, so it is there the next time you go back.'],'ul']:null,
     ['Staff and lorries','In Set-up.',[
       'Tap **Set-up**.',
       'Type a name and tap **Add** to put someone on the staff list. Tap **Yard** next to whoever loads the lorries.',
@@ -1652,9 +1743,9 @@ function guideTopics(){
    yard:[
     ['Load a lorry','Tick the sheet, then confirm.',[
       'Open the app. Every job that needs loading is on the **Loads** screen.',
-      'Tap a job. Miscellaneous items are at the top of the load sheet, then the tube, boards and fittings.',
+      'Tap a job. The load list comes first: any beams, then the tube, boards and fittings. Miscellaneous is underneath.',
       'Tap an item once when it’s on the lorry. Tap it again if it’s missing.',
-      '**Tick all of these** ticks the tube, boards and fittings in one go.',
+      '**Tick tube, boards and fittings** ticks those in one go. Beams and miscellaneous items are ticked one by one.',
       'Tap **Confirm loaded**. '+boss+' and the charge hand can see it straight away.']],
     ['Alerts','What you get told.',[
       'Tap **Alerts**. The red number is how many are new. Tap an alert to open the load.',
@@ -1710,7 +1801,7 @@ function guideTopics(){
 }
 function guideHtml(){
   var T=guideTopics(), boss=isBoss(), n=0, groups;
-  if(boss) groups=[['Your part',T.boss.concat([T.cal])],['What the yard does',T.yard],['What the charge hand and the gang do',T.ch],['What everyone can do',T.all]];
+  if(boss) groups=[['Your part',T.boss.concat([T.cal]).filter(Boolean)],['What the yard does',T.yard],['What the charge hand and the gang do',T.ch],['What everyone can do',T.all]];
   else groups=[['Your part',isYard()?T.yard:T.ch],['Everyone',T.all.concat([T.cal])]];
   var h='<section class="card"><div><h1 class="h1 gd-h">How to use '+esc(APP)+'</h1><p class="sub">Short steps for each thing you do. Tap one to open it.</p></div>'+(boss&&!S.demo?'<button class="btn soft sm" data-a="demo" style="align-self:flex-start">'+IC.play+'Watch a job go through</button>':'')+'</section>';
   groups.forEach(function(g){
@@ -1752,7 +1843,7 @@ function jobAlerts(old,nw){ // a job put on (no old), changed, or taken off (no 
   var out=[], yard=yardIds(), when=function(j){return fshort(j.date);};
   var chMsg=function(j){var g=(j.crew||[]).filter(function(x){return x!==j.ch;}).map(firstOf);return when(j)+': '+j.address+'. Lorry '+vehOf(j)+(g.length?', with '+andList(g):'')+'.';};
   var gangMsg=function(j){return when(j)+': '+j.address+'. '+firstOf(j.ch)+' is charge hand, lorry '+vehOf(j)+'.';};
-  var loadMsg=function(j){var n=Object.keys(exOf(j)).length;return vehOf(j)+' for '+when(j)+': '+j.address+'. '+(LOADNAME[j.load]||'')+(n?', '+plural(n,'miscellaneous item'):'')+'.';};
+  var loadMsg=function(j){var e=exOf(j),nb=0,n=0;Object.keys(e).forEach(function(k){if(BEAMID[k])nb+=e[k];else n++;});return vehOf(j)+' for '+when(j)+': '+j.address+'. '+(LOADNAME[j.load]||'')+(nb?', '+plural(nb,'beam'):'')+(n?', '+plural(n,'miscellaneous item'):'')+'.';};
   var sig=loadSig;
   if(!old&&nw){
     out.push({to:nw.ch,k:'job',t:'You’re charge hand',m:chMsg(nw),job:nw.id});
@@ -1964,7 +2055,7 @@ setInterval(clockAlerts,60000);
 /* ---------- job sheet form ---------- */
 var DAYL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],load:'full',std:ALLSTD.slice(),stdOpen:false,extra:{},open:{},notes:'',err:''};}
-function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),load:j.load||'full',std:(j.std||[]).slice(),stdOpen:false,extra:exOf(j),open:{},notes:j.notes||'',err:''};}
+function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),load:j.load||'full',std:stdOf(j),stdOpen:false,extra:exOf(j),open:{},notes:j.notes||'',err:''};}
 function staffOpt(id,f,sel){
   var off=offOn(id,f.date), busy=jobsOn(id,f.date,f.id), out=!!wkDay(f.date)&&!wkPicked(f.date,id)&&S.bosses.indexOf(id)<0;
   return '<option value="'+esc(id)+'"'+(sel?' selected':'')+((off||out)&&!sel?' disabled':'')+'>'+esc(nameOf(id)+(off?' (off: '+(off.reason||'time off').toLowerCase()+')':(out?' (not picked for '+DAYL[pdate(f.date).getDay()]+')':(busy.length?' ('+plural(busy.length,'job')+' that day)':''))))+'</option>';
@@ -1993,18 +2084,20 @@ function formHtml(f){
   var left=staff.filter(function(id){return id!==f.ch&&f.gang.indexOf(id)<0;});
   h+='<div class="fld"><label for="f-gang">Gang</label>'+(f.gang.length?'<div class="chips">'+f.gang.map(function(id){return '<button type="button" class="chip" data-a="gangrm" data-id="'+esc(id)+'" aria-label="Take '+esc(nameOf(id))+' off">'+esc(nameOf(id))+'<span class="x" aria-hidden="true">×</span></button>';}).join('')+'</div>':'')+
     (left.length?'<select id="f-gang" class="in" data-c="gang"><option value="">'+(f.gang.length?'Add someone else':'Add someone to the gang')+'</option>'+left.map(function(id){return staffOpt(id,f,false);}).join('')+'</select>':'')+'</div></section>';
-  h+='<section class="card"><span class="lab">Load</span><div class="seg">'+LOADS.map(function(x){return '<button type="button" data-a="load" data-v="'+x[0]+'" aria-pressed="'+(f.load===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>';
+  var stepRow=function(x){var q=f.extra[x[0]]||0;
+    return '<div class="st'+(q?' has':'')+'"><span class="st-n">'+esc(x[1])+'</span><div class="st-c"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="-1" aria-label="One fewer '+esc(x[1])+'">−</button><input id="x-'+x[0]+'" type="number" inputmode="numeric" min="0" max="999" data-x="'+x[0]+'" value="'+(q||'')+'" placeholder="0" aria-label="'+esc(x[1])+'"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="1" aria-label="One more '+esc(x[1])+'">+</button></div></div>';};
+  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Load list</b><div class="small muted">Tube, boards, fittings and beams.</div></div></div><div class="ld"><div class="seg">'+LOADS.map(function(x){return '<button type="button" data-a="load" data-v="'+x[0]+'" aria-pressed="'+(f.load===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>';
   if(f.load!=='empty'){
     var n=f.std.length;
     h+='<div class="card-h"><span class="hint">'+(n===ALLSTD.length?'All tube, boards and fittings.':(n?n+' of '+ALLSTD.length+' tube, board and fitting sizes.':'No tube, boards or fittings.'))+'</span><button type="button" class="link small" data-a="stdopen">'+(f.stdOpen?'Done':'Change')+'</button></div>';
     if(f.stdOpen) h+=STD.map(function(g){return '<div class="fld"><span class="fl">'+g[0]+'</span><div class="chips">'+g[1].map(function(x){return '<button type="button" class="chip" data-a="std" data-i="'+x[0]+'" aria-pressed="'+(f.std.indexOf(x[0])>=0)+'">'+x[1]+'</button>';}).join('')+'</div></div>';}).join('');
-  }else h+='<span class="hint">Nothing from the racks. Only what you add below.</span>';
-  h+='</section>';
-  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Miscellaneous</b><div class="small muted">Everything that isn’t tube, boards or fittings. Tap what this job needs. Open a group to put a number against the rest.</div></div></div>'+
+  }else h+='<span class="hint">No tube, boards or fittings. Only the beams and miscellaneous you add.</span>';
+  var nb=BEAMS.filter(function(x){return f.extra[x[0]]>0;}).length;
+  h+='</div><details class="grp" data-g="Beams"'+(f.open.Beams?' open':'')+'><summary>Beams'+(nb?'<span class="grp-n">'+nb+'</span>':'')+'</summary>'+BEAMS.map(stepRow).join('')+'</details></section>';
+  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Miscellaneous</b><div class="small muted">Everything that isn’t on the load list. Tap what this job needs. Open a group to put a number against the rest.</div></div></div>'+
     '<div class="chips mx" role="group" aria-label="Tap what this job needs">'+TICKS.map(function(x){return '<button type="button" class="chip" data-a="xtick" data-i="'+x[0]+'" aria-pressed="'+(f.extra[x[0]]>0)+'">'+esc(x[1])+'</button>';}).join('')+'</div>'+EXTRA.map(function(g){
     var c=g[1].filter(function(x){return f.extra[x[0]]>0;}).length;
-    return '<details class="grp" data-g="'+esc(g[0])+'"'+(f.open[g[0]]?' open':'')+'><summary>'+esc(g[0])+(c?'<span class="grp-n">'+c+'</span>':'')+'</summary>'+g[1].map(function(x){var q=f.extra[x[0]]||0;
-      return '<div class="st'+(q?' has':'')+'"><span class="st-n">'+esc(x[1])+'</span><div class="st-c"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="-1" aria-label="One fewer '+esc(x[1])+'">−</button><input id="x-'+x[0]+'" type="number" inputmode="numeric" min="0" max="999" data-x="'+x[0]+'" value="'+(q||'')+'" placeholder="0" aria-label="'+esc(x[1])+'"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="1" aria-label="One more '+esc(x[1])+'">+</button></div></div>';}).join('')+'</details>';}).join('')+'</section>';
+    return '<details class="grp" data-g="'+esc(g[0])+'"'+(f.open[g[0]]?' open':'')+'><summary>'+esc(g[0])+(c?'<span class="grp-n">'+c+'</span>':'')+'</summary>'+g[1].map(stepRow).join('')+'</details>';}).join('')+'</section>';
   h+='<section class="card"><div class="fld"><label for="f-notes">Notes for the yard and crew</label><textarea id="f-notes" class="in" data-f="notes" placeholder="Anything they need to know">'+esc(f.notes)+'</textarea></div></section>';
   LAY='two'; return h+'</div>';
 }
@@ -2014,7 +2107,7 @@ async function saveJob(){
   f.err=!addr?'Put the address in.':(!f.vehicle?'Pick the lorry.':(!f.ch?'Pick the charge hand.':(offs.length?nameOf(offs[0])+' is off that day.':(outs.length?nameOf(outs[0])+' isn’t picked for that '+DAYL[pdate(f.date).getDay()]+'.':''))));
   if(f.err){render(true);return;}
   var extra={}; Object.keys(f.extra).forEach(function(k){if(f.extra[k]>0)extra[k]=f.extra[k];});
-  var p=f.prop, prop={type:p.type||'',storeys:p.storeys||'',note:String(p.note||'').trim(),ring:p.ring||'',w:p.w||0,d:p.d||0,run:p.run||0,area:p.area||0,ax:p.ax||0,front:!!p.front}, pk=placeKey(addr);
+  var p=f.prop, prop={type:p.type||'',storeys:p.storeys||'',note:String(p.note||'').trim(),ring:p.ring||'',w:p.w||0,d:p.d||0,run:p.run||0,area:p.area||0,ax:p.ax||0,front:!!p.front,eaves:p.w?(p.eaves||0):0,top:p.w?(p.top||0):0,src:p.w?(p.src||''):''}, pk=placeKey(addr);
   var seq=jobList().filter(function(o){return o.id!==f.id&&o.date===f.date&&o.ch===f.ch&&String(o.vehicle||'').toUpperCase()===String(f.vehicle).toUpperCase();}).reduce(function(m,o){return Math.max(m,o.seq||0);},0)+1;
   var body={v:2,kind:f.kind||'erect',date:f.date,address:addr,line:String(f.line).trim(),tail:String(f.tail||'').trim(),lat:f.lat,lon:f.lon,exact:!!f.exact,pk:pk,prop:prop,vehicle:f.vehicle,load:f.load,std:f.load==='empty'?[]:f.std.slice(),extra:extra,crew:crew,ch:f.ch,notes:String(f.notes).trim()};
   try{
@@ -2071,7 +2164,7 @@ async function saveOff(){
 
 /* ---------- set-up ---------- */
 function setHtml(){
-  var staff=crewList(), fl=fleet(), k=addrKey(), T=S.addrTest, h='';
+  var staff=crewList(), fl=fleet(), k=addrKey(), ok=osKey(), T=S.addrTest, h='';
   h+='<div class="col"><section class="card flush"><div class="sh-h"><div><b class="t">Staff</b><div class="small muted">Everyone who gets the app. Tick Yard for whoever loads the lorries.</div></div></div><div class="list">'+
     staff.map(function(c){var boss=S.bosses.indexOf(c.id)>=0, linked=!S.standalone&&Array.from(S.people.values()).some(function(p){return p.crewId===c.id;});
       return '<div class="li"><span class="av soft">'+esc(initials(c.name))+'</span><div class="li-t"><b>'+esc(c.name)+'</b><small>'+(boss?'Boss':(c.yard?'Yard':'Staff'))+(!S.standalone?(linked?' · logged on':' · not logged on yet'):'')+'</small></div>'+
@@ -2085,6 +2178,8 @@ function setHtml(){
   h+='</div><div class="col">';
   if(canSat()) h+='<section class="card"><div><b style="font-size:1.08rem">Address finder</b><div class="small muted">'+(k?'Using Royal Mail addresses: every house in a postcode is listed.':'Postcodes are checked, but houses aren’t listed until a Royal Mail address key is added.')+'</div></div>'+
     (k?'<div class="card-h"><span class="tag">Key ending '+esc(k.slice(-4))+'</span>'+(ADDR_KEY_BUILT&&k===ADDR_KEY_BUILT?'':'<button class="link small bad" data-a="keydel">'+(S.confirm==='key'?'Sure?':'Remove')+'</button>')+'</div>':'<form class="rowf" data-form="addrkey"><input id="k-in" class="in" placeholder="Paste the key (starts ak_)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Address key"><button class="btn" type="submit">Save</button></form>')+
+    '<div class="fld"><span class="fl">House sizes from Ordnance Survey</span>'+(ok?'<div class="card-h"><span class="tag">Key ending '+esc(ok.slice(-4))+'</span><button class="link small bad" data-a="oskeydel">'+(S.confirm==='oskey'?'Sure?':'Remove')+'</button></div>':'<form class="rowf" data-form="oskey"><input id="ok-in" class="in" placeholder="Paste the Ordnance Survey key" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Ordnance Survey key"><button class="btn" type="submit">Save</button></form>')+
+      '<span class="hint">'+(ok?'The outline, the floors and the height to the eaves come from Ordnance Survey’s record of each building.':'Without a key, the outline is measured from a public map. With one, the outline, the floors and the height to the eaves come from Ordnance Survey’s record of each building.')+'</span></div>'+
     '<div class="rowf"><input id="t-pc" class="in pc" placeholder="Postcode to test" value="'+esc(T&&T.pc||'')+'" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Postcode to test"><button class="btn line" type="button" data-a="addrtest"'+(T&&T.busy?' disabled':'')+'>'+(T&&T.busy?'Testing…':'Test')+'</button></div>'+
     (T&&T.rows.length?'<div class="at">'+T.rows.map(function(r){return '<p class="'+(r.ok?'y':'n')+'"><b>'+(r.ok?'✓ ':'✗ ')+esc(r.n)+'</b><span>'+esc(r.d)+'</span></p>';}).join('')+'</div>':'')+'</section>';
   if(!S.demo) h+='<section class="card"><div class="card-h"><div><b style="font-size:1.08rem">Demo</b><div class="small muted">Watch one job go all the way through: you, the yard, the charge hand, the gang, then the finish. Nothing in it is saved.</div></div><button class="btn sm" data-a="demo">'+IC.play+'Run it</button></div></section>';
@@ -2102,6 +2197,9 @@ async function addrTest(){
   if(loc&&canSat()){
     var t0=Date.now(), ok=false, nb=0; try{var js=await overpass(mapQuery(loc.latitude,loc.longitude));nb=parseMap(js).blds.length;ok=true;}catch(_){ }
     add(ok&&nb>0,'House outlines for measuring',ok?(nb?nb+' buildings on the map nearby ('+(Date.now()-t0)+'ms)':'The map has no buildings drawn here'):'Couldn’t reach the map service');
+    if(osKey()){try{var o=await osBuildings(loc.latitude,loc.longitude,osKey()), big=o.blds.filter(function(x){return !SMALL[x.tags.building];}), hi=big.filter(function(x){return x.os.eaves>0;}).length, fl=big.filter(function(x){return x.os.floors>0;}).length;
+        add(big.length>0,'Ordnance Survey building records',big.length?big.length+' buildings, '+hi+' with heights, '+fl+' with floors ('+o.ms+'ms)':'No buildings came back for this postcode');}catch(e){add(false,'Ordnance Survey building records',String((e&&e.message)||e));}}
+    else add(false,'Ordnance Survey building records','No key added yet');
     var c=wpx(loc.latitude,loc.longitude,18), im=await new Promise(function(res){var i=new Image(), tm=setTimeout(function(){res(false);},10000);i.onload=function(){clearTimeout(tm);res(true);};i.onerror=function(){clearTimeout(tm);res(false);};i.src=TILES+'18/'+Math.floor(c[1]/256)+'/'+Math.floor(c[0]/256);});
     add(im,'Picture from above',im?'Loads fine':'Couldn’t load the picture');
   }
@@ -2127,8 +2225,8 @@ async function doUpdate(){
 /* ---------- sheets and the photo viewer ---------- */
 function whoSheet(){
   var me=myCrew();
-  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="See the app as" data-stop="1"><div class="sheet-h"><b>See the app as</b><button class="link" data-a="closesheet">Close</button></div><p class="hint">Pick a person to see exactly what they see on their phone.</p><div>'+
-    crewList().sort(function(a,b){var r=function(c){return S.bosses.indexOf(c.id)>=0?0:(c.yard?1:2);};return r(a)-r(b)||String(a.name).localeCompare(String(b.name));}).map(function(c){return '<button class="pick" data-a="be" data-id="'+esc(c.id)+'" aria-pressed="'+(c.id===me)+'"><span class="av">'+esc(initials(c.name))+'</span><span class="pick-t"><b>'+esc(c.name)+'</b><small>'+roleOf(c.id)+'</small></span>'+(c.id===me?'<span class="pill p-checked">You</span>':'')+'</button>';}).join('')+'</div></div></div>';
+  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="See the app as" data-stop="1"><div class="sheet-h"><b>See the app as</b><button class="link" data-a="closesheet">Close</button></div><p class="hint">There are four screens: the boss, the yard, a charge hand and the gang. Pick a person to see exactly what they see on their phone.</p><div>'+
+    crewList().sort(function(a,b){var r=function(c){return S.bosses.indexOf(c.id)>=0?0:(c.yard?1:2);};return r(a)-r(b)||String(a.name).localeCompare(String(b.name));}).map(function(c){return '<button class="pick" data-a="be" data-id="'+esc(c.id)+'" aria-pressed="'+(c.id===me)+'"><span class="av">'+esc(initials(c.name))+'</span><span class="pick-t"><b>'+esc(c.name)+'</b><small>'+esc(screenOf(c.id))+'</small></span>'+(c.id===me?'<span class="pill p-checked">You</span>':'')+'</button>';}).join('')+'</div></div></div>';
 }
 function extraSheet(s){
   return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="Extra work" data-stop="1"><div class="sheet-h"><b>Extra work</b><button class="link" data-a="closesheet">Close</button></div>'+
@@ -2428,6 +2526,7 @@ var ACT={
   staffdel:async function(b){var id=b.dataset.id;if(!two('st'+id))return;try{await S.db.doc('crew/'+id).update({removed:true});toast('Removed');}catch(e){fail(e);}},
   vandel:async function(b){var id=b.dataset.id;if(!two('vn'+id))return;try{await S.db.doc('vehicles/'+id).update({removed:true});toast('Removed');}catch(e){fail(e);}},
   keydel:function(){if(!two('key'))return;try{localStorage.removeItem('fcs-addr-key');}catch(_){ }toast('Key removed');render(true);},
+  oskeydel:function(){if(!two('oskey'))return;try{localStorage.removeItem('fcs-os-key');}catch(_){ }toast('Key removed');render(true);},
   addrtest:function(){addrTest();},
   checkupdate:function(){checkUpdate(true);},
   doupdate:function(){doUpdate();},
@@ -2436,7 +2535,8 @@ var ACT={
 var FORMS={
   addstaff:async function(){var el=document.getElementById('s-name'),n=(el?el.value:'').trim().replace(/\s+/g,' ');if(!n){toast('Type a name first');return;}if(crewList().some(function(c){return c.name.toLowerCase()===n.toLowerCase();})){toast(n+' is already on the list');return;}try{await S.db.collection('crew').add({name:n,yard:false,at:Date.now()});toast(n+' added');}catch(e){fail(e);}render(true);var e2=document.getElementById('s-name');if(e2)e2.value='';},
   addvan:async function(){var r=document.getElementById('v-reg'),m=document.getElementById('v-name'),reg=(r?r.value:'').trim().toUpperCase().replace(/\s+/g,' '),nm=(m?m.value:'').trim();if(!reg){toast('Type the reg first');return;}if(fleet().some(function(v){return String(v.reg).toUpperCase()===reg;})){toast(reg+' is already on the list');return;}try{await S.db.collection('vehicles').add({reg:reg,name:nm,at:Date.now()});toast(reg+' added');}catch(e){fail(e);}render(true);var r2=document.getElementById('v-reg'),m2=document.getElementById('v-name');if(r2)r2.value='';if(m2)m2.value='';},
-  addrkey:function(){var el=document.getElementById('k-in'),v=(el?el.value:'').trim();if(!/^ak_[A-Za-z0-9_]{6,}$/.test(v)){toast('That doesn’t look like a key. It starts ak_');return;}try{localStorage.setItem('fcs-addr-key',v);}catch(_){toast('Couldn’t save it on this phone');return;}toast('Key saved. Tap Test.');render(true);}
+  addrkey:function(){var el=document.getElementById('k-in'),v=(el?el.value:'').trim();if(!/^ak_[A-Za-z0-9_]{6,}$/.test(v)){toast('That doesn’t look like a key. It starts ak_');return;}try{localStorage.setItem('fcs-addr-key',v);}catch(_){toast('Couldn’t save it on this phone');return;}toast('Key saved. Tap Test.');render(true);},
+  oskey:function(){var el=document.getElementById('ok-in'),v=(el?el.value:'').trim();if(!/^[A-Za-z0-9_\-]{16,80}$/.test(v)){toast('That doesn’t look like an Ordnance Survey key');return;}try{localStorage.setItem('fcs-os-key',v);}catch(_){toast('Couldn’t save it on this phone');return;}toast('Key saved. Tap Test.');render(true);}
 };
 document.addEventListener('click',function(e){
   var sm=e.target.closest('summary'); if(sm){var dt=sm.parentNode;if(dt.classList.contains('fold'))S.open[dt.dataset.o]=!dt.open;return;}
