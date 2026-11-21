@@ -13,6 +13,8 @@ What it does:
 - **The property.** A picture from above with the house outlined and measured, the type of house and storeys, and a note. It is kept on file for the address. Street View, satellite and directions are one tap away.
 - **Calendar.** One calendar with a colour key: jobs, inspections, time off and weekend work. Tap a day to see what is on, who is free and which lorries are free. Staff ask for time off in the app: a week's notice or more goes straight on, less goes to Gerry to approve. Anyone who's off can't be put on a job.
 - **Demo.** Set-up → Demo runs one job all the way through, seen as each person in turn. Nothing in it is saved.
+- **Guide.** The last button along the bottom has short steps for each thing a person does. Each person sees their own part.
+- **Phone and laptop.** On a phone it is one column with buttons along the bottom. On a laptop the menu sits down the left side and the screens use two columns.
 - **Set-up.** The staff list, the lorries list, and the address finder key.
 
 This is the practice version. Everything stays on the phone it's used on, and nothing is shared between phones. Tap the name at the top right to see the app as someone else. **Set-up → Start again from scratch** wipes it.

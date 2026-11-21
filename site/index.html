@@ -411,6 +411,41 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 .at .y{background:var(--go-soft)}
 .at .n{background:var(--bad-soft)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+
+/* the guide */
+.gd + .gd{border-top:1px solid var(--line)}
+.gd ol,.gd ul{margin:0;padding:12px 18px 16px 40px;display:flex;flex-direction:column;gap:9px;font-size:.96rem}
+.gd li::marker{color:var(--ink3);font-weight:700}
+.gd-h{font-size:1.3rem}
+
+/* columns: on a phone the wrappers vanish and everything stacks in one column, as before */
+.col{display:contents}
+.nav.sub,.wide{display:none}
+
+/* laptop: the tabs become a side menu, and a page with two halves sits in two columns */
+@media (min-width:1000px){
+  .bar-in,.coach-in{max-width:none;padding-left:24px;padding-right:24px}
+  .nav,.nav.sub{display:block;top:var(--bar-h,60px);right:auto;width:216px;border-top:0;border-right:1px solid var(--line);padding:14px 10px}
+  .nav-in{max-width:none;margin:0;flex-direction:column;gap:4px;padding:0}
+  .tab{flex:none;flex-direction:row;justify-content:flex-start;gap:12px;min-height:48px;padding:0 14px;border-radius:12px;font-size:.98rem;text-align:left}
+  .tab[aria-current="page"]{background:var(--brand-soft)}
+  .tab[aria-current="page"]::before{display:none}
+  .tab .badge{position:static;margin-left:auto}
+  main{max-width:760px;margin-left:calc(216px + max(0px,(100vw - 216px - 760px)/2));margin-right:0;padding:26px 28px 72px}
+  main.two,main.side{max-width:1180px;margin-left:calc(216px + max(0px,(100vw - 216px - 1180px)/2));display:grid;gap:20px;align-items:start}
+  main.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+  main.side{grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);grid-template-rows:auto 1fr}
+  main.two > .col,main.side > .col{display:flex;flex-direction:column;gap:16px;min-width:0}
+  main.side > .ca{grid-column:1;grid-row:1}
+  main.side > .cb{grid-column:1;grid-row:2}
+  main.side > .cs{grid-column:2;grid-row:1 / span 2}
+  .wide{display:block}
+  main.has-foot{padding-bottom:132px}
+  .foot{left:216px}
+  .scrim{align-items:center;padding:24px}
+  .sheet{max-width:520px;border-radius:20px;max-height:86vh;padding-top:18px}
+  .sheet::before{display:none}
+}
 </style>
 </head>
 <body>
@@ -421,9 +456,9 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'052e5d8a',at:'21 Nov, 06:28'};
+var FCS_BUILD={v:'58d395ee',at:'21 Nov, 08:07'};
 var ADDR_KEY_BUILT='';
-var COMPANY='First Choice Scaffolding', APP='Load Check', VER='4';
+var COMPANY='First Choice Scaffolding', APP='Load Check', VER='5';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
 var $app=document.getElementById('app'), $toast=document.getElementById('toast');
 
@@ -442,6 +477,7 @@ var LOADNAME={full:'Full load',three:'Three-quarter load',half:'Half load',quart
 var ALLSTD=[]; STD.forEach(function(g){g[1].forEach(function(x){ALLSTD.push(x[0]);});});
 var TYPES=['Detached','Semi','Terraced','Bungalow','Flats','Other'], STOREYS=['1','2','3','4+'];
 var KINDS=[['erect','Erect'],['alter','Alter'],['strike','Strike']], KINDNAME={erect:'Erect',alter:'Alter',strike:'Strike'};
+var LAY='';   // how the page in hand wants laying out on a wide screen: 'two' columns, a 'side' column, or one
 
 var S={phase:'loading',standalone:false,db:null,assets:null,me:null,owner:false,viewAs:null,tab:'jobs',page:null,form:null,sheet:null,lb:null,
   jobs:new Map(),crew:new Map(),people:new Map(),vans:new Map(),off:new Map(),ychk:new Map(),cchk:new Map(),extras:new Map(),photos:new Map(),places:new Map(),scafs:new Map(),insps:new Map(),wkdays:new Map(),wknames:new Map(),bosses:[],got:{},
@@ -499,7 +535,8 @@ var IC={
   flag:SVG+'2"><path d="M5 21V4M5 4.5h12l-2.500 4 2.500 4H5"/></svg>',
   search:SVG+'2"><circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/></svg>',
   play:SVG+'2"><circle cx="12" cy="12" r="9"/><path d="M10 8.5l5.500 3.500-5.500 3.500z"/></svg>',
-  shield:SVG+'1.9"><path d="M12 3l7 3v5.500c0 4.300-3 7.600-7 9.500-4-1.900-7-5.200-7-9.500V6l7-3z"/><path d="M9 12l2.200 2.200L15.200 10"/></svg>'
+  shield:SVG+'1.9"><path d="M12 3l7 3v5.500c0 4.300-3 7.600-7 9.500-4-1.900-7-5.200-7-9.500V6l7-3z"/><path d="M9 12l2.200 2.200L15.200 10"/></svg>',
+  help:SVG+'1.8"><circle cx="12" cy="12" r="9"/><path d="M9.300 9.300a2.800 2.800 0 0 1 5.400 1c0 1.900-2.700 2.300-2.700 4M12 17.400v.100"/></svg>'
 };
 
 /* ---------- people ---------- */
@@ -985,16 +1022,17 @@ function jobsBadge(){
   var c=myCrew(); return jobList().filter(function(j){return j.date>=t0&&j.date<=t1&&j.ch===c&&statusOf(j)!=='done';}).length+inspDue().length;
 }
 function barHtml(){
-  var back=!!S.page, pk=back&&S.page.k, title=back?(pk==='job'?'Job sheet':(pk==='scaf'?'Scaffold record':(S.form&&S.form.id?'Change job':'New job'))):(S.tab==='jobs'?tabName():(S.tab==='cal'?'Calendar':'Set-up')), c=myCrew();
+  var back=!!S.page, pk=back&&S.page.k, title=back?(pk==='job'?'Job sheet':(pk==='scaf'?'Scaffold record':(S.form&&S.form.id?'Change job':'New job'))):(S.tab==='jobs'?tabName():(S.tab==='cal'?'Calendar':(S.tab==='guide'?'Guide':'Set-up'))), c=myCrew();
   var h='<header class="bar"><div class="bar-in">'+(back?'<button class="bar-back" data-a="back" aria-label="Back">'+IC.back+'</button>':'<img class="bar-logo" src="'+LOGO+'" alt="">');
   h+='<div class="bar-t"><small>'+esc(COMPANY)+'</small><b>'+esc(title)+'</b></div>';
   if(!back&&c) h+=S.standalone&&!S.demo?'<button class="who" data-a="who" aria-label="Viewing as '+esc(nameOf(c))+'. Change person"><span class="av">'+esc(initials(nameOf(c)))+'</span><span>'+esc(firstOf(c))+'</span>'+IC.down+'</button>':'<div class="who plain" title="'+esc(nameOf(c))+'"><span class="av">'+esc(initials(nameOf(c)))+'</span></div>';
   return h+'</div>'+coachHtml()+(S.updateReady&&!S.demo?'<button class="upd" data-a="doupdate">New version ready. Tap to update.</button>':'')+'</header>';
 }
-function navHtml(){
+function navHtml(sub){
   var tabs=[['jobs',tabName(),IC.jobs,jobsBadge()],['cal','Calendar',IC.cal,isBoss()?pendingOff().length:0]];
   if(isBoss()) tabs.push(['set','Set-up',IC.set,0]);
-  return '<nav class="nav"><div class="nav-in">'+tabs.map(function(t){return '<button class="tab" data-a="tab" data-v="'+t[0]+'"'+(S.tab===t[0]?' aria-current="page"':'')+'>'+t[2]+'<span>'+t[1]+'</span>'+(t[3]?'<span class="badge">'+t[3]+'</span>':'')+'</button>';}).join('')+'</div></nav>';
+  tabs.push(['guide','Guide',IC.help,0]);
+  return '<nav class="nav'+(sub?' sub':'')+'" aria-label="Main"><div class="nav-in">'+tabs.map(function(t){return '<button class="tab" data-a="tab" data-v="'+t[0]+'"'+(S.tab===t[0]?' aria-current="page"':'')+'>'+t[2]+'<span>'+t[1]+'</span>'+(t[3]?'<span class="badge">'+t[3]+'</span>':'')+'</button>';}).join('')+'</div></nav>';
 }
 
 /* ---------- jobs list ---------- */
@@ -1075,12 +1113,15 @@ function jobListHtml(){
   return h;
 }
 function jobsTab(){
-  var h='';
+  var side, srch='', list;
   if(isBoss()){
-    h+='<button class="btn" data-a="new">'+IC.plus+'New job</button>'+needsHtml();
-    if(jobList().length>=3) h+='<div class="srch">'+IC.search+'<input id="q" class="in" type="text" inputmode="search" placeholder="Find a job by address, lorry or name" value="'+esc(S.q)+'" autocomplete="off" enterkeyhint="search" aria-label="Find a job"></div>'; else S.q='';
-  }else{S.q='';h+=inspCards()+wkCard();}
-  return h+'<div id="joblist" class="sec" style="gap:16px">'+jobListHtml()+'</div>';
+    side=needsHtml();
+    if(jobList().length>=3) srch='<div class="srch">'+IC.search+'<input id="q" class="in" type="text" inputmode="search" placeholder="Find a job by address, lorry or name" value="'+esc(S.q)+'" autocomplete="off" enterkeyhint="search" aria-label="Find a job"></div>'; else S.q='';
+  }else{S.q='';side=inspCards()+wkCard();}
+  list='<div id="joblist" class="sec" style="gap:16px">'+jobListHtml()+'</div>';
+  if(side) LAY='side';
+  if(isBoss()) return '<div class="col ca"><button class="btn" data-a="new">'+IC.plus+'New job</button></div>'+(side?'<div class="col cs"><span class="lab wide">Needs you</span>'+side+'</div>':'')+'<div class="col cb">'+srch+list+'</div>';
+  return (side?'<div class="col cs"><span class="lab wide">For you</span>'+side+'</div>':'')+'<div class="col ca">'+list+'</div>';
 }
 
 /* ---------- one job ---------- */
@@ -1168,7 +1209,7 @@ function scafCard(j){
   return '<section class="card"><div class="card-h"><span class="lab">Scaffold record</span><span class="pill '+(!on?'p-loaded':(due<0||isUnsafe(s)?'p-bad':(due===0?'p-toload':'p-checked')))+'">'+(on?esc(dueWords(s)):'Not inspected by us')+'</span></div><p class="hint">Standing since '+esc(fshort(tsDay(s.upAt)))+'. Inspect it before first use, then every 7 days until it comes down.</p><div class="btns fit">'+(on?'<button class="btn go sm" data-a="inspnew" data-id="'+esc(s.id)+'">Record inspection</button>':'')+'<button class="btn line sm" data-a="scaf" data-id="'+esc(s.id)+'">Open record</button></div></section>';
 }
 function jobPage(j){
-  var stage=stageFor(j), boss=isBoss(), st=statusOf(j), h=nextCard(j)+heroHtml(j), site=siteHtml(j), track=trackHtml(j), pos=runPos(j), id=esc(j.id);
+  var stage=stageFor(j), boss=isBoss(), st=statusOf(j), h='<div class="col">'+nextCard(j)+heroHtml(j)+'</div><div class="col">', site=siteHtml(j), track=trackHtml(j), pos=runPos(j), id=esc(j.id);
   if(stage) h+=sheetHtml(j,stage)+track+site;
   else if(boss&&!isCh(j)) h+=track+site+scafCard(j)+sheetFold(j);
   else if(st==='out'||st==='done') h+=site+scafCard(j)+track+sheetFold(j);
@@ -1176,7 +1217,7 @@ function jobPage(j){
   h+=historyHtml(j);
   if(boss&&!S.demo) h+='<button class="btn soft sm" data-a="another" data-id="'+id+'" style="width:100%">'+IC.plus+'Add another job for this gang</button>'+(pos.n>1?'<div class="btns"><button class="btn line sm" data-a="seqmove" data-d="-1" data-id="'+id+'"'+(pos.i===0?' disabled':'')+'>Do it earlier</button><button class="btn line sm" data-a="seqmove" data-d="1" data-id="'+id+'"'+(pos.i===pos.n-1?' disabled':'')+'>Do it later</button></div>':'');
   if(boss) h+='<button class="btn soft sm" data-a="share" data-id="'+esc(j.id)+'" style="width:100%">'+IC.send+'Send this job as a message</button><div class="btns"><button class="btn line sm" data-a="edit" data-id="'+esc(j.id)+'">Change job</button><button class="btn danger sm" data-a="del" data-id="'+esc(j.id)+'">'+(S.confirm==='del'+j.id?'Tap again to delete':'Delete job')+'</button></div>';
-  return h;
+  LAY='two'; return h+'</div>';
 }
 function shareText(j){ // the whole job as plain words, for WhatsApp or a text
   var rows=rowsOf(j), gang=(j.crew||[]).filter(function(x){return x!==j.ch;}), p=j.prop||{}, pick=function(k){return rows.filter(function(r){return r.sec===k;});};
@@ -1270,7 +1311,7 @@ function calHtml(){
   var me=myCrew(), boss=isBoss(), t0=today(0), m=S.month||t0.slice(0,7), y=+m.slice(0,4), mo=+m.slice(5,7)-1, first=new Date(y,mo,1,12), lead=(first.getDay()+6)%7, dim=new Date(y,mo+1,0).getDate(), cells=Math.ceil((lead+dim)/7)*7, sel=S.day||t0;
   var D=calData(dstr(new Date(y,mo,1-lead,12)),dstr(new Date(y,mo,cells-lead,12))), cats=CATS.filter(function(c){return c[0]!=='insp'||boss||myScafs().length;});
   var mode=cats.some(function(c){return c[0]===S.calMode;})?S.calMode:'all', show=function(k){return mode==='all'||mode===k;}, np=boss?pendingOff().length:0, h='';
-  h+='<div class="keys" role="group" aria-label="What the calendar shows">'+cats.map(function(c){return '<button type="button" class="key" data-a="calmode" data-v="'+c[0]+'" aria-pressed="'+(mode===c[0])+'">'+(c[0]==='all'?'':'<i class="kd '+c[0]+'"></i>')+c[1]+(c[0]==='off'&&np?' ('+np+')':'')+'</button>';}).join('')+'</div>';
+  h+='<div class="col"><div class="keys" role="group" aria-label="What the calendar shows">'+cats.map(function(c){return '<button type="button" class="key" data-a="calmode" data-v="'+c[0]+'" aria-pressed="'+(mode===c[0])+'">'+(c[0]==='all'?'':'<i class="kd '+c[0]+'"></i>')+c[1]+(c[0]==='off'&&np?' ('+np+')':'')+'</button>';}).join('')+'</div>';
   if(mode==='wk'&&boss) h+='<button class="btn" data-a="wknew">'+IC.plus+'Ask for weekend volunteers</button>';   // the main thing to do in a filtered view sits at the top
   if(mode==='off'&&(me||boss)) h+='<button class="btn" data-a="offnew">'+IC.plus+(boss?'Book time off':'Ask for time off')+'</button>';
   if(boss&&show('off')) h+=pendingOff().map(offAsk).join('');
@@ -1288,7 +1329,7 @@ function calHtml(){
     h+='<button class="day'+(d.getMonth()!==mo?' out':'')+(ds===t0?' today':'')+'" data-a="day" data-v="'+ds+'" aria-pressed="'+(ds===sel)+'" aria-label="'+esc(fshort(ds)+(say.length?', '+say.join(', '):''))+'"><span>'+d.getDate()+'</span>'+(mk?'<span class="mks">'+mk+'</span>':'')+'</button>';
   }
   var K={all:[['bad','Red: needs sorting'],['fin','Green: jobs all finished'],['plan','Outline: planned or waiting']],jobs:[['bad','Red: something missing'],['fin','Green: all finished']],insp:[['bad','Red: overdue or not safe'],['plan','Outline: planned ahead']],off:[['plan','Outline: waiting for a yes']]}[mode]||[];
-  h+='</div>'+(K.length?'<div class="cal-k">'+K.map(function(k){return '<span><i class="kd '+k[0]+'"></i>'+k[1]+'</span>';}).join('')+'</div>':'')+'</section>'+dayCard(sel,D,mode);
+  h+='</div>'+(K.length?'<div class="cal-k">'+K.map(function(k){return '<span><i class="kd '+k[0]+'"></i>'+k[1]+'</span>';}).join('')+'</div>':'')+'</section></div><div class="col">'+dayCard(sel,D,mode);
   if(mode==='wk'){
     var days=wkOpenDays().filter(function(w){return w.date!==sel;});
     days.forEach(function(w){h+='<section class="card flush"><div class="sh-h"><div><b class="t">'+esc(fshort(w.date))+'</b><div class="small muted">Weekend work</div></div></div>'+wkBlock(w.date)+'</section>';});
@@ -1303,7 +1344,7 @@ function calHtml(){
   var acts=[];
   if(mode==='all'&&(me||boss)) acts.push('<button class="btn line sm" data-a="offnew">'+IC.plus+(boss?'Book time off':'Ask for time off')+'</button>');
   if(mode==='all'&&boss) acts.push('<button class="btn line sm" data-a="wknew">'+IC.plus+'Ask for weekend volunteers</button>');
-  return h+(acts.length?'<div class="btns fit">'+acts.join('')+'</div>':'');
+  LAY='two'; return h+(acts.length?'<div class="btns fit">'+acts.join('')+'</div>':'')+'</div>';
 }
 
 /* ---------- one standing scaffold: its details and its inspection record ---------- */
@@ -1327,7 +1368,7 @@ function inspText(i){ // one inspection as plain words, with the details the reg
 }
 function scafPage(s){
   var boss=isBoss(), up=!s.downAt, on=s.inspect!==false, list=inspOf(s.id), last=lastInsp(s), id=esc(s.id), staff=crewList().filter(function(c){return !c.yard;}), jobs=jobList().filter(function(j){return (j.pk||placeKey(j.address))===s.id;}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,8);
-  var h='<section class="card"><div class="card-h"><span class="lab">'+(up?'Standing since '+esc(fshort(tsDay(s.upAt))):'Came down '+esc(fshort(tsDay(s.downAt))))+'</span>'+(up?scafPill(s):'<span class="pill p-loaded">Down</span>')+'</div><h2 class="hero-a">'+esc(s.address)+'</h2>'+
+  var h='<div class="col"><section class="card"><div class="card-h"><span class="lab">'+(up?'Standing since '+esc(fshort(tsDay(s.upAt))):'Came down '+esc(fshort(tsDay(s.downAt))))+'</span>'+(up?scafPill(s):'<span class="pill p-loaded">Down</span>')+'</div><h2 class="hero-a">'+esc(s.address)+'</h2>'+
     (up&&last&&last.result==='bad'?'<div class="note bad"><b>Not safe to use</b>'+esc(last.found||'Defects found')+(last.todo?'. Still to do: '+esc(last.todo):'')+'</div>':'')+
     (up&&s.paperAt&&!last?'<p class="hint">Last inspected '+esc(fshort(s.paperAt))+', before it was put in the app.</p>':'')+
     (up&&on?'<p class="sub">'+(isUnsafe(s)?'Inspect it again once it’s put right, and record it here. Until then it shows as not safe.':esc(dueWords(s))+'. Inspect before first use, then every 7 days until it comes down, and again after bad weather or an alteration.')+'</p>':'')+actsHtml(s,true)+
@@ -1337,10 +1378,10 @@ function scafPage(s){
     '<div class="fld"><label for="sc-cust">Who it is inspected for</label><input id="sc-cust" class="in" data-sc="customer" data-id="'+id+'" value="'+esc(s.customer||'')+'" placeholder="Customer’s name and address" autocomplete="off"></div>'+
     '<div class="fld"><label for="sc-desc">What the scaffold is</label><input id="sc-desc" class="in" data-sc="desc" data-id="'+id+'" value="'+esc(s.desc||'')+'" placeholder="e.g. Front and side, three lifts" autocomplete="off"></div>';
   else h+='<dl class="kv"><dt>Inspector</dt><dd>'+esc(s.inspector?nameOf(s.inspector):'Nobody yet')+'</dd>'+(s.customer?'<dt>For</dt><dd>'+esc(s.customer)+'</dd>':'')+(s.desc?'<dt>Scaffold</dt><dd>'+esc(s.desc)+'</dd>':'')+'</dl>';
-  h+='</section><section class="card flush"><div class="sh-h"><div><b class="t">Inspection record</b><div class="small muted">'+(list.length?plural(list.length,'inspection')+', newest first.':'Nothing recorded yet.')+'</div></div></div>'+list.map(inspRow).join('')+'</section>';
+  h+='</section></div><div class="col"><section class="card flush"><div class="sh-h"><div><b class="t">Inspection record</b><div class="small muted">'+(list.length?plural(list.length,'inspection')+', newest first.':'Nothing recorded yet.')+'</div></div></div>'+list.map(inspRow).join('')+'</section>';
   if(jobs.length) h+='<section class="card flush"><div class="sh-h"><b class="t">Jobs at this address</b></div><div class="list">'+jobs.map(function(j){return '<button class="li" data-a="open" data-id="'+esc(j.id)+'"><div class="li-t"><b>'+esc(fshort(j.date))+'</b><small>'+esc([j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]:'',crewLine(j)].filter(Boolean).join(' · '))+'</small></div>'+pillOf(j)+'</button>';}).join('')+'</div></section>';
   if(boss&&up) h+='<div class="btns fit"><button class="btn line sm" data-a="scafins" data-id="'+id+'">'+(on?'Not ours to inspect':'It is ours to inspect')+'</button><button class="btn danger sm" data-a="scafdown" data-id="'+id+'">'+(S.confirm==='down'+s.id?'Tap again: it’s down':'Scaffold is down')+'</button></div>';
-  return h;
+  LAY='two'; return h+'</div>';
 }
 function scafSheet(s){
   var staff=crewList().filter(function(c){return !c.yard;}), t0=today(0);
@@ -1452,6 +1493,127 @@ async function demoAuto(){ // "Do it for me": carry out the step exactly as that
   S.busy='';
 }
 
+/* ---------- the guide: short steps for whoever is holding the phone ---------- */
+function gb(s){return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>');}
+function guideTopics(){
+  var map=canSat(), boss=bossFirst();
+  return {
+   boss:[
+    ['Put a job on','One sheet, then it goes to the yard.',[
+      'Tap **Jobs**, then **New job**.',
+      'Tap **Erect**, **Alter** or **Strike**. Then tap the day.',
+      map?'Type the postcode and tap **Find**. Then type the house number and road.':'Type the address.',
+      map?'A picture from above comes up. Tap the house to mark it and measure it.':null,
+      'Tap the type of house and the storeys. Add a note if the crew need one.',
+      'Pick the lorry, the charge hand and the gang from the lists.',
+      'Tap the load: **Full**, **¾**, **Half**, **¼** or **Empty**.',
+      'Under **Forgotten items**, open a group and put a number against anything this job needs.',
+      'Tap **Send to the yard**.']],
+    ['Give a gang more than one job in a day','It works for every gang.',[
+      'Send the first job as normal.',
+      'On the sheet that comes up, tap **Add another job for this gang**.',
+      'The day, lorry, charge hand and gang are filled in. Put the next address in and tap **Send to the yard**.',
+      'Do the same for a third or a fourth. Tap **Done** when the gang’s day is full.',
+      'On the Jobs screen the gang’s jobs sit together, numbered 1 of 3, 2 of 3, 3 of 3. **Add a job** on that line adds one more.',
+      'To change the order, open a job and tap **Do it earlier** or **Do it later**.']],
+    ['See where every job has got to','The tag on each job tells you.',[
+      '**To load**: sent to the yard, not loaded yet.',
+      '**Loaded**: the yard has confirmed the load.',
+      '**Checked**: the charge hand has checked it.',
+      '**Left 07:12**: the lorry has left the yard, with the time.',
+      '**Finished**: the job is done and the photos are in.',
+      'A red **missing** tag: something isn’t on the lorry.',
+      'Cards at the top of the Jobs screen are things that need you: items missing, extra work to charge, time off, weekend names and inspections.',
+      'Open a job to see who did each step and when, and the finish photos.'],'ul'],
+    ['Weekend work','You ask, they put their names down, you pick.',[
+      'Tap **Calendar**, then **Weekend work** in the key at the top.',
+      'Tap **Ask for weekend volunteers**. Pick the weekend, and Saturday, Sunday or both.',
+      'Staff get a card on their jobs screen and tap **Put my name down**.',
+      'A card on your Jobs screen shows how many names are down. Tap it.',
+      'Tap **Pick** next to each man you want. That is your crew list for the day.',
+      'Only the men you pick can be put on a job that day. **Call this day off** cancels it.']],
+    ['Time off','A week’s notice goes straight on. Less comes to you.',[
+      'Staff ask in the app. A week’s notice or more goes straight on the calendar.',
+      'Short notice comes to you as a card. Tap **Approve** or **Say no**.',
+      'To book it yourself: **Calendar**, **Time off** in the key, then **Book time off**.',
+      'Anyone who is off can’t be picked for a job on those days.'],'ul'],
+    ['Scaffold inspections','Every standing scaffold, and when it is due.',[
+      'When an **Erect** job is finished, the scaffold goes on the record by itself.',
+      'An inspection is due the day it goes up, then 7 days after each one.',
+      'You and the inspector get an **Inspection due** card. Tap **Record inspection**.',
+      'Tap **Safe to use** or **Not safe**, type what was found, add photos, and save.',
+      '**Not safe** stays in front of you until it is inspected again.',
+      'To see them all: **Calendar**, **Inspections** in the key, then **Standing scaffolds**. **Add a scaffold that’s already up** puts on the ones standing today.',
+      'A finished **Strike** job takes the scaffold off the record.']],
+    ['Staff and lorries','In Set-up.',[
+      'Tap **Set-up**.',
+      'Type a name and tap **Add** to put someone on the staff list. Tap **Yard** next to whoever loads the lorries.',
+      'Type a reg and tap **Add** to put a lorry on.',
+      '**Remove** takes a person or a lorry off. Their old jobs stay.']],
+    ['Watch it work first','The demo. Nothing in it is saved.',[
+      'Tap **Set-up**, then **Run it** next to Demo.',
+      'A yellow strip takes you through one job as each person: you, the yard, the charge hand, the gang, then the finish.',
+      'One button does each step for you. **End demo** stops it.']]],
+   yard:[
+    ['Load a lorry','Tick the sheet, then confirm.',[
+      'Open the app. Every job that needs loading is on the **Loads** screen.',
+      'Tap a job. Forgotten items are at the top of the load sheet.',
+      'Tap an item once when it’s on the lorry. Tap it again if it’s missing.',
+      '**Tick all of these** ticks the tube, boards and fittings in one go.',
+      'Tap **Confirm loaded**. '+boss+' and the charge hand can see it straight away.']]],
+   ch:[
+    ['Check the load and leave the yard','In the morning.',[
+      'Open your job. You can see the house, its size, **Street View** and **Directions**.',
+      'Tick the load sheet. Tap once when it’s on. Tap again if it’s missing.',
+      'Tap **Confirm checked**.',
+      'Tap **Leaving the yard** as you pull out. It saves the time for '+boss+'.',
+      'Got more than one job? One tap covers all your checked jobs.']],
+    ['On the job','Photos, extra work, finished.',[
+      'Tap **Add** next to **Finish photos** and take them.',
+      'If you did anything on top of the job, tap **Add** next to **Extra work**. Type what was done and who asked for it.',
+      'Tap **Job finished**. You need at least one finish photo first.',
+      'If you have another job, a **Next job** card takes you to it.']],
+    ['Inspect a scaffold','When a card says one is due.',[
+      'Tap **Record inspection** on the card.',
+      'Tap **Safe to use** or **Not safe**.',
+      'Type anything you found, what you did about it, and anything still to do.',
+      'Type your position the first time. Add photos if you want.',
+      'Tap **Save the inspection**.']],
+    ['If you are in the gang','You can look but not change.',[
+      'You see your jobs, the house and the photos.',
+      'Only the charge hand ticks the load and confirms.'],'ul']],
+   all:[
+    ['Weekend work: put your name down','When '+boss+' asks.',[
+      'A **Weekend work is going** card comes up on your jobs screen.',
+      'Tap **Put my name down** for each day you want.',
+      boss+' picks who he wants. Your card then says “You’re working”.',
+      'Changed your mind? Tap **Take my name off**. Don’t want it? Tap **Not for me**.']],
+    ['Ask for time off','From your own phone.',[
+      'Tap **Calendar**, then **Time off** in the key at the top.',
+      'Tap **Ask for time off**. Pick the first and last day.',
+      'A week’s notice or more goes straight on. Less goes to '+boss+' to say yes or no.']]],
+   cal:['The calendar and its colours','The key along the top says what each colour is.',[
+      '**Jobs** are dark blue, with the number of jobs. Green means every job that day is finished. Red means something is missing.',
+      '**Inspections** are blue-green squares. Red means overdue or not safe.',
+      '**Time off** is a purple circle. **Weekend work** is an orange square with a W.',
+      'Tap a key to show just that kind. Tap **All** for everything.',
+      'Tap a day to see what is on it.'],'ul']
+  };
+}
+function guideHtml(){
+  var T=guideTopics(), boss=isBoss(), n=0, groups;
+  if(boss) groups=[['Your part',T.boss.concat([T.cal])],['What the yard does',T.yard],['What the charge hand and the gang do',T.ch],['What everyone can do',T.all]];
+  else groups=[['Your part',isYard()?T.yard:T.ch],['Everyone',T.all.concat([T.cal])]];
+  var h='<section class="card"><div><h1 class="h1 gd-h">How to use '+esc(APP)+'</h1><p class="sub">Short steps for each thing you do. Tap one to open it.</p></div>'+(boss&&!S.demo?'<button class="btn soft sm" data-a="demo" style="align-self:flex-start">'+IC.play+'Watch a job go through</button>':'')+'</section>';
+  groups.forEach(function(g){
+    h+='<div class="sec"><span class="lab">'+esc(g[0])+'</span><section class="card flush">'+g[1].map(function(t){
+      var k='g-'+(boss?'b':(isYard()?'y':'s'))+(n++), tag=t[3]==='ul'?'ul':'ol';
+      return '<details class="fold gd" data-o="'+k+'"'+(S.open[k]?' open':'')+'><summary><span><b>'+esc(t[0])+'</b><small>'+esc(t[1])+'</small></span></summary><'+tag+'>'+t[2].filter(Boolean).map(function(s){return '<li>'+gb(s)+'</li>';}).join('')+'</'+tag+'></details>';
+    }).join('')+'</section></div>';
+  });
+  return h;
+}
+
 /* ---------- job sheet form ---------- */
 var DAYL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
 function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],load:'full',std:ALLSTD.slice(),stdOpen:false,extra:{},open:{},notes:'',err:''};}
@@ -1462,7 +1624,7 @@ function staffOpt(id,f,sel){
 }
 function formHtml(f){
   var r=f.pcRes, staff=crewList().filter(function(c){return !c.yard;}).map(function(c){return c.id;}), fl=fleet(), h='';
-  h+='<section class="card"><span class="lab">What and when</span><div class="seg" role="group" aria-label="Type of job">'+KINDS.map(function(x){return '<button type="button" data-a="kind" data-v="'+x[0]+'" aria-pressed="'+(f.kind===x[0])+'">'+x[1]+'</button>';}).join('')+'</div><div class="seg" role="group" aria-label="Which day">'+[['today','Today'],['tom','Tomorrow'],['pick','Other day']].map(function(x){return '<button type="button" data-a="dmode" data-v="'+x[0]+'" aria-pressed="'+(f.dmode===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
+  h+='<div class="col"><section class="card"><span class="lab">What and when</span><div class="seg" role="group" aria-label="Type of job">'+KINDS.map(function(x){return '<button type="button" data-a="kind" data-v="'+x[0]+'" aria-pressed="'+(f.kind===x[0])+'">'+x[1]+'</button>';}).join('')+'</div><div class="seg" role="group" aria-label="Which day">'+[['today','Today'],['tom','Tomorrow'],['pick','Other day']].map(function(x){return '<button type="button" data-a="dmode" data-v="'+x[0]+'" aria-pressed="'+(f.dmode===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
     (f.dmode==='pick'?'<input id="f-date" class="in" type="date" data-c="date" value="'+esc(f.date)+'" min="'+today(0)+'" aria-label="Date">':'<span class="hint">'+esc(fshort(f.date))+'</span>')+'</section>';
   h+='<section class="card"><span class="lab">Where</span>';
   if(canSat()) h+='<div class="fld"><label for="f-pc">Postcode</label><div class="rowf"><input id="f-pc" class="in pc" data-f="pc" value="'+esc(f.pc)+'" placeholder="e.g. SS6 7AA" autocomplete="off" autocapitalize="characters" spellcheck="false" enterkeyhint="search"><button type="button" class="btn" data-a="findpc"'+(r&&r.busy?' disabled':'')+'>'+(r&&r.busy?'Finding…':'Find')+'</button></div></div>';
@@ -1474,7 +1636,7 @@ function formHtml(f){
   }
   h+='<div class="fld"><label for="f-line">'+(f.tail?'House number and road':'Address')+'</label><input id="f-line" class="in" data-f="line" value="'+esc(f.line)+'" placeholder="'+(f.tail?'e.g. 14 Station Road':(canSat()?'House number, road and town':'House number, road, town and postcode'))+'" autocomplete="off" spellcheck="false"><div id="sugg" class="addr-list" hidden></div>'+
     (f.tail?'<div><span class="tag">'+esc(f.tail)+'</span> <button type="button" class="link small" data-a="cleartail">Remove</button></div>':'')+'</div></section>';
-  h+=propHtml(f);
+  h+=propHtml(f)+'</div><div class="col">';
   h+='<section class="card"><span class="lab">Lorry and crew</span><div class="fld"><label for="f-van">Lorry</label>';
   h+=fl.length?'<select id="f-van" class="in" data-c="vehicle"><option value="">Pick a lorry</option>'+fl.map(function(v){var reg=String(v.reg).toUpperCase(),u=vanOn(reg,f.date,f.id);return '<option value="'+esc(reg)+'"'+(reg===String(f.vehicle).toUpperCase()?' selected':'')+'>'+esc(reg+(v.name?' · '+v.name:'')+(u.length?' ('+plural(u.length,'job')+' that day)':''))+'</option>';}).join('')+'</select>':'<p class="hint">No lorries yet. Add them in Set-up.</p>';
   h+='</div><div class="fld"><label for="f-ch">Charge hand</label>'+(staff.length?'<select id="f-ch" class="in" data-c="ch"><option value="">Pick the charge hand</option>'+staff.map(function(id){return staffOpt(id,f,id===f.ch);}).join('')+'</select>':'<p class="hint">No staff yet. Add them in Set-up.</p>')+'</div>';
@@ -1497,7 +1659,7 @@ function formHtml(f){
       return '<div class="st'+(q?' has':'')+'"><span class="st-n">'+esc(x[1])+'</span><div class="st-c"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="-1" aria-label="One fewer '+esc(x[1])+'">−</button><input id="x-'+x[0]+'" type="number" inputmode="numeric" min="0" max="999" data-x="'+x[0]+'" value="'+(q||'')+'" placeholder="0" aria-label="'+esc(x[1])+'"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="1" aria-label="One more '+esc(x[1])+'">+</button></div></div>';}).join('')+'</details>';}).join('')+
     '<p class="tip" style="padding-top:12px">'+ALWAYS.map(function(x){return x[1];}).join(', ')+' are on every load sheet already.</p></section>';
   h+='<section class="card"><div class="fld"><label for="f-notes">Notes for the yard and crew</label><textarea id="f-notes" class="in" data-f="notes" placeholder="Anything they need to know">'+esc(f.notes)+'</textarea></div></section>';
-  return h;
+  LAY='two'; return h+'</div>';
 }
 function formFoot(f){return '<div class="foot"><div class="foot-in">'+(f.err?'<span class="err" role="alert" style="text-align:center">'+esc(f.err)+'</span>':'')+'<button class="btn go" data-a="save">'+IC.send+(f.id?'Save changes':'Send to the yard')+'</button></div></div>';}
 async function saveJob(){
@@ -1558,7 +1720,7 @@ async function saveOff(){
 /* ---------- set-up ---------- */
 function setHtml(){
   var staff=crewList(), fl=fleet(), k=addrKey(), T=S.addrTest, h='';
-  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Staff</b><div class="small muted">Everyone who gets the app. Tick Yard for whoever loads the lorries.</div></div></div><div class="list">'+
+  h+='<div class="col"><section class="card flush"><div class="sh-h"><div><b class="t">Staff</b><div class="small muted">Everyone who gets the app. Tick Yard for whoever loads the lorries.</div></div></div><div class="list">'+
     staff.map(function(c){var boss=S.bosses.indexOf(c.id)>=0, linked=!S.standalone&&Array.from(S.people.values()).some(function(p){return p.crewId===c.id;});
       return '<div class="li"><span class="av soft">'+esc(initials(c.name))+'</span><div class="li-t"><b>'+esc(c.name)+'</b><small>'+(boss?'Boss':(c.yard?'Yard':'Staff'))+(!S.standalone?(linked?' · logged on':' · not logged on yet'):'')+'</small></div>'+
         (boss?'':'<button class="chip" data-a="yard" data-id="'+esc(c.id)+'" aria-pressed="'+!!c.yard+'">Yard</button>')+
@@ -1568,6 +1730,7 @@ function setHtml(){
   h+='<section class="card flush"><div class="sh-h"><div><b class="t">Lorries</b><div class="small muted">Add each one once, then pick it on the job sheet.</div></div></div>'+(fl.length?'<div class="list">'+
     fl.map(function(v){return '<div class="li"><span class="plate">'+esc(String(v.reg).toUpperCase())+'</span><div class="li-t"><small>'+esc(v.name||'')+'</small></div><button class="link small bad" data-a="vandel" data-id="'+esc(v.id)+'">'+(S.confirm==='vn'+v.id?'Sure?':'Remove')+'</button></div>';}).join('')+'</div>':'')+
     '<form class="rowf" data-form="addvan" style="padding:12px 16px 16px;border-top:1px solid var(--line)"><input id="v-reg" class="in pc" placeholder="Reg" autocomplete="off" autocapitalize="characters" maxlength="10" aria-label="Reg" style="flex:0 1 110px"><input id="v-name" class="in" placeholder="Name (optional)" autocomplete="off" maxlength="24" aria-label="Name"><button class="btn" type="submit">Add</button></form></section>';
+  h+='</div><div class="col">';
   if(canSat()) h+='<section class="card"><div><b style="font-size:1.08rem">Address finder</b><div class="small muted">'+(k?'Using Royal Mail addresses: every house in a postcode is listed.':'Postcodes are checked, but houses aren’t listed until a Royal Mail address key is added.')+'</div></div>'+
     (k?'<div class="card-h"><span class="tag">Key ending '+esc(k.slice(-4))+'</span>'+(ADDR_KEY_BUILT&&k===ADDR_KEY_BUILT?'':'<button class="link small bad" data-a="keydel">'+(S.confirm==='key'?'Sure?':'Remove')+'</button>')+'</div>':'<form class="rowf" data-form="addrkey"><input id="k-in" class="in" placeholder="Paste the key (starts ak_)" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" aria-label="Address key"><button class="btn" type="submit">Save</button></form>')+
     '<div class="rowf"><input id="t-pc" class="in pc" placeholder="Postcode to test" value="'+esc(T&&T.pc||'')+'" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Postcode to test"><button class="btn line" type="button" data-a="addrtest"'+(T&&T.busy?' disabled':'')+'>'+(T&&T.busy?'Testing…':'Test')+'</button></div>'+
@@ -1575,7 +1738,7 @@ function setHtml(){
   if(!S.demo) h+='<section class="card"><div class="card-h"><div><b style="font-size:1.08rem">Demo</b><div class="small muted">Watch one job go all the way through: you, the yard, the charge hand, the gang, then the finish. Nothing in it is saved.</div></div><button class="btn sm" data-a="demo">'+IC.play+'Run it</button></div></section>';
   h+='<section class="card"><div class="card-h"><div><b>'+esc(APP)+'</b><div class="small muted">Version '+VER+(FCS_BUILD.v!=='dev'?' · '+esc(FCS_BUILD.v):'')+(FCS_BUILD.at?' · '+esc(FCS_BUILD.at):'')+'</div></div>'+(S.standalone?'<button class="btn line sm" data-a="checkupdate">Check for update</button>':'')+'</div>'+
     (S.standalone?'<p class="hint">This is the practice version. Everything, photos included, stays on this phone. Tap your name at the top to see the app as someone else.</p><button class="btn danger sm" data-a="reset" style="width:100%">'+(S.confirm==='reset'?'Tap again to wipe everything':'Start again from scratch')+'</button>':'<p class="hint">Share this app with each member of staff as an Editor. The first time they open it, they tap their name. The picture from above and the house measuring only work in the home-screen version.</p>')+'</section>';
-  return h;
+  LAY='two'; return h+'</div>';
 }
 async function addrTest(){
   var el=document.getElementById('t-pc'), raw=normPc(el&&el.value)||'SS67AA', T=S.addrTest={busy:true,rows:[],pc:fmtPc(raw)}; render(true);
@@ -1701,14 +1864,16 @@ function render(force){
       if(S.page&&S.page.k==='job'&&(!j||j.v!==2)){S.page=null;j=null;}
       if(S.page&&S.page.k==='form'&&!S.form) S.page=null;
       var sc=S.page&&S.page.k==='scaf'?S.scafs.get(S.page.id):null; if(S.page&&S.page.k==='scaf'&&!sc) S.page=null;
-      var k=S.page&&S.page.k, body=k?(k==='job'?jobPage(j):(k==='scaf'?scafPage(sc):formHtml(S.form))):(S.tab==='jobs'?jobsTab():(S.tab==='cal'?calHtml():setHtml()));
-      var foot=k==='job'?jobFoot(j):(k==='form'?formFoot(S.form):'');
-      html=barHtml()+'<main'+(foot?' class="has-foot"':'')+'>'+body+'</main>'+(S.page?foot:navHtml())+sheetOpen()+(S.lb?lbHtml():'');
+      LAY='';
+      var k=S.page&&S.page.k, body=k?(k==='job'?jobPage(j):(k==='scaf'?scafPage(sc):formHtml(S.form))):(S.tab==='jobs'?jobsTab():(S.tab==='cal'?calHtml():(S.tab==='guide'?guideHtml():setHtml())));
+      var foot=k==='job'?jobFoot(j):(k==='form'?formFoot(S.form):''), cls=[foot?'has-foot':'',LAY].filter(Boolean).join(' ');
+      html=barHtml()+'<main'+(cls?' class="'+cls+'"':'')+'>'+body+'</main>'+(S.page?foot:'')+navHtml(!!S.page)+sheetOpen()+(S.lb?lbHtml():'');
     }
   }
   if(S.nav||!$app.firstChild){$app.innerHTML=html;S.nav=false;}
   else{var tmp=document.createElement('template');tmp.innerHTML=html;morphKids($app,tmp.content||tmp);}
   fillThumbs();
+  var bar=$app.querySelector('.bar'); if(bar) document.documentElement.style.setProperty('--bar-h',bar.offsetHeight+'px');   // the side menu on a laptop starts under the top bar, however tall it is
   if(S.standalone) saveLocal();
 }
 function go(page){S.page=page;S.confirm=null;S.jz=null;S.satFail=false;SAT.ZMAX=20;S.lb=null;if(!page||page.id!==S.self)S.self=null;S.nav=true;window.scrollTo(0,0);render(true);}
@@ -1716,7 +1881,7 @@ function dropSheet(){var s=S.sheet;if(s&&s.files)s.files.forEach(function(x){try
 
 /* ---------- actions ---------- */
 var ACT={
-  tab:function(b){S.tab=b.dataset.v;S.confirm=null;S.nav=true;window.scrollTo(0,0);render(true);},
+  tab:function(b){S.tab=b.dataset.v;S.page=null;S.form=null;S.lb=null;S.self=null;S.confirm=null;S.nav=true;window.scrollTo(0,0);render(true);},
   back:function(){if(S.page&&S.page.k==='form'&&S.form&&S.form.id){var id=S.form.id;S.form=null;go({k:'job',id:id});return;}S.form=null;go(null);},
   open:function(b){go({k:'job',id:b.dataset.id});},
   'new':function(){S.form=blankForm();go({k:'form'});},
