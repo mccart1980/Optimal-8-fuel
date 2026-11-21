@@ -538,6 +538,19 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
   .sheet{max-width:520px;border-radius:20px;max-height:86vh;padding-top:18px}
   .sheet::before{display:none}
 }
+
+/* ---------- version 12: the every-job items on the job sheet, the yard's load cards, staff roles in Set-up ---------- */
+.ev{padding:12px 16px 14px;border-top:1px solid var(--line);display:flex;flex-direction:column;gap:10px}
+.ev .st{margin:0 -16px}
+.ev + .grp{border-top:1px solid var(--line)}
+.ld-a{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.ld-a .plate{font-size:1rem;padding:4px 10px}
+.ld-h{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.ld-h .plate{font-size:1.5rem;padding:6px 14px;border-radius:7px}
+.ld-h span:not(.plate){font-size:1rem;font-weight:600;color:var(--ink2);letter-spacing:0}
+.st-r{flex-wrap:wrap}
+.st-b{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+@media (max-width:560px){.st-r .st-b{flex-basis:100%;justify-content:flex-start;padding-left:52px}}
 </style>
 </head>
 <body>
@@ -548,29 +561,31 @@ select.in{appearance:none;background-image:linear-gradient(45deg,transparent 50%
 (function(){
 'use strict';
 var STANDALONE=true;
-var FCS_BUILD={v:'35e2de7d',at:'21 Nov, 17:26'};
+var FCS_BUILD={v:'847c0d4a',at:'21 Nov, 18:21'};
 var ADDR_KEY_BUILT='';
-var COMPANY='First Choice Scaffolding', APP='Load Check', VER='11';
+var COMPANY='First Choice Scaffolding', APP='Load Check', VER='12';
 var LOGO=document.getElementById('sp-logo').getAttribute('src'), T0=Date.now();
 var $app=document.getElementById('app'), $toast=document.getElementById('toast');
 
 /* ---------- what goes on a load ----------
    The size of the load (full, half and so on) tells the yard what tube, boards, fittings, base plates and sole boards to put on. Nobody ticks those one by one.
-   The load list adds what changes from job to job, each with a number: beams, ladders, and boards when the amount is different from usual.
+   The load list also carries the things that go on every job (EVERY), and what changes from job to job, each with a number: beams, and boards when the amount is different from usual.
    Miscellaneous is the things that could be forgotten, so they get ticked off: EXTRA takes a number, TICKS are needed or not. */
 var LOADSAYS='Tube, boards, fittings, base plates and sole boards';
 var LOADX=[['Change the boards',[['bq8','8ft boards'],['bq10','10ft boards'],['bq13','13ft boards']],'Leave these alone and the yard puts on the usual boards for the load. Put a number in only when this job needs a different amount. The yard loads that many in place of the usual.','In place of the usual amount'],
-  ['Beams',[['bm3','3m beams'],['bm4','4m beams'],['bm5','5m beams'],['bm6','6m beams'],['bm8','8m beams']]],
-  ['Ladders',[['ldl','Long ladders'],['lds','Short ladders']]]], LOADID={};
+  ['Beams',[['bm3','3m beams'],['bm4','4m beams'],['bm5','5m beams'],['bm6','6m beams'],['bm8','8m beams']]]], LOADID={};
+// On the load list for every job. A number means it is counted, and that is how many are on to start with.
+var EVERY=[['cap','Caps'],['net','Netting'],['fom','Foam'],['ldl','Long ladders',2],['lds','Short ladders',2],['ldf','Ladder safes'],['gat','Gates'],['trd','Treaders']];
 LOADX.forEach(function(g){g[1].forEach(function(x){LOADID[x[0]]=1;});});
 var EXTRA=[['Butts',[['bt12','1ft butts'],['bt18','18in butts'],['bt24','2ft butts'],['bt36','3ft butts'],['bt48','4ft butts']]],
   ['Beam joiners and pins',[['bmj','Beam joiners'],['bmp','Pins']]],
   ['Stair treads, brackets and jacks',[['str','Stair treads'],['brk','Brackets'],['sjk','Screw jacks']]],
   ['Lifting and rubbish',[['rpw','Rope and wheel'],['cht','Chutes'],['hop','Hoppers'],['chb','Chute brackets']]]];
-var TICKS=[['cap','Caps'],['fbc','Board clips'],['net','Netting'],['fom','Foam'],['gat','Gates'],['ldf','Ladder safes'],['trd','Treaders'],['tie','Tie gear'],['xcb','Excalibur bolts'],['ctt','Cable ties'],['bsh','Short boards']];
-// The kit that goes on every lorry, whatever the job. It starts on the first job sheet for a lorry each day; the gang's later jobs on that lorry don't repeat it.
-var KIT={cap:1,fbc:1,net:1,fom:1,gat:1,ldf:1,trd:1,ldl:2,lds:2};
-var KITSAYS='caps, board clips, netting, foam, gates, ladder safes, treaders, 2 long ladders and 2 short ladders';
+var TICKS=[['fbc','Board clips'],['tie','Tie gear'],['xcb','Excalibur bolts'],['ctt','Cable ties'],['bsh','Short boards']];
+// What a new job sheet starts with: everything in EVERY, and board clips under Miscellaneous.
+var KIT={fbc:1};
+EVERY.forEach(function(x){KIT[x[0]]=x[2]||1;LOADID[x[0]]=1;});
+var KITSAYS='caps, netting, foam, 2 long ladders, 2 short ladders, ladder safes, gates and treaders';
 // words Gerry can tap to say what a job is, instead of typing them
 var QUICK=['Front','Back','Left side','Right side','All round','1 lift','2 lifts','3 lifts','4 lifts','Roof','Chimney','Windows','Loading bay','Bridge'];
 // names of things earlier versions ticked one by one, so an old job's record still reads properly
@@ -582,7 +597,7 @@ var KINDS=[['erect','Erect'],['alter','Alter'],['strike','Strike']], KINDNAME={e
 var LAY='';   // how the page in hand wants laying out on a wide screen: 'two' columns, a 'side' column, or one
 
 var S={phase:'loading',standalone:false,db:null,assets:null,me:null,owner:false,viewAs:null,tab:'jobs',page:null,form:null,sheet:null,lb:null,
-  jobs:new Map(),crew:new Map(),people:new Map(),vans:new Map(),off:new Map(),ychk:new Map(),cchk:new Map(),extras:new Map(),photos:new Map(),places:new Map(),scafs:new Map(),insps:new Map(),wkdays:new Map(),wknames:new Map(),alerts:new Map(),bosses:[],got:{},
+  jobs:new Map(),crew:new Map(),people:new Map(),vans:new Map(),off:new Map(),ychk:new Map(),cchk:new Map(),extras:new Map(),photos:new Map(),places:new Map(),scafs:new Map(),insps:new Map(),wkdays:new Map(),wknames:new Map(),alerts:new Map(),bosses:[],supers:[],got:{},
   world:null,demo:null,net:false,pend:{},month:null,day:null,calMode:'all',calView:'month',week:null,fresh:null,drag:null,over:null,confirm:null,deferred:false,updateReady:null,addrTest:null,earlier:false,q:'',self:null,open:{},jz:null,satFail:false,nav:true,busy:''};
 
 /* ---------- small helpers ---------- */
@@ -654,17 +669,20 @@ function myCrew(){
   if(local()){return S.viewAs&&S.crew.has(S.viewAs)&&!S.crew.get(S.viewAs).removed?S.viewAs:null;}
   var p=S.people.get(S.me), c=p&&p.crewId; return c&&S.crew.has(c)&&!S.crew.get(c).removed?c:null;
 }
-function isBoss(){var c=myCrew();if(c&&S.bosses.indexOf(c)>=0)return true;return !local()&&S.owner&&!S.bosses.some(function(b){return S.crew.has(b)&&!S.crew.get(b).removed;});}
+function isBoss(){return isOwnBoss()||isSup(myCrew());}   // the boss, or a supervisor he has switched on: both see everything
+function isOwnBoss(){var c=myCrew();if(c&&S.bosses.indexOf(c)>=0)return true;return !local()&&S.owner&&!S.bosses.some(function(b){return S.crew.has(b)&&!S.crew.get(b).removed;});}
+function isSup(id){return !!id&&(S.supers||[]).indexOf(id)>=0&&S.bosses.indexOf(id)<0;}
 function isYard(){var c=myCrew(),o=c&&S.crew.get(c);return !!(o&&o.yard);}
 function bossFirst(){for(var i=0;i<S.bosses.length;i++){if(S.crew.has(S.bosses[i])&&!S.crew.get(S.bosses[i]).removed)return firstOf(S.bosses[i]);}return 'the boss';}
-function roleOf(id){var c=S.crew.get(id)||{};return S.bosses.indexOf(id)>=0?'Boss':(c.yard?'Yard':'Staff');}
+function roleOf(id){var c=S.crew.get(id)||{};return S.bosses.indexOf(id)>=0?'Boss':(isSup(id)?'Supervisor':(c.yard?'Yard':'Staff'));}
 function screenOf(id){ // which of the four screens this person gets: the boss, the yard, a charge hand, or one of the gang
   if(S.bosses.indexOf(id)>=0) return 'The boss. Sees everything and has control of it.';
-  if((S.crew.get(id)||{}).yard) return 'The yard. Sees the load list and miscellaneous for each lorry.';
-  var t0=today(0), js=jobList().filter(function(j){return j.date>=t0&&!(j.done&&j.done.at);}), ch=js.filter(function(j){return j.ch===id;}).length, gg=js.filter(function(j){return j.ch!==id&&(j.crew||[]).indexOf(id)>=0;}).length;
-  if(ch) return 'Charge hand on '+plural(ch,'job')+'. Checks the load and sees his jobs.'+(gg?' In the gang on '+plural(gg,'other')+'.':'');
-  if(gg) return 'In the gang on '+plural(gg,'job')+'. Just sees the job.';
-  return 'Site staff. Not on a job yet.';
+  if(isSup(id)) return 'Supervisor. Sees everything '+bossFirst()+' sees.';
+  if((S.crew.get(id)||{}).yard) return 'The yard. Sees the load list for each lorry, and nothing else.';
+  var js=jobList().filter(function(j){return inWin(j.date)&&!(j.done&&j.done.at);}), ch=js.filter(function(j){return j.ch===id;}).length, gg=js.filter(function(j){return j.ch!==id&&(j.crew||[]).indexOf(id)>=0;}).length;
+  if(ch) return 'Charge hand on '+plural(ch,'job')+'. Checks the load and only sees the jobs they are on, a day at a time.'+(gg?' In the gang on '+plural(gg,'other')+'.':'');
+  if(gg) return 'In the gang on '+plural(gg,'job')+'. Only sees the jobs they are on, a day at a time.';
+  return 'Site staff. Not on a job today or the next working day.';
 }
 function fleet(){return Array.from(S.vans.values()).filter(function(v){return !v.removed&&v.reg;}).sort(function(a,b){return String(a.reg).localeCompare(String(b.reg));});}
 
@@ -675,14 +693,25 @@ function pendingOff(){return offList().filter(function(o){return o.status==='pen
 
 /* ---------- jobs ---------- */
 function jobList(){return Array.from(S.jobs.values()).filter(function(j){return j.date&&j.v===2;});}
-function visJobs(){var all=isBoss()||isYard();return jobList().filter(function(j){return all||onJob(j);});}
+function nextWork(){var d=today(1),n=0;while(isWkend(d)&&n<3){d=addDays(d,1);n++;}return d;}   // the next weekday after today
+function inWin(ds){return ds>=today(0)&&ds<=nextWork();}   // today and up to the next working day: as far ahead as the yard and the site staff see
+function yardView(j){return isYard()&&!isBoss()&&!onJob(j);}   // the yard looking at a load: the lorry and its load list, and nothing about the job
+function canSee(j){ // The boss and a supervisor see every job. Site staff see the jobs they are on, for today and the next working day. A charge hand also keeps an earlier job of his until it is finished, for up to a week, so it can still be finished. The yard sees the loads for today and the next working day.
+  if(isBoss()) return true;
+  if(onJob(j)) return inWin(j.date)||(isCh(j)&&j.date<today(0)&&j.date>=addDays(today(0),-7)&&!(j.done&&j.done.at));
+  return isYard()&&inWin(j.date);
+}
+function visJobs(){return jobList().filter(canSee);}
+function seenFrom(ds){var d=addDays(ds,-1),n=0;while(isWkend(d)&&n<3){d=addDays(d,-1);n++;}return d;}   // the first day a job is on the yard's and the crew's phones: the working day before it
+function lorryPos(j){var r=vanOn(j.vehicle,j.date).sort(bySeq),i=0;r.forEach(function(o,k){if(o.id===j.id)i=k;});return {i:i,n:r.length,list:r};}   // where a load comes among that lorry's loads for the day
 function exOf(j){var o={},e=(j&&j.extra)||{};Object.keys(e).forEach(function(k){if(e[k]>0)o[k]=e[k];});return o;}   // the miscellaneous items a job really has: anything taken off again is stored as 0
 function loadSig(j){var e=exOf(j);return JSON.stringify([j.load||'',Object.keys(e).sort().map(function(k){return k+':'+e[k];})]);}   // has the load sheet changed?
 function rowsOf(j){ // what the yard and the charge hand tick: the load in one line, what was added to the load list, then miscellaneous
   var out=[], ex=exOf(j);
   if(j.load&&j.load!=='empty') out.push({id:'load',name:LOADNAME[j.load]||'Load',sub:LOADSAYS,sec:'load'});
   LOADX.forEach(function(g){g[1].forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sub:j.load&&j.load!=='empty'?(g[3]||''):'',qty:ex[x[0]],sec:'load'});});});
-  TICKS.forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sec:'extra'});});   // the tapped-on items first: most of them are the every-lorry kit, so the top of the list is the same each time
+  EVERY.forEach(function(x){if(ex[x[0]]>0)out.push(x[2]?{id:x[0],name:x[1],qty:ex[x[0]],sec:'load'}:{id:x[0],name:x[1],sec:'load'});});   // the same on every job, so this part of the list reads the same each time
+  TICKS.forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],sec:'extra'});});
   EXTRA.forEach(function(g){g[1].forEach(function(x){if(ex[x[0]]>0)out.push({id:x[0],name:x[1],qty:ex[x[0]],sec:'extra'});});});
   return out;
 }
@@ -693,16 +722,23 @@ function missingOf(j){ // only things still on this job's load sheet count as mi
   m.forEach(function(id){if(OLDNAME[id])id='load';if(on[id]&&out.indexOf(id)<0)out.push(id);});   // a size of tube ticked missing on an older job counts against the load
   return out;
 }
-function loadWords(j){ // the load in a sentence: "Full load with 4m beams × 2 and long ladders × 2, and 9 miscellaneous items"
+function kitWords(e){ // the every-job items in a few words: "the every-job kit", with anything left off or counted differently in brackets. When most of it is off, just what is on
+  var low=function(x){return x[1].charAt(0).toLowerCase()+x[1].slice(1);}, on=EVERY.filter(function(x){return e[x[0]]>0;}), off=EVERY.filter(function(x){return !(e[x[0]]>0);});
+  if(on.length<=EVERY.length/2) return on.map(function(x){return low(x)+(x[2]?' × '+e[x[0]]:'');});
+  var notes=off.map(function(x){return 'no '+low(x);}).concat(on.filter(function(x){return x[2]&&e[x[0]]!==x[2];}).map(function(x){return low(x)+' × '+e[x[0]];}));
+  return ['the every-job kit'+(notes.length?' ('+notes.join(', ')+')':'')];
+}
+function loadWords(j){ // the load in a sentence: "Full load with 4m beams × 2 and the every-job kit, and 3 miscellaneous items"
   var e=exOf(j), on=[], n=0;
   LOADX.forEach(function(g){g[1].forEach(function(x){if(e[x[0]]>0)on.push(x[1].charAt(0).toLowerCase()+x[1].slice(1)+' × '+e[x[0]]);});});
+  on=on.concat(kitWords(e));
   Object.keys(e).forEach(function(k){if(!LOADID[k])n++;});
   var misc=n?plural(n,'miscellaneous item'):'';
-  return j.load==='empty'?(on.length||n?'Empty apart from '+andList(on.concat(n?[misc]:[])):'Empty'):(LOADNAME[j.load]||'Load')+(on.length?' with '+andList(on):'')+(n?(on.length?', and ':' and ')+misc:'');
+  return j.load==='empty'?(on.length||n?'Empty apart from '+andList(on.concat(n?[misc]:[])):'Empty'):(LOADNAME[j.load]||'Load')+(on.length?' with '+andList(on):'')+(n?(on.length>1?', and ':' and ')+misc:'');
 }
 function hasWord(text,w){return String(text||'').split(',').some(function(x){return x.trim().replace(/\.$/,'').toLowerCase()===w.toLowerCase();});}
 function sheetSum(j,rows){var n=rows.filter(function(r){return r.id!=='load';}).length;return (LOADNAME[j.load]||'Load')+(n?' · '+plural(n,j.load==='empty'?'item':'other item'):'');}
-function itemName(id){var n=OLDNAME[id]||id;if(id==='load')return 'Tube, boards or fittings (load short)';EXTRA.concat(LOADX).forEach(function(g){g[1].forEach(function(x){if(x[0]===id)n=x[1];});});TICKS.forEach(function(x){if(x[0]===id)n=x[1];});return n;}
+function itemName(id){var n=OLDNAME[id]||id;if(id==='load')return 'Tube, boards or fittings (load short)';EXTRA.concat(LOADX).forEach(function(g){g[1].forEach(function(x){if(x[0]===id)n=x[1];});});TICKS.concat(EVERY).forEach(function(x){if(x[0]===id)n=x[1];});return n;}
 function onJob(j){var c=myCrew();return !!c&&(j.crew||[]).indexOf(c)>=0;}
 function isCh(j){var c=myCrew();return !!c&&j.ch===c;}
 function canStep(j){return isCh(j)||(isBoss()&&S.self===j.id);}   // may move the job on a step
@@ -978,19 +1014,19 @@ function demoPicture(v){ // a drawn stand-in for a photo. Four different houses,
 var KEY={jobs:'jobs',crew:'crew',people:'people',vehicles:'vans',daysoff:'off',yardchecks:'ychk',checks:'cchk',extras:'extras',photos:'photos',places:'places',scaffolds:'scafs',inspections:'insps',wkdays:'wkdays',wknames:'wknames',alerts:'alerts'};
 // A "world" is one store and everything read from it. The real one and the demo one never mix.
 function attach(db){
-  var w={db:db,maps:{},got:{},bosses:[]};
+  var w={db:db,maps:{},got:{},bosses:[],supers:[]};
   Object.keys(KEY).concat(['settings']).forEach(function(c){
     db.collection(c).onSnapshot(function(snap){
       var m=new Map(); snap.docs.forEach(function(d){m.set(d.id,Object.assign({},d.data(),{id:d.id}));});
       var fresh=null;
       if(c==='alerts'&&w.got.alerts&&S.world===w){var me=myCrew(),prev=w.maps.alerts||new Map();m.forEach(function(a,id){if(!prev.has(id)&&a.to===me&&!a.read&&a.by!==me)fresh=a;});}
-      if(c==='settings'){var r=m.get('roles');w.bosses=(r&&r.bosses)||[];} else w.maps[KEY[c]]=m;
+      if(c==='settings'){var r=m.get('roles');w.bosses=(r&&r.bosses)||[];w.supers=(r&&r.supers)||[];} else w.maps[KEY[c]]=m;
       w.got[c]=true; if(S.world===w){useWorld(w);render();if(fresh){toast('New alert: '+fresh.t);setTimeout(markAlertsRead,60);}if(c!=='alerts')clockSoon();}
     },function(){});
   });
   return w;
 }
-function useWorld(w){S.world=w;S.db=w.db;S.got=w.got;S.bosses=w.bosses;Object.keys(KEY).forEach(function(c){S[KEY[c]]=w.maps[KEY[c]]||new Map();});}
+function useWorld(w){S.world=w;S.db=w.db;S.got=w.got;S.bosses=w.bosses;S.supers=w.supers||[];Object.keys(KEY).forEach(function(c){S[KEY[c]]=w.maps[KEY[c]]||new Map();});}
 function LocalDb(seed,changed,sync){
   var data=JSON.parse(JSON.stringify(seed)), subs=[], cp=function(v){return JSON.parse(JSON.stringify(v));};
   function snap(c){var o=data[c]||{};return {docs:Object.keys(o).map(function(id){var v=cp(o[id]);return {id:id,data:function(){return v;}};})};}
@@ -1218,11 +1254,12 @@ function tabName(){return isBoss()?'Jobs':(isYard()?'Loads':'My jobs');}
 function jobsBadge(){
   var t0=today(0), t1=today(1);
   if(isBoss()) return jobList().filter(function(j){return j.date>=t0&&!(j.left&&j.left.at)&&missingOf(j).length;}).length+toCharge().length+inspDue().length;
-  if(isYard()) return jobList().filter(function(j){return j.date>=t0&&j.date<=t1&&statusOf(j)==='toload';}).length;
-  var c=myCrew(); return jobList().filter(function(j){return j.date>=t0&&j.date<=t1&&j.ch===c&&statusOf(j)!=='done';}).length+inspDue().length;
+  var c=myCrew(), vis=visJobs();
+  if(isYard()) return vis.filter(function(j){return statusOf(j)==='toload'||(j.ch===c&&statusOf(j)!=='done');}).length;
+  return vis.filter(function(j){return j.ch===c&&statusOf(j)!=='done';}).length+inspDue().length;
 }
 function barHtml(){
-  var back=!!S.page, pk=back&&S.page.k, title=back?(pk==='job'?'Job':(pk==='scaf'?'Scaffold record':(S.form&&S.form.id?'Change job':'New job'))):(S.tab==='jobs'?tabName():(S.tab==='cal'?'Calendar':(S.tab==='guide'?'Guide':(S.tab==='alerts'?'Alerts':'Set-up')))), c=myCrew();
+  var back=!!S.page, pk=back&&S.page.k, title=back?(pk==='job'?(S.jobs.has(S.page.id)&&yardView(S.jobs.get(S.page.id))?'Load':'Job'):(pk==='scaf'?'Scaffold record':(S.form&&S.form.id?'Change job':'New job'))):(S.tab==='jobs'?tabName():(S.tab==='cal'?'Calendar':(S.tab==='guide'?'Guide':(S.tab==='alerts'?'Alerts':'Set-up')))), c=myCrew();
   var h='<header class="bar"><div class="bar-in">'+(back?'<button class="bar-back" data-a="back" aria-label="Back">'+IC.back+'</button>':'<img class="bar-logo" src="'+LOGO+'" alt="">');
   h+='<div class="bar-t"><small>'+esc(COMPANY)+'</small><b>'+esc(title)+'</b></div>';
   if(!back&&c) h+=(S.standalone&&!S.demo)||(S.demo&&!S.demo.step)?'<button class="who" data-a="who" aria-label="Viewing as '+esc(nameOf(c))+'. Change person"><span class="av">'+esc(initials(nameOf(c)))+'</span><span>'+esc(firstOf(c))+'</span>'+IC.down+'</button>':'<div class="who plain" title="'+esc(nameOf(c))+'"><span class="av">'+esc(initials(nameOf(c)))+'</span></div>';
@@ -1236,8 +1273,9 @@ function navHtml(sub){
 }
 
 /* ---------- jobs list ---------- */
-function pillOf(j){
+function pillOf(j,yard){
   var st=statusOf(j), m=missingOf(j).length;
+  if(st==='done'&&yard&&j.left&&j.left.at) st='out';
   if(st==='done') return '<span class="pill p-done">Finished</span>';
   if(st==='out') return '<span class="pill p-out">Left '+clock(j.left.at)+'</span>';
   if(m) return '<span class="pill p-bad"><i></i>'+m+' missing</span>';
@@ -1245,7 +1283,13 @@ function pillOf(j){
 }
 function crewLine(j){var ids=(j.crew||[]).slice().sort(function(a,b){return (b===j.ch)-(a===j.ch);});return ids.map(firstOf).join(', ');}
 function kindTag(j){return j.kind&&KINDNAME[j.kind]?'<span class="ty '+j.kind+'">'+KINDNAME[j.kind]+'</span>':'';}
+function loadCard(j){ // all the yard sees of a job in the list: the lorry, which load of the day it is, what size, and where the loading has got to
+  var pos=lorryPos(j), rows=rowsOf(j), m=missingOf(j);
+  return '<button class="job" data-a="open" data-id="'+esc(j.id)+'"><div class="job-top"><span class="job-a ld-a">'+(j.vehicle?'<span class="plate">'+esc(vehOf(j))+'</span>':'No lorry set')+(pos.n>1?'<span>Load '+(pos.i+1)+' of '+pos.n+'</span>':'')+'</span>'+pillOf(j,true)+'</div>'+
+    '<div class="job-m"><span>'+esc(sheetSum(j,rows))+'</span></div>'+(m.length?'<div class="job-s"><span class="bad">Missing: '+esc(m.map(itemName).join(', '))+'</span></div>':'')+'</button>';
+}
 function jobCard(j,pos){
+  if(yardView(j)) return loadCard(j);
   pos=pos||runPos(j);
   var y=j.yard&&j.yard.at, c=j.chk&&j.chk.at, l=j.left&&j.left.at, d=j.done&&j.done.at, ex=extrasOf(j.id).length, ph=photosOf(j.id,'finish').length, m=missingOf(j), bits=[];
   if(l) bits.push('<span>Left <b>'+clock(j.left.at)+'</b></span>');
@@ -1254,7 +1298,7 @@ function jobCard(j,pos){
   if(ex) bits.push('<span>'+plural(ex,'extra')+'</span>');
   if(ph) bits.push('<span>'+plural(ph,'photo')+'</span>');
   return '<button class="job" data-a="open" data-id="'+esc(j.id)+'"><div class="job-top"><span class="job-a">'+esc(j.address)+'</span>'+pillOf(j)+'</div>'+
-    (j.what&&!(isYard()&&!isBoss())?'<div class="job-w">'+esc(j.what)+'</div>':'')+
+    (j.what?'<div class="job-w">'+esc(j.what)+'</div>':'')+
     '<div class="job-m">'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'')+kindTag(j)+(pos.n>1?'<span class="seq">'+(pos.i+1)+' of '+pos.n+'</span>':'')+'<span>'+esc(LOADNAME[j.load]||'')+'</span><span>'+esc(crewLine(j))+'</span></div>'+
     (bits.length?'<div class="job-s">'+bits.join('')+'</div>':'')+
     '<div class="steps" aria-hidden="true"><i class="on"></i><i class="'+(y?((j.yard.missing||[]).length?'bad':'on'):'')+'"></i><i class="'+(c?((j.chk.missing||[]).length?'bad':'on'):'')+'"></i><i class="'+(l?'on':'')+'"></i><i class="'+(d?'on':'')+'"></i></div></button>';
@@ -1286,6 +1330,19 @@ function wkCard(){ // tells staff that weekend work is going
     off.map(function(w){return '<div class="wk-r"><div class="li-t"><b>'+esc(fshort(w.date))+'</b><small>Called off. No work that day.</small></div><span class="pill p-bad">Off</span></div>';}).join('')+
     (days.some(function(w){return !wkMine(w.date);})?'<button class="link small" data-a="wkhide" style="align-self:flex-start;padding:0">Not for me</button>':'')+'</div>';
 }
+function yardListHtml(all){ // the yard's list: each day, each lorry, and the loads for it in the order they go out
+  var days=[], h='';
+  all.slice().sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:byLorry(a,b));}).forEach(function(j){if(!days.length||days[days.length-1].d!==j.date)days.push({d:j.date,l:[]});days[days.length-1].l.push(j);});
+  days.forEach(function(g){
+    var n=g.l.length, lo=g.l.filter(function(j){return (j.yard&&j.yard.at)||(j.left&&j.left.at);}).length, lor=[], at={};
+    g.l.forEach(function(j){var k=vehOf(j);if(at[k]==null){at[k]=lor.length;lor.push([]);}lor[at[k]].push(j);});
+    h+='<div class="sec"><div class="sec-h"><span class="lab">'+esc(fwhen(g.d))+'</span><span class="small muted">'+lo+' of '+n+' loaded</span></div>'+lor.map(function(r){
+      if(r.length<2) return jobCard(r[0]);
+      return '<div class="run"><div class="run-h"><span class="plate">'+esc(vehOf(r[0]))+'</span><b>'+r.length+' loads that day</b><span class="small muted">In the order they go out</span></div>'+r.map(function(j){return jobCard(j);}).join('')+'</div>';
+    }).join('')+'</div>';
+  });
+  return h;
+}
 function jobListHtml(){
   var boss=isBoss(), yard=isYard(), t0=today(0), all=visJobs(), h='', q=String(S.q||'').trim().toLowerCase();
   if(q){
@@ -1294,13 +1351,17 @@ function jobListHtml(){
     return '<div class="sec"><span class="lab">'+plural(hits.length,'job')+' found</span>'+hits.map(function(j){return '<span class="lab">'+esc(fwhen(j.date))+'</span>'+jobCard(j);}).join('')+'</div>';
   }
   var up=all.filter(function(j){return j.date>=t0;}).sort(function(a,b){return a.date<b.date?-1:(a.date>b.date?1:(a.createdAt||0)-(b.createdAt||0));});
+  var late=boss?[]:all.filter(function(j){return j.date<t0;}).sort(function(a,b){return a.date<b.date?-1:1;});   // a job of theirs from an earlier day that was never marked finished
+  if(late.length) h+='<div class="sec"><div class="sec-h"><span class="lab">Still to finish</span><span class="small muted">From an earlier day</span></div>'+late.map(function(j){return '<span class="lab">'+esc(fshort(j.date))+'</span>'+jobCard(j);}).join('')+'</div>';
   if(!up.length){
-    h+='<div class="card empty">'+IC.box+'<b>'+(boss?'No jobs yet':(yard?'Nothing to load':'No jobs for you yet'))+'</b><span>'+(boss?'Tap New job to send a load sheet to the yard. Or look at a week of example jobs first.':(yard?'When '+esc(bossFirst())+' sends a job, the load sheet shows here.':'When '+esc(bossFirst())+' puts you on a job, it shows here.'))+'</span>'+(canDemo()?'<button class="btn soft sm" data-a="demo" style="margin-top:8px">'+IC.play+'Show example jobs</button>':'')+'</div>';
+    if(!late.length) h+='<div class="card empty">'+IC.box+'<b>'+(boss?'No jobs yet':(yard?'Nothing to load':'No jobs for you yet'))+'</b><span>'+(boss?'Tap New job to send a load sheet to the yard. Or look at a week of example jobs first.':(yard?'When '+esc(bossFirst())+' sends a job for today or the next working day, its load list shows here.':'When '+esc(bossFirst())+' puts you on a job for today or the next working day, it shows here.'))+'</span>'+(canDemo()?'<button class="btn soft sm" data-a="demo" style="margin-top:8px">'+IC.play+'Show example jobs</button>':'')+'</div>';
+  }else if(yard&&!boss){
+    h+=yardListHtml(up);
   }else{
     var days=[]; up.forEach(function(j){if(!days.length||days[days.length-1].d!==j.date)days.push({d:j.date,l:[]});days[days.length-1].l.push(j);});
     days.forEach(function(g){
       var n=g.l.length, out=g.l.filter(function(j){return j.left&&j.left.at;}).length, lo=g.l.filter(function(j){return j.yard&&j.yard.at;}).length, sum='';
-      if((boss||yard)&&n>1) sum=g.d===t0?out+' of '+n+' left the yard':lo+' of '+n+' loaded';
+      if(boss&&n>1) sum=g.d===t0?out+' of '+n+' left the yard':lo+' of '+n+' loaded';
       var runs=[], at={}; g.l.forEach(function(j){var k=runKey(j);if(at[k]==null){at[k]=runs.length;runs.push([]);}runs[at[k]].push(j);});
       h+='<div class="sec"><div class="sec-h"><span class="lab">'+esc(fwhen(g.d))+'</span>'+(sum?'<span class="small muted">'+sum+'</span>':'')+'</div>'+runs.map(function(r){
         var full=runOf(r[0]).length, f=r.sort(bySeq)[0];
@@ -1309,7 +1370,7 @@ function jobListHtml(){
       }).join('')+'</div>';
     });
   }
-  var past=all.filter(function(j){return j.date<t0;}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,30);
+  var past=boss?all.filter(function(j){return j.date<t0;}).sort(function(a,b){return a.date<b.date?1:-1;}).slice(0,30):[];
   if(past.length) h+='<div class="sec"><button class="link" data-a="earlier">'+(S.earlier?'Hide earlier jobs':'Show earlier jobs ('+past.length+')')+'</button>'+(S.earlier?past.map(function(j){return '<span class="lab">'+esc(fshort(j.date))+'</span>'+jobCard(j);}).join(''):'')+'</div>';
   if(canDemo()&&all.length) h+=egCard();   // with no jobs at all, the empty card above already has the button
   return h;
@@ -1329,21 +1390,32 @@ function jobsTab(){
 
 /* ---------- one job ---------- */
 function jobZ(j){return Math.min(SAT.ZMAX,S.jz||(j.exact?19:18));}
+function loadHero(j){ // the yard's page for a load: which lorry, which load of the day, what goes on, and any note from the boss. Nothing about the job itself
+  var pos=lorryPos(j), pv=pos.list[pos.i-1], nx=pos.list[pos.i+1], v=fleet().filter(function(x){return String(x.reg).toUpperCase()===String(j.vehicle).toUpperCase();})[0];
+  var h='<section class="card flush"><div class="hero-b"><div class="card-h"><span class="lab">'+esc(fwhen(j.date))+'</span>'+pillOf(j,true)+'</div><h2 class="hero-a ld-h">'+(j.vehicle?'<span class="plate">'+esc(vehOf(j))+'</span>':'No lorry set')+(v&&v.name?'<span>'+esc(v.name)+'</span>':'')+'</h2>';
+  if(pos.n>1) h+='<div class="tags"><span class="seq">Load '+(pos.i+1)+' of '+pos.n+' for this lorry</span><span class="seq-n"><button class="seq-b" data-a="open" data-id="'+esc(pv?pv.id:'')+'" aria-label="The load before"'+(pv?'':' disabled')+'>'+IC.prev+'</button><button class="seq-b" data-a="open" data-id="'+esc(nx?nx.id:'')+'" aria-label="The load after"'+(nx?'':' disabled')+'>'+IC.next+'</button></span></div>';
+  h+='<dl class="kv"><dt>Load</dt><dd>'+esc(loadWords(j))+'</dd></dl>';
+  if(j.notes) h+='<div class="note"><b>From '+esc(bossFirst())+'</b>'+esc(j.notes)+'</div>';
+  return h+'</div></section>';
+}
 function heroHtml(j){
+  if(yardView(j)) return loadHero(j);
   var p=j.prop||{}, gang=(j.crew||[]).filter(function(x){return x!==j.ch;}), v=fleet().filter(function(x){return String(x.reg).toUpperCase()===String(j.vehicle).toUpperCase();})[0];
-  var yardOnly=isYard()&&!isBoss()&&!onJob(j), ring=ringOf(p.ring), house=houseText(p), h='<section class="card flush">';
-  if(canSat()&&j.lat!=null&&!S.satFail&&!yardOnly) h+=satHtml({lat:j.lat,lon:j.lon,z:jobZ(j),ring:ring,ax:p.ax,w:p.w,d:p.d,pick:false,pin:!!j.exact});
+  var ring=ringOf(p.ring), house=houseText(p), h='<section class="card flush">';
+  if(canSat()&&j.lat!=null&&!S.satFail) h+=satHtml({lat:j.lat,lon:j.lon,z:jobZ(j),ring:ring,ax:p.ax,w:p.w,d:p.d,pick:false,pin:!!j.exact});
   var pos=runPos(j), pv=pos.list[pos.i-1], nx=pos.list[pos.i+1];
+  if(pv&&!canSee(pv)) pv=null;
+  if(nx&&!canSee(nx)) nx=null;   // a man in the gang for one job of the day can't step through to the others
   h+='<div class="hero-b"><div class="card-h"><span class="lab">'+esc(fwhen(j.date))+'</span>'+pillOf(j)+'</div><h2 class="hero-a">'+esc(j.address)+'</h2>';
   if(j.kind||pos.n>1) h+='<div class="tags">'+kindTag(j)+(pos.n>1?'<span class="seq">Job '+(pos.i+1)+' of '+pos.n+' for this gang</span><span class="seq-n"><button class="seq-b" data-a="open" data-id="'+esc(pv?pv.id:'')+'" aria-label="The job before"'+(pv?'':' disabled')+'>'+IC.prev+'</button><button class="seq-b" data-a="open" data-id="'+esc(nx?nx.id:'')+'" aria-label="The job after"'+(nx?'':' disabled')+'>'+IC.next+'</button></span>':'')+'</div>';
   if(j.what) h+='<div class="what"><span class="lab">The job</span><p>'+esc(j.what)+'</p></div>';
   else if(isBoss()&&!(j.done&&j.done.at)) h+='<div class="what none"><span class="lab">The job</span><p>Nothing written about the job yet. <button class="link" data-a="edit" data-id="'+esc(j.id)+'">Say what it is</button></p></div>';
-  if(!yardOnly) h+=actsHtml(j,true);
+  h+=actsHtml(j,true);
   h+='<dl class="kv"><dt>Lorry</dt><dd>'+(j.vehicle?'<span class="plate">'+esc(j.vehicle)+'</span>':'Not set')+(v&&v.name?' <span>'+esc(v.name)+'</span>':'')+'</dd><dt>Load</dt><dd>'+esc(loadWords(j))+'</dd><dt>Charge hand</dt><dd>'+esc(j.ch?nameOf(j.ch):'Not set')+'</dd>'+(gang.length?'<dt>Gang</dt><dd>'+esc(gang.map(nameOf).join(', '))+'</dd>':'');
-  if(house&&!yardOnly) h+='<dt>House</dt><dd>'+esc(house)+'</dd>';
+  if(house) h+='<dt>House</dt><dd>'+esc(house)+'</dd>';
   h+='</dl>';
-  if(p.w&&p.d&&!yardOnly) h+='<div class="size"><b>'+esc(sizeText(p))+'</b><span>'+esc(sizeSub(p))+'</span>'+(highText(p)?'<span>'+esc(highText(p))+'</span>':'')+'<span>'+(p.src==='os'?'From Ordnance Survey’s record of the building.':(p.src==='demo'?'Made-up sizes for the demo. On a real job they come from the building’s record.':'A guide, measured from the map.'))+'</span></div>';
-  if(p.note&&!yardOnly) h+='<div class="note know"><b>Good to know</b>'+esc(p.note)+'</div>';
+  if(p.w&&p.d) h+='<div class="size"><b>'+esc(sizeText(p))+'</b><span>'+esc(sizeSub(p))+'</span>'+(highText(p)?'<span>'+esc(highText(p))+'</span>':'')+'<span>'+(p.src==='os'?'From Ordnance Survey’s record of the building.':(p.src==='demo'?'Made-up sizes for the demo. On a real job they come from the building’s record.':'A guide, measured from the map.'))+'</span></div>';
+  if(p.note) h+='<div class="note know"><b>Good to know</b>'+esc(p.note)+'</div>';
   if(j.notes) h+='<div class="note"><b>From '+esc(bossFirst())+'</b>'+esc(j.notes)+'</div>';
   return h+'</div></section>';
 }
@@ -1355,12 +1427,18 @@ function trackHtml(j){
   var who=function(x){return esc(nameOf(x.by))+', '+esc(ftime(x.at));};
   var row=function(cls,t,s){return '<div class="tr '+cls+'"><span class="tr-d">'+(cls==='bad'?IC.no:IC.ok)+'</span><div class="tr-t"><b>'+t+'</b>'+s+'</div></div>';};
   var ph=photosOf(j.id,'finish').length;
-  var h='<section class="card"><span class="lab">Progress</span><div class="track">'+
+  if(yardView(j)) return '<section class="card"><span class="lab">Progress</span><div class="track">'+
     row('on','Sent to the yard','<small>'+esc(j.createdAt?(j.createdBy?nameOf(j.createdBy)+', ':'')+ftime(j.createdAt):'')+'</small>')+
+    row(y?((y.missing||[]).length?'bad':'on'):'','Loaded',y?'<small>'+who(y)+undo('yard',y)+'</small>'+miss(y):'<small>Waiting to be loaded</small>')+
+    row(c?((c.missing||[]).length?'bad':'on'):'','Checked on the lorry',c?'<small>'+esc(ftime(c.at))+'</small>'+miss(c):'<small>Not checked yet</small>')+
+    row(l?'on':'','Left the yard',l?'<span class="tr-big">'+clock(l.at)+'</span>':'<small>Not left yet</small>')+'</div></section>';
+  var h='<section class="card"><span class="lab">Progress</span><div class="track">'+
+    row('on',inWin(j.date)||j.date<today(0)?'Sent to the yard':'Job put on','<small>'+esc(j.createdAt?(j.createdBy?nameOf(j.createdBy)+', ':'')+ftime(j.createdAt):'')+'</small>')+
     row(y?((y.missing||[]).length?'bad':'on'):'','Loaded',y?'<small>'+who(y)+undo('yard',y)+'</small>'+miss(y):'<small>Waiting for the yard</small>')+
     row(c?((c.missing||[]).length?'bad':'on'):'','Checked by the charge hand',c?'<small>'+who(c)+undo('chk',c)+'</small>'+miss(c):'<small>Waiting for '+esc(j.ch?firstOf(j.ch):'the charge hand')+'</small>')+
     row(l?'on':'','Left the yard',l?'<span class="tr-big">'+clock(l.at)+'</span><small>'+esc(nameOf(l.by))+(dstr(new Date(l.at))!==today(0)?', '+esc(fshort(dstr(new Date(l.at)))):'')+(l.typed?' · time typed in':'')+(canSite(j)?' <button class="link small" data-a="timeopen" data-id="'+id+'">Change time</button>':'')+undo('left',l)+'</small>':'<small>Not left yet</small>')+
     row(d?'on':'','Job finished',d?'<small>'+who(d)+(ph?' · '+plural(ph,'photo'):'')+undo('done',d)+'</small>':'<small>Not finished yet</small>')+'</div>';
+  if(boss&&!d&&!inWin(j.date)&&j.date>today(0)) h+='<p class="hint">Only you can see this job for now. The yard and the crew see it from '+esc(fwhen(seenFrom(j.date)))+'.</p>';
   if(boss&&!isCh(j)&&!d) h+=S.self===j.id?'<p class="hint">You’re doing the steps on this job yourself. <button class="link small" data-a="self" data-id="'+id+'">Stop</button></p>':'<p class="hint">Yard or charge hand not on the app? <button class="link small" data-a="self" data-id="'+id+'">Do the next step yourself</button></p>';
   return h+'</section>';
 }
@@ -1405,7 +1483,7 @@ function historyHtml(j){
 }
 function nextCard(j){ // when a gang has more jobs that day, point at the next one
   var pos=runPos(j), nx=pos.list.slice(pos.i+1).filter(function(o){return statusOf(o)!=='done';})[0];
-  if(statusOf(j)!=='done'||!nx||!(onJob(j)||isBoss())) return '';
+  if(statusOf(j)!=='done'||!nx||!(onJob(j)||isBoss())||!canSee(nx)) return '';
   return '<button class="need pay" data-a="open" data-id="'+esc(nx.id)+'"><div><b>Next job:</b> '+esc(nx.address)+'</div><span class="small muted">Tap to open it.</span></button>';
 }
 function scafCard(j){
@@ -1414,12 +1492,12 @@ function scafCard(j){
   return '<section class="card"><div class="card-h"><span class="lab">Scaffold record</span><span class="pill '+(!on?'p-loaded':(due<0||isUnsafe(s)?'p-bad':(due===0?'p-toload':'p-checked')))+'">'+(on?esc(dueWords(s)):'Not inspected by us')+'</span></div><p class="hint">Standing since '+esc(fshort(tsDay(s.upAt)))+'. Inspect it before first use, then every 7 days until it comes down.</p><div class="btns fit">'+(on?'<button class="btn go sm" data-a="inspnew" data-id="'+esc(s.id)+'">Record inspection</button>':'')+'<button class="btn line sm" data-a="scaf" data-id="'+esc(s.id)+'">Open record</button></div></section>';
 }
 function jobPage(j){
-  var stage=stageFor(j), boss=isBoss(), st=statusOf(j), h='<div class="col">'+nextCard(j)+heroHtml(j)+'</div><div class="col">', site=siteHtml(j), track=trackHtml(j), pos=runPos(j), id=esc(j.id);
+  var yv=yardView(j), stage=stageFor(j), boss=isBoss(), st=statusOf(j), h='<div class="col">'+nextCard(j)+heroHtml(j)+'</div><div class="col">', site=yv?'':siteHtml(j), track=trackHtml(j), pos=runPos(j), id=esc(j.id);
   if(stage) h+=sheetHtml(j,stage)+track+site;
   else if(boss&&!isCh(j)) h+=track+site+scafCard(j)+sheetFold(j);
-  else if(st==='out'||st==='done') h+=site+scafCard(j)+track+sheetFold(j);
+  else if(!yv&&(st==='out'||st==='done')) h+=site+scafCard(j)+track+sheetFold(j);
   else h+=track+site+sheetFold(j);
-  h+=historyHtml(j);
+  if(boss) h+=historyHtml(j);   // what was done at this address before is for the boss and a supervisor
   if(boss&&!walking()) h+='<button class="btn soft sm" data-a="another" data-id="'+id+'" style="width:100%">'+IC.plus+'Add another job for this gang</button>'+(pos.n>1?'<div class="btns"><button class="btn line sm" data-a="seqmove" data-d="-1" data-id="'+id+'"'+(pos.i===0?' disabled':'')+'>Do it earlier</button><button class="btn line sm" data-a="seqmove" data-d="1" data-id="'+id+'"'+(pos.i===pos.n-1?' disabled':'')+'>Do it later</button></div>':'');
   if(boss) h+='<button class="btn soft sm" data-a="share" data-id="'+esc(j.id)+'" style="width:100%">'+IC.send+'Send this job as a message</button><div class="btns"><button class="btn line sm" data-a="edit" data-id="'+esc(j.id)+'">Change job</button><button class="btn danger sm" data-a="del" data-id="'+esc(j.id)+'">'+(S.confirm==='del'+j.id?'Tap again to delete':'Delete job')+'</button></div>';
   LAY='two'; return h+'</div>';
@@ -1429,7 +1507,7 @@ function shareText(j){ // the whole job as plain words, for WhatsApp or a text
   var L=[COMPANY.toUpperCase(),fshort(j.date)+' · '+(j.kind&&KINDNAME[j.kind]?KINDNAME[j.kind]+' · ':'')+j.address,'Lorry: '+(j.vehicle||'not set')+' · '+(LOADNAME[j.load]||''),'Charge hand: '+(j.ch?nameOf(j.ch):'not set')];
   if(gang.length) L.push('Gang: '+gang.map(nameOf).join(', '));
   if(j.what) L.push('','THE JOB',j.what);
-  if(pick('load').length){L.push('','LOAD LIST');pick('load').forEach(function(r){L.push(r.id==='load'?r.name+': '+LOADSAYS.toLowerCase():'- '+r.name+' x '+r.qty+(r.sub?' ('+r.sub.toLowerCase()+')':''));});}
+  if(pick('load').length){L.push('','LOAD LIST');pick('load').forEach(function(r){L.push(r.id==='load'?r.name+': '+LOADSAYS.toLowerCase():'- '+r.name+(r.qty?' x '+r.qty:'')+(r.sub?' ('+r.sub.toLowerCase()+')':''));});}
   if(pick('extra').length){L.push('','MISCELLANEOUS');pick('extra').forEach(function(r){L.push('- '+r.name+(r.qty?' x '+r.qty:''));});}
   if(houseText(p)||p.w) L.push('','THE PROPERTY',[houseText(p),p.w?sizeText(p):'',p.w?highText(p):''].filter(Boolean).join(' · '));
   if(p.note) L.push('Good to know: '+p.note);
@@ -1512,7 +1590,26 @@ function registerHtml(){
       return '<button class="li" data-a="scaf" data-id="'+esc(s.id)+'"><div class="li-t"><b>'+esc(s.address)+'</b><small>Up since '+esc(fshort(tsDay(s.upAt)))+' · week '+(wk+1)+(s.inspector&&s.inspect!==false?' · '+esc(firstOf(s.inspector))+' inspects':'')+'</small></div>'+scafPill(s)+'</button>';}).join('')+'</div>':'')+
     (isBoss()?'<div style="padding:12px 16px 16px;border-top:1px solid var(--line)"><button class="btn soft sm" data-a="scafnew" style="width:100%">'+IC.plus+'Add a scaffold that’s already up</button></div>':'')+'</section>';
 }
+function myCalHtml(){ // everyone but the boss and a supervisor: the calendar shows their own time off, and the button to ask for more. No jobs, and nobody else's time off
+  var me=myCrew(), t0=today(0), m=S.month||t0.slice(0,7), y=+m.slice(0,4), mo=+m.slice(5,7)-1, first=new Date(y,mo,1,12), lead=(first.getDay()+6)%7, dim=new Date(y,mo+1,0).getDate(), cells=Math.ceil((lead+dim)/7)*7, sel=S.day||t0;
+  var mine=offList().filter(function(o){return o.person===me;}).sort(function(a,b){return a.from<b.from?-1:1;}), O={};
+  mine.forEach(function(o){var d=o.from,n=0;while(d<=o.to&&n<370){O[d]=o;d=addDays(d,1);n++;}});
+  var h='<div class="col"><button class="btn" data-a="offnew">'+IC.plus+'Ask for time off</button>';
+  h+='<section class="card"><div class="cal-h"><button class="cal-nav" data-a="month" data-d="-1" aria-label="Previous month">'+IC.prev+'</button><b>'+MONL[mo]+' '+y+'</b><button class="cal-nav" data-a="month" data-d="1" aria-label="Next month">'+IC.next+'</button></div><div class="cal">'+['M','T','W','T','F','S','S'].map(function(d){return '<span class="cal-d">'+d+'</span>';}).join('');
+  for(var i=0;i<cells;i++){
+    var d=new Date(y,mo,1-lead+i,12), ds=dstr(d), o=O[ds], wait=o&&o.status==='pending';
+    h+='<button class="day'+(d.getMonth()!==mo?' out':'')+(ds===t0?' today':'')+'" data-a="day" data-v="'+ds+'" aria-pressed="'+(ds===sel)+'" aria-label="'+esc(fshort(ds)+(o?(wait?', asked for, waiting for a yes':', booked off'):''))+'"><span>'+d.getDate()+'</span>'+(o?'<span class="mks"><span class="mk off'+(wait?' plan':'')+'">Off</span></span>':'')+'</button>';
+  }
+  h+='</div><div class="cal-k"><span><i class="kd off"></i>Booked off</span><span><i class="kd plan"></i>Outline: waiting for a yes</span></div></section></div><div class="col">';
+  var on=O[sel];
+  h+='<section class="card flush"><div class="sh-h"><div><b class="t">'+esc(fwhen(sel))+'</b><div class="small muted">'+(on?(on.status==='pending'?'You’ve asked for this off. Waiting for '+esc(bossFirst())+' to say yes.':'You’re booked off.'):'You’re not booked off.')+'</div></div></div>'+(on?'<div class="list">'+offRow(on)+'</div>':'')+'</section>';
+  var next=mine.filter(function(o){return o.to>=t0;}).slice(0,12);
+  h+='<section class="card flush"><div class="sh-h"><div><b class="t">Your time off</b><div class="small muted">'+(next.length?'What you have booked, and anything waiting for a yes.':'Nothing booked. Tap Ask for time off to book some.')+'</div></div></div>'+(next.length?'<div class="list">'+next.map(offRow).join('')+'</div>':'')+'</section>';
+  h+='<p class="hint">This calendar is only for your own time off. Your '+(isYard()?'loads':'jobs')+' are under '+esc(tabName())+'.</p>';
+  LAY='two'; return h+'</div>';
+}
 function calHtml(){
+  if(!isBoss()) return myCalHtml();
   var me=myCrew(), boss=isBoss(), t0=today(0), m=S.month||t0.slice(0,7), y=+m.slice(0,4), mo=+m.slice(5,7)-1, first=new Date(y,mo,1,12), lead=(first.getDay()+6)%7, dim=new Date(y,mo+1,0).getDate(), cells=Math.ceil((lead+dim)/7)*7, sel=S.day||t0;
   var D=calData(dstr(new Date(y,mo,1-lead,12)),dstr(new Date(y,mo,cells-lead,12))), cats=CATS.filter(function(c){return c[0]!=='insp'||boss||myScafs().length;});
   var mode=cats.some(function(c){return c[0]===S.calMode;})?S.calMode:'all', show=function(k){return mode==='all'||mode===k;}, np=boss?pendingOff().length:0, h='';
@@ -1626,9 +1723,9 @@ function wkSheet(s){
     (s.err?'<p class="err" role="alert">'+esc(s.err)+'</p>':'')+'<button class="btn go" data-a="wksave">Ask for volunteers</button></div></div>';
 }
 function sentSheet(s){
-  var j=S.jobs.get(s.job), pos=j?runPos(j):{i:0,n:1};
-  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="Sent to the yard" data-stop="1"><div class="sheet-h"><b>Sent to the yard</b><button class="link" data-a="closesheet">Close</button></div>'+
-    (j?'<p class="sub">'+esc(j.address)+'</p>':'')+(s.told?'<p class="hint">'+IC.bell+' Alert sent to '+esc(s.told)+'.</p>':'')+'<p class="hint">'+(j&&pos.n>1?'That is job '+(pos.i+1)+' of '+pos.n+' that day for '+esc(firstOf(j.ch))+'’s gang on '+esc(j.vehicle)+'.':'Got more for the same gang that day? Add them now. They are numbered in the order you add them.')+'</p>'+
+  var j=S.jobs.get(s.job), pos=j?runPos(j):{i:0,n:1}, far=!!j&&!inWin(j.date);   // a job further ahead than the next working day is not on anyone else's phone yet
+  return '<div class="scrim" data-a="closesheet"><div class="sheet" role="dialog" aria-label="'+(far?'Job saved':'Sent to the yard')+'" data-stop="1"><div class="sheet-h"><b>'+(far?'Job saved':'Sent to the yard')+'</b><button class="link" data-a="closesheet">Close</button></div>'+
+    (j?'<p class="sub">'+esc(j.address)+'</p>':'')+(s.told?'<p class="hint">'+IC.bell+' Alert sent to '+esc(s.told)+'.</p>':'')+(far?'<p class="hint">Only you can see this job for now. The yard and the crew see it from '+esc(fwhen(seenFrom(j.date)))+', and are told at 4 o’clock that day.</p>':'')+'<p class="hint">'+(j&&pos.n>1?'That is job '+(pos.i+1)+' of '+pos.n+' that day for '+esc(firstOf(j.ch))+'’s gang on '+esc(j.vehicle)+'.':'Got more for the same gang that day? Add them now. They are numbered in the order you add them.')+'</p>'+
     '<button class="btn soft" data-a="another" data-id="'+esc(s.job)+'">'+IC.plus+'Add another job for this gang</button><button class="btn go" data-a="closesheet">Done</button></div></div>';
 }
 
@@ -1731,9 +1828,12 @@ function guideTopics(){
    boss:[
     ['Who sees what','Four screens, one for each kind of person.',[
       '**You** see every job and have control of it: you put jobs on, change them and pick who goes where.',
-      '**The yard** sees the load list and the miscellaneous for each lorry, ticks it off and confirms it is loaded.',
-      '**The charge hand** sees his jobs, checks the load in the morning, and marks the job as it goes.',
-      '**The gang** just see the job: where it is, the house, who they are with.',
+      '**A supervisor** sees everything you see. To make someone one, tap **Supervisor** next to their name in **Set-up**.',
+      '**The yard** only sees the load list for each lorry: the lorry, what goes on it and any note from you. No address and no names. It ticks the list off and confirms the lorry is loaded.',
+      '**The charge hand** only sees the jobs you have put him on. He checks the load in the morning, and marks the job as it goes.',
+      '**The gang** only see the jobs they are on: where it is, what the job is, the house, who they are with.',
+      'The yard, the charge hand and the gang see **today and the next working day**, and no further. A job further ahead stays with you until the working day before. Then it shows on their phones, and they are told at 4 o’clock.',
+      'Their **Calendar** only shows their own time off, and the button to ask for more. They can’t see the jobs ahead or anyone else’s time off.',
       local()?'To look at any of the four, tap your name at the top right and pick a person.':null,
       '**Show example jobs**, under your jobs on the Jobs screen, shows all four with a made-up week of jobs on them.'],'ul'],
     ['Put a job on','One sheet, then it goes to the yard.',[
@@ -1745,10 +1845,10 @@ function guideTopics(){
       'Tap the type of house and the storeys. Add a note if the crew need one.',
       'Pick the lorry, the charge hand and the gang from the lists.',
       'Under **Load list**, tap the load: **Full**, **¾**, **Half**, **¼** or **Empty**. The yard knows what tube, boards, fittings, base plates and sole boards that takes.',
-      'What goes on every lorry is already on the sheet: caps, board clips, netting, foam, gates, ladder safes, treaders, 2 long ladders and 2 short ladders. Take one off, or change a ladder number, if a job is different. A gang’s second job on the same lorry doesn’t repeat them.',
+      'What goes on every job is already on the load list, under **On every job**: '+KITSAYS+'. Take one off, or change a ladder number, only if a job is different.',
       'Open **Beams** to put a number against any this job needs. Open **Change the boards** only when this job needs a different amount of boards from usual.',
-      'Under **Miscellaneous**, tap what else could get forgotten, such as tie gear. Open a group, such as Butts, to put a number against the rest.',
-      'Tap **Send to the yard**.']],
+      'Under **Miscellaneous**, tap what else could get forgotten, such as tie gear. Board clips are on to start with. Open a group, such as Butts, to put a number against the rest.',
+      'Tap **Send to the yard**. If the job is further ahead than the next working day, it is saved and only you see it until the working day before.']],
     ['Give a gang more than one job in a day','It works for every gang.',[
       'Send the first job as normal.',
       'On the sheet that comes up, tap **Add another job for this gang**.',
@@ -1766,7 +1866,7 @@ function guideTopics(){
       'Cards at the top of the Jobs screen are things that need you: items missing, extra work to charge, time off, weekend names and inspections.',
       'Open a job to see who did each step and when, and the finish photos.'],'ul'],
     ['The week planner, on a laptop','Every man down the side, the days across the top.',[
-      'Open the app on a laptop. Tap **Calendar**, then **Week planner**.',
+      'Open the app on a laptop. Tap **Calendar**, then **Week planner**. Only you and a supervisor get it.',
       'Each job sits on its charge hand’s row, under its day. “With Ian” means that man is in Ian’s gang that day.',
       'To move a job to another day, drag it along the row and drop it.',
       'To give a job to another charge hand, drag it onto his row. If he already has jobs that day, it joins them on his lorry.',
@@ -1778,9 +1878,9 @@ function guideTopics(){
       'Tap **Alerts**. The red number is how many are new. Tap an alert to open the job, the scaffold or the calendar.',
       'You are told when a lorry is loaded, when anything is missing, when a gang leaves the yard, when there is extra work and when a job is finished.',
       'You are told when someone asks for time off, puts a name down for the weekend, or finds a scaffold not safe.',
-      'Staff are told when you put them on a job or make them charge hand, and when a job moves, changes or is cancelled.',
-      'The yard is told about every new load and every change to one.',
-      'After 4 o’clock everyone gets tomorrow’s jobs, and you get the day in one line with any lorry still to load.',
+      'Staff are told when you put them on a job or make them charge hand, and when a job moves, changes or is cancelled. That is for today and the next working day. For a job further ahead, they are told at 4 o’clock the working day before.',
+      'The yard is told about every new load and every change to one, by lorry. The yard is not told the address.',
+      'After 4 o’clock everyone gets the next day’s jobs, and you get the day in one line with any lorry still to load. On a Friday that covers Monday.',
       'On the day an inspection is due, you and the inspector are told. You are both told again if it goes overdue.'],'ul'],
     ['Weekend work','You ask, they put their names down, you pick.',[
       'Tap **Calendar**, then **Weekend work** in the key at the top.',
@@ -1790,7 +1890,8 @@ function guideTopics(){
       'Tap **Pick** next to each man you want. That is your crew list for the day.',
       'Only the men you pick can be put on a job that day. **Call this day off** cancels it.']],
     ['Time off','A week’s notice goes straight on. Less comes to you.',[
-      'Staff ask in the app. A week’s notice or more goes straight on the calendar.',
+      'Staff ask in the app, from their own **Calendar**. A week’s notice or more goes straight on.',
+      'Staff only see their own time off. You see everyone’s.',
       'Short notice comes to you as a card. Tap **Approve** or **Say no**.',
       'To book it yourself: **Calendar**, **Time off** in the key, then **Book time off**.',
       'Anyone who is off can’t be picked for a job on those days.'],'ul'],
@@ -1811,6 +1912,7 @@ function guideTopics(){
     ['Staff and lorries','In Set-up.',[
       'Tap **Set-up**.',
       'Type a name and tap **Add** to put someone on the staff list. Tap **Yard** next to whoever loads the lorries.',
+      'Tap **Supervisor** next to anyone who should see everything you see. Everyone else only sees the jobs they are put on, a day at a time.',
       'Type a reg and tap **Add** to put a lorry on.',
       '**Remove** takes a person or a lorry off. Their old jobs stay.']],
     ['See it with example jobs','The demo. Nothing in it is saved.',[
@@ -1821,18 +1923,24 @@ function guideTopics(){
       '**End demo** stops it. Your real jobs are not touched.']]],
    yard:[
     ['Load a lorry','Tick the sheet, then confirm.',[
-      'Open the app. Every job that needs loading is on the **Loads** screen.',
-      'Tap a job. The load list comes first, with Miscellaneous underneath.',
+      'Open the app. The **Loads** screen has the load list for each lorry, for today and the next working day.',
+      'A lorry with more than one load that day shows them as **Load 1 of 2**, **Load 2 of 2**, in the order they go out.',
+      'Tap a load. It shows the lorry, the load list and any note from '+boss+'. Miscellaneous is underneath.',
       'The load is one line, such as **Full load**. That is the usual tube, boards, fittings, base plates and sole boards for a load that size.',
-      'Under it are any beams, ladders or a changed number of boards, each with how many.',
+      'Under it are any beams or a changed number of boards, each with how many. Then what goes on every job: caps, netting, foam, the ladders, ladder safes, gates and treaders.',
       'Tap a line once when it’s on the lorry. Tap it again if it’s missing.',
       'Tap **Confirm loaded**. '+boss+' and the charge hand can see it straight away.']],
     ['Alerts','What you get told.',[
       'Tap **Alerts**. The red number is how many are new. Tap an alert to open the load.',
       'You get one for every new load, and when a load changes or is cancelled.',
       'If the charge hand finds something missing at his morning check, you are told.',
-      'After 4 o’clock you get the lorries still to load for tomorrow.'],'ul']],
+      'After 4 o’clock you get the lorries still to load for the next day.'],'ul']],
    ch:[
+    ['Your jobs','The ones you are on, a day at a time.',[
+      'The **My jobs** screen shows the jobs '+boss+' has put you on, for today and the next working day.',
+      'A job further ahead shows up the working day before. You are told at 4 o’clock that day.',
+      'If you are the charge hand, a job from an earlier day stays on your screen until you mark it finished.',
+      'Open a job to see where it is, what the job is, the house, the lorry and who you are with.'],'ul'],
     ['Check the load and leave the yard','In the morning.',[
       'Open your job. You can see the house, its size, **Street View** and **Directions**.',
       'Tick the load sheet. Tap once when it’s on. Tap again if it’s missing.',
@@ -1851,7 +1959,7 @@ function guideTopics(){
       'Type your position the first time. Add photos if you want.',
       'Tap **Save the inspection**.']],
     ['If you are in the gang','You can look but not change.',[
-      'You see your jobs, the house and the photos.',
+      'You see the jobs you are on, the house and the photos.',
       'Only the charge hand ticks the load and confirms.'],'ul'],
     ['Alerts','What you get told.',[
       'Tap **Alerts**. The red number is how many are new. Tap an alert to open the job.',
@@ -1859,7 +1967,7 @@ function guideTopics(){
       'You get one if your job moves to another day or another lorry, if it changes, and if it is cancelled.',
       'The charge hand is told when his lorry is loaded, and if anything is missing.',
       'You are told when weekend work is going, when you are picked, and when your time off is answered.',
-      'After 4 o’clock you get tomorrow’s jobs.',
+      'After 4 o’clock you get the next day’s jobs.',
       'If you are down to inspect a scaffold, you are told on the day it is due.'],'ul']],
    all:[
     ['Weekend work: put your name down','When '+boss+' asks.',[
@@ -1868,9 +1976,10 @@ function guideTopics(){
       boss+' picks who he wants. Your card then says “You’re working”.',
       'Changed your mind? Tap **Take my name off**. Don’t want it? Tap **Not for me**.']],
     ['Ask for time off','From your own phone.',[
-      'Tap **Calendar**, then **Time off** in the key at the top.',
+      isBoss()?'Staff tap **Calendar**. Theirs only shows their own time off.':'Tap **Calendar**. It shows your own time off, and nothing else.',
       'Tap **Ask for time off**. Pick the first and last day.',
-      'A week’s notice or more goes straight on. Less goes to '+boss+' to say yes or no.']]],
+      'A week’s notice or more goes straight on. Less goes to '+boss+' to say yes or no.',
+      'To cancel it, tap **Cancel** next to it.']]],
    cal:['The calendar and its colours','The key along the top says what each colour is.',[
       '**Jobs** are dark blue, with the number of jobs. Green means every job that day is finished. Red means something is missing.',
       '**Inspections** are blue-green squares. Red means overdue or not safe.',
@@ -1883,7 +1992,7 @@ function guideTopics(){
 function guideHtml(){
   var T=guideTopics(), boss=isBoss(), n=0, groups;
   if(boss) groups=[['Your part',T.boss.concat([T.cal]).filter(Boolean)],['What the yard does',T.yard],['What the charge hand and the gang do',T.ch],['What everyone can do',T.all]];
-  else groups=[['Your part',isYard()?T.yard:T.ch],['Everyone',T.all.concat([T.cal])]];
+  else groups=[['Your part',isYard()?T.yard:T.ch],['Everyone',T.all]];   // the calendar with its colours and key is the boss's: everyone else's only has their own time off
   var h='<section class="card"><div><h1 class="h1 gd-h">How to use '+esc(APP)+'</h1><p class="sub">Short steps for each thing you do. Tap one to open it.</p></div>'+'</section>';
   if(canDemo()) h+='<section class="card eg"><div><b>Example jobs</b><span class="small muted">A made-up week of jobs, to see every screen with something on it. Or follow one job from start to finish. Nothing in it is saved.</span></div><div class="btns fit"><button class="btn soft sm" data-a="demo">'+IC.play+'Show example jobs</button><button class="btn line sm" data-a="demo" data-v="1">Follow one job</button></div></section>';
   groups.forEach(function(g){
@@ -1904,7 +2013,8 @@ function yardIds(){return crewList().filter(function(c){return c.yard;}).map(fun
 function siteIds(){return crewList().filter(function(c){return S.bosses.indexOf(c.id)<0;}).map(function(c){return c.id;});}   // everyone but the boss
 function vehOf(j){return String(j.vehicle||'').toUpperCase();}
 function toAll(ids,a){return ids.map(function(id){return Object.assign({to:id},a);});}
-function toBosses(a){return toAll(bossIds(),a);}
+function leadIds(){return bossIds().concat((S.supers||[]).filter(function(b){return isSup(b)&&S.crew.has(b)&&!S.crew.get(b).removed;}));}   // the boss and any supervisor: a supervisor is told what the boss is told
+function toBosses(a){return toAll(leadIds(),a);}
 function tell(list){ // never tells the person doing it, and never says the same thing twice
   var me=myCrew(), now=Date.now(), seen={}, out=[];
   (list||[]).forEach(function(a){
@@ -1922,11 +2032,16 @@ function pruneAlerts(){ // keep the store small: read alerts over a month old go
   old.slice(0,40).forEach(function(a){S.db.doc('alerts/'+a.id).delete().catch(function(){});});
 }
 function jobAlerts(old,nw){ // a job put on (no old), changed, or taken off (no nw): who needs telling, and what
+  // The yard and the site staff only see today and the next working day, so that is all they are told about. A job further ahead is first heard of at four o'clock the day before.
+  var oin=!!old&&inWin(old.date), nin=!!nw&&inWin(nw.date);
+  if(old&&nw&&!oin&&nin) old=null;                       // moved into their days: to them it is a new job
+  else if(old&&nw&&oin&&!nin) return movedAlerts(old);    // moved out of their days: to them it has gone
+  else if(!oin&&!nin) return [];
   var out=[], yard=yardIds(), when=function(j){return fshort(j.date);};
   var what=function(j){return j.what?' '+String(j.what).replace(/[.\s]+$/,'')+'.':'';};
   var chMsg=function(j){var g=(j.crew||[]).filter(function(x){return x!==j.ch;}).map(firstOf);return when(j)+': '+j.address+'. Lorry '+vehOf(j)+(g.length?', with '+andList(g):'')+'.'+what(j);};
   var gangMsg=function(j){return when(j)+': '+j.address+'. '+firstOf(j.ch)+' is charge hand, lorry '+vehOf(j)+'.'+what(j);};
-  var loadMsg=function(j){return vehOf(j)+' for '+when(j)+': '+j.address+'. '+loadWords(j)+'.';};
+  var loadMsg=function(j){return vehOf(j)+' for '+when(j)+': '+loadWords(j)+'.';};   // the yard is told the lorry and the load, not where it is going
   var sig=loadSig;
   if(!old&&nw){
     out.push({to:nw.ch,k:'job',t:'You’re charge hand',m:chMsg(nw),job:nw.id});
@@ -1935,7 +2050,7 @@ function jobAlerts(old,nw){ // a job put on (no old), changed, or taken off (no 
   }else if(old&&!nw){
     if(!(old.done&&old.done.at)){
       (old.crew||[]).forEach(function(c){out.push({to:c,k:'job',t:'Job cancelled',m:when(old)+': '+old.address+'.'});});
-      if(!(old.left&&old.left.at)) out=out.concat(toAll(yard,{k:'load',t:'Load cancelled',m:vehOf(old)+' for '+when(old)+': '+old.address+'.'}));
+      if(!(old.left&&old.left.at)) out=out.concat(toAll(yard,{k:'load',t:'Load cancelled',m:loadMsg(old)}));
     }
   }else if(old&&nw){
     var oc=old.crew||[], nc=nw.crew||[], ch=[];
@@ -1959,14 +2074,18 @@ function jobAlerts(old,nw){ // a job put on (no old), changed, or taken off (no 
   }
   return out;
 }
+function movedAlerts(old){ // a job put back beyond the days the yard and the site staff see
+  var out=(old.crew||[]).map(function(c){return {to:c,k:'job',t:'Job moved',m:fshort(old.date)+': '+old.address+' is not on that day now.'};});
+  return old.left&&old.left.at?out:out.concat(toAll(yardIds(),{k:'load',t:'Load cancelled',m:vehOf(old)+' for '+fshort(old.date)+': '+loadWords(old)+'. The job has been moved to another day.'}));
+}
 function loadedAlerts(j,miss){ // the yard has confirmed a load
   var m=vehOf(j)+' for '+fshort(j.date)+': '+j.address+(miss.length?'. Missing: '+miss.map(itemName).join(', '):'')+'.', a={k:'load',t:miss.length?'Loaded with items missing':'Lorry loaded',m:m,job:j.id};
-  return [Object.assign({to:j.ch},a)].concat(toBosses(a));
+  return (inWin(j.date)?[Object.assign({to:j.ch},a)]:[]).concat(toBosses(a));
 }
 function checkAlerts(j,miss){ // the charge hand's morning check only raises an alert when something is missing
   if(!miss.length) return [];
   var a={k:'load',t:'Items missing at the morning check',m:j.address+', '+vehOf(j)+': '+miss.map(itemName).join(', ')+'.',job:j.id};
-  return toBosses(a).concat(toAll(yardIds(),a));
+  return toBosses(a).concat(toAll(yardIds(),Object.assign({},a,{m:vehOf(j)+' for '+fshort(j.date)+': '+miss.map(itemName).join(', ')+'.'})));   // the yard gets the lorry, not the address
 }
 function leftAlerts(j,at,n){return toBosses({k:'time',t:'Left the yard',m:firstOf(j.ch)+'’s gang left at '+clock(at)+' on '+vehOf(j)+(n>1?' for '+n+' jobs.':': '+j.address+'.'),job:j.id});}
 function doneAlerts(j,at,ph,ex){if(ph==null)ph=photosOf(j.id,'finish').length;if(ex==null)ex=extrasOf(j.id).length;return toBosses({k:'job',t:'Job finished',m:j.address+'. '+firstOf(j.ch)+'’s gang, '+clock(at)+(ph?', '+plural(ph,'photo'):'')+(ex?', '+plural(ex,'extra'):'')+'.',job:j.id});}
@@ -2000,7 +2119,7 @@ function alertsHtml(){
   h+='<section class="card flush">';
   list.forEach(function(a){
     var d=tsDay(a.at), nw=fresh[a.id]||!a.read; if(d!==last){h+='<div class="sh-g"><span>'+esc(fday(d))+'</span></div>';last=d;}
-    var can=!!(a.job&&S.jobs.has(a.job))||!!(a.scaf&&S.scafs.has(a.scaf))||!!a.cal, tag=can?'button':'div';
+    var can=!!(a.job&&S.jobs.has(a.job)&&canSee(S.jobs.get(a.job)))||!!(a.scaf&&S.scafs.has(a.scaf)&&canInspect(S.scafs.get(a.scaf)))||!!a.cal||!!a.tab, tag=can?'button':'div';
     h+='<'+tag+' class="li al'+(nw?' new':'')+'"'+(can?' data-a="algo" data-id="'+esc(a.id)+'"':'')+'><span class="al-d '+(AK[a.k]||'jobs')+'"></span><div class="li-t"><b>'+esc(a.t)+'</b><small>'+esc(a.m)+'</small><small class="al-t">'+clock(a.at)+(a.by&&S.crew.has(a.by)?' · from '+esc(firstOf(a.by)):'')+'</small></div>'+(nw?'<span class="pill p-toload">New</span>':'')+'</'+tag+'>';
   });
   return h+'</section>'+foot;
@@ -2009,7 +2128,7 @@ function alertsHtml(){
 /* ---------- week planner: the site staff down the side, the days across the top. Drag a job to another man or another day ---------- */
 function monOf(ds){return addDays(ds,-((pdate(ds).getDay()+6)%7));}
 function wideNow(){return window.innerWidth>=1000;}
-function canPlan(){return (isBoss()||isYard())&&wideNow();}
+function canPlan(){return isBoss()&&wideNow();}   // the week planner shows every job and every man, so it is for the boss and a supervisor
 function plannerRows(days){ // the site staff by name, so a row never moves when a job does. The boss only gets a row in a week he is charge hand himself
   var lead={};
   jobList().forEach(function(j){if(j.ch&&j.date>=days[0]&&j.date<=days[6])lead[j.ch]=1;});
@@ -2103,7 +2222,7 @@ function dueAlerts(){ // the day an inspection is due, and once more if it goes 
   scafList().forEach(function(s){
     if(s.inspect===false||isUnsafe(s)) return;
     var due=dueOf(s); if(due>t0) return;
-    var late=due<t0, l=lastInsp(s), who=bossIds().slice(), why;
+    var late=due<t0, l=lastInsp(s), who=leadIds(), why;
     if(late) why='It was due '+fshort(due)+'.';
     else if(s.redoAt&&(!l||l.at<s.redoAt)) why='It has been altered, so it needs inspecting again.';
     else if(l) why='Last inspected '+fshort(tsDay(l.at))+'.';
@@ -2114,19 +2233,24 @@ function dueAlerts(){ // the day an inspection is due, and once more if it goes 
   });
   return out;
 }
-function tomorrowAlerts(){ // from 4 o'clock: each man's jobs for tomorrow, what the yard still has to load, and the day in one line for the boss
+function tomorrowAlerts(){ // from 4 o'clock: each man's jobs for the next day, what the yard still has to load, and the day in one line for the boss. On a Friday that takes in the weekend and Monday
   if(new Date().getHours()<16) return [];
-  var tm=today(1), js=jobList().filter(function(j){return j.date===tm&&!(j.done&&j.done.at);}).sort(bySeq), out=[], seen={}, lor=[], toLoad={}, now=Date.now();
-  if(!js.length||js.some(function(j){return now-(j.createdAt||0)<6e5;})) return out;   // not while tomorrow's jobs are still being put on: wait until ten minutes after the last one
+  var out=[], now=Date.now(), end=nextWork(), d=today(1), n=0;
+  while(d<=end&&n<5){out=out.concat(aheadAlerts(d,now));d=addDays(d,1);n++;}
+  return out;
+}
+function aheadAlerts(tm,now){ // the reminders for one day ahead
+  var js=jobList().filter(function(j){return j.date===tm&&!(j.done&&j.done.at);}).sort(bySeq), out=[], seen={}, lor=[], toLoad={}, day=tm===today(1)?'Tomorrow':DAYL[pdate(tm).getDay()];
+  if(!js.length||js.some(function(j){return now-(j.createdAt||0)<6e5;})) return out;   // not while that day's jobs are still being put on: wait until ten minutes after the last one
   js.forEach(function(j){(j.ch?[j.ch]:[]).concat(j.crew||[]).forEach(function(p){
     if(seen[p]) return; seen[p]=1;
     var mine=js.filter(function(o){return o.ch===p||(o.crew||[]).indexOf(p)>=0;}), f=mine[0], g=(f.crew||[]).filter(function(x){return x!==f.ch;}).map(firstOf);
-    out.push({id:'tm_'+tm+'_'+p,to:p,k:'job',t:'Tomorrow’s jobs',m:fshort(tm)+': '+f.address+(mine.length>1?', then '+plural(mine.length-1,'more job'):'')+'. Lorry '+vehOf(f)+', '+(f.ch===p?'you’re charge hand'+(g.length?', with '+andList(g):''):firstOf(f.ch)+' is charge hand')+'.',job:f.id});
+    out.push({id:'tm_'+tm+'_'+p,to:p,k:'job',t:day+'’s jobs',m:fshort(tm)+': '+f.address+(mine.length>1?', then '+plural(mine.length-1,'more job'):'')+'. Lorry '+vehOf(f)+', '+(f.ch===p?'you’re charge hand'+(g.length?', with '+andList(g):''):firstOf(f.ch)+' is charge hand')+'.',job:f.id});
   });});
   js.forEach(function(j){var r=vehOf(j);if(lor.indexOf(r)<0)lor.push(r);if(!(j.yard&&j.yard.at)&&!(j.left&&j.left.at))toLoad[r]=(toLoad[r]||0)+1;});
   var tl=Object.keys(toLoad);
-  if(tl.length) out=out.concat(yardIds().map(function(p){return {id:'tl_'+tm+'_'+p,to:p,k:'load',t:'Tomorrow’s loads',m:fshort(tm)+': '+andList(tl.map(function(r){return r+' ('+plural(toLoad[r],'job')+')';}))+' still to load.',cal:'all',day:tm};}));
-  out=out.concat(bossIds().map(function(p){return {id:'tb_'+tm+'_'+p,to:p,k:'job',t:'Tomorrow at a glance',m:fshort(tm)+': '+plural(js.length,'job')+' on '+plural(lor.length,'lorry').replace('lorrys','lorries')+'. '+(tl.length?'Still to load: '+andList(tl)+'.':'Every lorry is loaded.'),cal:'all',day:tm};}));
+  if(tl.length) out=out.concat(yardIds().map(function(p){return {id:'tl_'+tm+'_'+p,to:p,k:'load',t:day+'’s loads',m:fshort(tm)+': '+andList(tl.map(function(r){return r+' ('+plural(toLoad[r],'load')+')';}))+' still to load.',tab:'jobs'};}));
+  out=out.concat(leadIds().map(function(p){return {id:'tb_'+tm+'_'+p,to:p,k:'job',t:day+' at a glance',m:fshort(tm)+': '+plural(js.length,'job')+' on '+plural(lor.length,'lorry').replace('lorrys','lorries')+'. '+(tl.length?'Still to load: '+andList(tl)+'.':'Every lorry is loaded.'),cal:'all',day:tm};}));
   return out;
 }
 function clockAlerts(){
@@ -2157,11 +2281,10 @@ function demoWeek(base){ // base: the staff and lorries. Call it with that store
     if(!a||!a.to||a.to===by||!S.crew.has(a.to)) return; var k=a.to+'|'+a.t+'|'+a.m; if(seen[k]) return; seen[k]=1;
     D.alerts['da'+(an++)]=Object.assign({at:t+an,by:by||'',read:t<day0},a);});};
 
-  var seqs={}, kits={};
+  var seqs={};
   var job=function(id,o){
     var k=o.date+'|'+o.veh+'|'+o.ch; seqs[k]=(seqs[k]||0)+1;
-    var first=!kits[o.date+'|'+o.veh]; kits[o.date+'|'+o.veh]=1;   // the every-lorry kit is on the first sheet for a lorry each day, as it is on a real job
-    var j={id:id,v:2,kind:o.kind,seq:seqs[k],date:o.date,address:o.addr,line:o.addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(o.addr),prop:Object.assign(blankProp(),o.prop||{}),vehicle:o.veh,what:o.what||'',load:o.load,extra:Object.assign({},first?KIT:{},o.extra||{}),crew:[o.ch].concat(o.gang||[]),ch:o.ch,notes:o.notes||'',createdAt:o.made,createdBy:boss,yard:null,chk:null,left:null,done:null};
+    var j={id:id,v:2,kind:o.kind,seq:seqs[k],date:o.date,address:o.addr,line:o.addr,tail:'',lat:null,lon:null,exact:false,pk:placeKey(o.addr),prop:Object.assign(blankProp(),o.prop||{}),vehicle:o.veh,what:o.what||'',load:o.load,extra:Object.assign({},KIT,o.extra||{}),crew:[o.ch].concat(o.gang||[]),ch:o.ch,notes:o.notes||'',createdAt:o.made,createdBy:boss,yard:null,chk:null,left:null,done:null};
     D.jobs[id]=j; D.places[j.pk]=Object.assign({address:j.address,lat:null,lon:null,exact:false,at:o.made,by:boss},j.prop);
     say(jobAlerts(null,j),o.made,boss); return j;
   };
@@ -2277,20 +2400,13 @@ function demoLate(D){ // the reminders the clock would have raised by now: inspe
 
 /* ---------- job sheet form ---------- */
 var DAYL=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
-function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],what:'',load:'full',extra:Object.assign({},KIT),kit:true,open:{},notes:'',err:''};}
-function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),what:j.what||'',load:j.load||'full',extra:exOf(j),kit:false,open:{},notes:j.notes||'',err:''};}
+function blankForm(){return {id:null,kind:'erect',loadSet:false,dmode:'tom',date:today(1),pc:'',line:'',tail:'',lat:null,lon:null,exact:false,z:18,map:null,prop:blankProp(),recKey:'',recAt:0,pcRes:null,vehicle:'',ch:'',gang:[],what:'',load:'full',extra:Object.assign({},KIT),open:{},notes:'',err:''};}
+function formFrom(j){var n=daysTo(j.date);return {id:j.id,kind:j.kind||'erect',loadSet:true,dmode:n===0?'today':(n===1?'tom':'pick'),date:j.date,pc:'',line:j.line||j.address||'',tail:j.line?(j.tail||''):'',lat:j.lat==null?null:j.lat,lon:j.lon==null?null:j.lon,exact:!!j.exact,z:j.exact?19:18,map:null,prop:Object.assign(blankProp(),j.prop||{}),recKey:placeKey(j.address),recAt:0,pcRes:null,vehicle:j.vehicle||'',ch:j.ch||'',gang:(j.crew||[]).filter(function(x){return x!==j.ch;}),what:j.what||'',load:j.load||'full',extra:exOf(j),open:{},notes:j.notes||'',err:''};}
 function staffOpt(id,f,sel){
   var off=offOn(id,f.date), busy=jobsOn(id,f.date,f.id), out=!!wkDay(f.date)&&!wkPicked(f.date,id)&&S.bosses.indexOf(id)<0;
   return '<option value="'+esc(id)+'"'+(sel?' selected':'')+((off||out)&&!sel?' disabled':'')+'>'+esc(nameOf(id)+(off?' (off: '+(off.reason||'time off').toLowerCase()+')':(out?' (not picked for '+DAYL[pdate(f.date).getDay()]+')':(busy.length?' ('+plural(busy.length,'job')+' that day)':''))))+'</option>';
 }
-function kitSync(f){ // On a new job sheet the every-lorry kit is on to start with, unless that lorry already has a job that day (its kit is on that sheet). Once Gerry changes a kit item by hand it is left alone.
-  if(f.id||!f.kit) return;
-  var first=!(f.vehicle&&vanOn(String(f.vehicle).toUpperCase(),f.date,f.id).some(function(o){var e=exOf(o),n=0;Object.keys(KIT).forEach(function(k){if(e[k]>0)n++;});return n>=5;}));   // is the kit already on another sheet for that lorry that day?
-  Object.keys(KIT).forEach(function(k){if(first)f.extra[k]=KIT[k];else delete f.extra[k];});
-  f.kitOn=first;
-}
 function formHtml(f){
-  kitSync(f);
   var r=f.pcRes, staff=crewList().filter(function(c){return !c.yard;}).map(function(c){return c.id;}), fl=fleet(), h='';
   h+='<div class="col"><section class="card"><span class="lab">What and when</span><div class="seg" role="group" aria-label="Type of job">'+KINDS.map(function(x){return '<button type="button" data-a="kind" data-v="'+x[0]+'" aria-pressed="'+(f.kind===x[0])+'">'+x[1]+'</button>';}).join('')+'</div><div class="seg" role="group" aria-label="Which day">'+[['today','Today'],['tom','Tomorrow'],['pick','Other day']].map(function(x){return '<button type="button" data-a="dmode" data-v="'+x[0]+'" aria-pressed="'+(f.dmode===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
     (f.dmode==='pick'?'<input id="f-date" class="in" type="date" data-c="date" value="'+esc(f.date)+'" min="'+today(0)+'" aria-label="Date">':'<span class="hint">'+esc(fshort(f.date))+'</span>')+'</section>';
@@ -2319,9 +2435,10 @@ function formHtml(f){
   var stepRow=function(x){var q=f.extra[x[0]]||0;
     return '<div class="st'+(q?' has':'')+'"><span class="st-n">'+esc(x[1])+'</span><div class="st-c"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="-1" aria-label="One fewer '+esc(x[1])+'">−</button><input id="x-'+x[0]+'" type="number" inputmode="numeric" min="0" max="999" data-x="'+x[0]+'" value="'+(q||'')+'" placeholder="0" aria-label="'+esc(x[1])+'"><button type="button" data-a="step" data-i="'+x[0]+'" data-d="1" aria-label="One more '+esc(x[1])+'">+</button></div></div>';};
   h+='<section class="card flush"><div class="sh-h"><div><b class="t">Load list</b><div class="small muted">What goes on the lorry.</div></div></div><div class="ld"><div class="seg">'+LOADS.map(function(x){return '<button type="button" data-a="load" data-v="'+x[0]+'" aria-pressed="'+(f.load===x[0])+'">'+x[1]+'</button>';}).join('')+'</div>'+
-    '<span class="hint">'+(f.load==='empty'?'No tube, boards or fittings. Only what you add here and under Miscellaneous.':'The yard knows what a '+esc((LOADNAME[f.load]||'load').toLowerCase())+' takes: tube, boards, fittings, base plates and sole boards. Add what else this job needs.')+'</span>'+
-    (!f.id&&f.kit?'<span class="hint kit">'+(f.kitOn?'Already on, because they go on every lorry: '+KITSAYS+'. Take one off or change a number if this job is different.':'This lorry already has a job that day with the every-lorry kit on its sheet, so the kit isn’t repeated here.')+'</span>':'')+'</div>'+
-    [LOADX[1],LOADX[2],LOADX[0]].map(function(g){var c=g[1].filter(function(x){return f.extra[x[0]]>0;}).length;
+    '<span class="hint">'+(f.load==='empty'?'No tube, boards or fittings. Only what is on below and under Miscellaneous.':'The yard knows what a '+esc((LOADNAME[f.load]||'load').toLowerCase())+' takes: tube, boards, fittings, base plates and sole boards.')+'</span></div>'+
+    '<div class="ev"><span class="lab">On every job</span><div class="chips" role="group" aria-label="On every job">'+EVERY.filter(function(x){return !x[2];}).map(function(x){return '<button type="button" class="chip" data-a="xtick" data-i="'+x[0]+'" aria-pressed="'+(f.extra[x[0]]>0)+'">'+esc(x[1])+'</button>';}).join('')+'</div>'+
+    EVERY.filter(function(x){return x[2];}).map(stepRow).join('')+'<span class="hint">These are on the load list for every job. Take one off or change a number only when this job is different.</span></div>'+
+    [LOADX[1],LOADX[0]].map(function(g){var c=g[1].filter(function(x){return f.extra[x[0]]>0;}).length;
       return '<details class="grp" data-g="'+esc(g[0])+'"'+(f.open[g[0]]?' open':'')+'><summary>'+esc(g[0])+(c?'<span class="grp-n">'+c+'</span>':'')+'</summary>'+(g[2]?'<p class="tip">'+esc(g[2])+'</p>':'')+g[1].map(stepRow).join('')+'</details>';}).join('')+'</section>';
   h+='<section class="card flush"><div class="sh-h"><div><b class="t">Miscellaneous</b><div class="small muted">The things that could get forgotten. Tap what else this job needs. Open a group to put a number against the rest.</div></div></div>'+
     '<div class="chips mx" role="group" aria-label="Tap what this job needs">'+TICKS.map(function(x){return '<button type="button" class="chip" data-a="xtick" data-i="'+x[0]+'" aria-pressed="'+(f.extra[x[0]]>0)+'">'+esc(x[1])+'</button>';}).join('')+'</div>'+EXTRA.map(function(g){
@@ -2394,12 +2511,13 @@ async function saveOff(){
 /* ---------- set-up ---------- */
 function setHtml(){
   var staff=crewList(), fl=fleet(), k=addrKey(), ok=osKey(), T=S.addrTest, h='';
-  h+='<div class="col">'+(S.demo?'':'<section class="card eg"><div><b>Example jobs</b><span class="small muted">The demo: a made-up week of jobs, so you can see every screen with something on it: yours, the yard’s, a charge hand’s and the gang’s. You can also follow one job step by step. Nothing in it is saved.</span></div><button class="btn sm" data-a="demo">'+IC.play+'Show example jobs</button></section>')+'<section class="card flush"><div class="sh-h"><div><b class="t">Staff</b><div class="small muted">Everyone who gets the app. Tick Yard for whoever loads the lorries.</div></div></div><div class="list">'+
-    staff.map(function(c){var boss=S.bosses.indexOf(c.id)>=0, linked=!S.standalone&&Array.from(S.people.values()).some(function(p){return p.crewId===c.id;});
-      return '<div class="li"><span class="av soft">'+esc(initials(c.name))+'</span><div class="li-t"><b>'+esc(c.name)+'</b><small>'+(boss?'Boss':(c.yard?'Yard':'Staff'))+(!S.standalone?(linked?' · logged on':' · not logged on yet'):'')+'</small></div>'+
+  h+='<div class="col">'+(S.demo?'':'<section class="card eg"><div><b>Example jobs</b><span class="small muted">The demo: a made-up week of jobs, so you can see every screen with something on it: yours, the yard’s, a charge hand’s and the gang’s. You can also follow one job step by step. Nothing in it is saved.</span></div><button class="btn sm" data-a="demo">'+IC.play+'Show example jobs</button></section>')+'<section class="card flush"><div class="sh-h"><div><b class="t">Staff</b><div class="small muted">Everyone who gets the app. Tick Yard for whoever loads the lorries. Tick Supervisor for anyone who should see everything '+(isOwnBoss()?'you see':esc(bossFirst())+' sees')+'. Everyone else only sees the jobs they are put on, a day at a time.</div></div></div><div class="list">'+
+    staff.map(function(c){var boss=S.bosses.indexOf(c.id)>=0, sup=isSup(c.id), linked=!S.standalone&&Array.from(S.people.values()).some(function(p){return p.crewId===c.id;});
+      return '<div class="li st-r"><span class="av soft">'+esc(initials(c.name))+'</span><div class="li-t"><b>'+esc(c.name)+'</b><small>'+esc(roleOf(c.id))+(!S.standalone?(linked?' · logged on':' · not logged on yet'):'')+'</small></div><div class="st-b">'+
         (boss?'':'<button class="chip" data-a="yard" data-id="'+esc(c.id)+'" aria-pressed="'+!!c.yard+'">Yard</button>')+
+        (boss||!isOwnBoss()?'':'<button class="chip" data-a="sup" data-id="'+esc(c.id)+'" aria-pressed="'+sup+'">Supervisor</button>')+
         (!S.standalone&&S.owner?'<button class="chip" data-a="boss" data-id="'+esc(c.id)+'" aria-pressed="'+boss+'">Boss</button>':'')+
-        (boss?'':'<button class="link small bad" data-a="staffdel" data-id="'+esc(c.id)+'">'+(S.confirm==='st'+c.id?'Sure?':'Remove')+'</button>')+'</div>';}).join('')+
+        (boss||c.id===myCrew()?'':'<button class="link small bad" data-a="staffdel" data-id="'+esc(c.id)+'">'+(S.confirm==='st'+c.id?'Sure?':'Remove')+'</button>')+'</div></div>';}).join('')+
     '</div><form class="rowf" data-form="addstaff" style="padding:12px 16px 16px;border-top:1px solid var(--line)"><input id="s-name" class="in" placeholder="Add a name" autocomplete="off" autocapitalize="words" maxlength="40" aria-label="Name"><button class="btn" type="submit">Add</button></form></section>';
   h+='<section class="card flush"><div class="sh-h"><div><b class="t">Lorries</b><div class="small muted">Add each one once, then pick it on the job sheet.</div></div></div>'+(fl.length?'<div class="list">'+
     fl.map(function(v){return '<div class="li"><span class="plate">'+esc(String(v.reg).toUpperCase())+'</span><div class="li-t"><small>'+esc(v.name||'')+'</small></div><button class="link small bad" data-a="vandel" data-id="'+esc(v.id)+'">'+(S.confirm==='vn'+v.id?'Sure?':'Remove')+'</button></div>';}).join('')+'</div>':'')+
@@ -2539,9 +2657,9 @@ function render(force){
     if(!local()&&!myCrew()&&!S.owner) html=barHtml()+linkHtml();
     else{
       var j=S.page&&S.page.k==='job'?S.jobs.get(S.page.id):null;
-      if(S.page&&S.page.k==='job'&&(!j||j.v!==2)){S.page=null;j=null;}
+      if(S.page&&S.page.k==='job'&&(!j||j.v!==2||!canSee(j))){S.page=null;j=null;}
       if(S.page&&S.page.k==='form'&&!S.form) S.page=null;
-      var sc=S.page&&S.page.k==='scaf'?S.scafs.get(S.page.id):null; if(S.page&&S.page.k==='scaf'&&!sc) S.page=null;
+      var sc=S.page&&S.page.k==='scaf'?S.scafs.get(S.page.id):null; if(S.page&&S.page.k==='scaf'&&(!sc||!canInspect(sc))){S.page=null;sc=null;}   // a scaffold's record is for the boss, a supervisor and whoever is down to inspect it
       LAY='';
       var k=S.page&&S.page.k, body=k?(k==='job'?jobPage(j):(k==='scaf'?scafPage(sc):formHtml(S.form))):(S.tab==='jobs'?jobsTab():(S.tab==='cal'?calHtml():(S.tab==='guide'?guideHtml():(S.tab==='alerts'?alertsHtml():setHtml()))));
       var foot=k==='job'?jobFoot(j):(k==='form'?formFoot(S.form):''), cls=[foot?'has-foot':'',LAY].filter(Boolean).join(' ');
@@ -2562,8 +2680,9 @@ var ACT={
   tab:function(b){S.tab=b.dataset.v;S.page=null;S.form=null;S.lb=null;S.self=null;S.confirm=null;S.fresh=null;S.nav=true;window.scrollTo(0,0);render(true);if(S.tab==='alerts')setTimeout(markAlertsRead,0);},
   algo:function(b){ // an alert takes you to what it is about
     var a=S.alerts.get(b.dataset.id);if(!a)return;
-    if(a.job&&S.jobs.has(a.job)){go({k:'job',id:a.job});return;}
-    if(a.scaf&&S.scafs.has(a.scaf)){go({k:'scaf',id:a.scaf});return;}
+    if(a.job&&S.jobs.has(a.job)&&canSee(S.jobs.get(a.job))){go({k:'job',id:a.job});return;}
+    if(a.scaf&&S.scafs.has(a.scaf)&&canInspect(S.scafs.get(a.scaf))){go({k:'scaf',id:a.scaf});return;}
+    if(a.tab||(a.cal&&a.cal!=='off'&&!isBoss())){S.tab='jobs';S.page=null;S.fresh=null;S.nav=true;window.scrollTo(0,0);render(true);return;}   // anyone but the boss only has time off on the calendar: the rest is on their jobs screen
     if(a.cal){S.tab='cal';S.calView='month';S.calMode=a.cal;if(a.day){S.day=a.day;S.month=a.day.slice(0,7);}S.page=null;S.fresh=null;S.nav=true;window.scrollTo(0,0);render(true);}
   },
   notify:function(){
@@ -2581,7 +2700,7 @@ var ACT={
     f.date=d;f.dmode=n===0?'today':(n===1?'tom':'pick');f.ch=p;f.back='cal';if(last){f.vehicle=last.vehicle||'';f.gang=(last.crew||[]).filter(function(x){return x!==p;});}S.form=f;go({k:'form'});
   },
   back:function(){if(S.page&&S.page.k==='form'&&S.form&&S.form.id){var id=S.form.id;S.form=null;go({k:'job',id:id});return;}S.form=null;go(null);},
-  open:function(b){go({k:'job',id:b.dataset.id});},
+  open:function(b){var j=S.jobs.get(b.dataset.id);if(j&&!canSee(j)){toast('That one isn’t on your list.');return;}go({k:'job',id:b.dataset.id});},
   'new':function(){S.form=blankForm();go({k:'form'});},
   newon:function(b){var f=blankForm(),n=daysTo(b.dataset.v);f.date=b.dataset.v;f.dmode=n===0?'today':(n===1?'tom':'pick');S.form=f;go({k:'form'});},
   edit:function(b){var j=S.jobs.get(b.dataset.id);if(!j)return;S.form=formFrom(j);go({k:'form'});},
@@ -2677,7 +2796,7 @@ var ACT={
   seqmove:async function(b){
     var j=S.jobs.get(b.dataset.id);if(!j)return;var pos=runPos(j),k=pos.i+(+b.dataset.d);if(k<0||k>=pos.n)return;
     var ids=pos.list.map(function(o){return o.id;});ids.splice(pos.i,1);ids.splice(k,0,j.id);
-    try{for(var i=0;i<ids.length;i++){if((S.jobs.get(ids[i]).seq||0)!==i+1)await S.db.doc('jobs/'+ids[i]).update({seq:i+1});}tell([{to:j.ch,k:'job',t:'Job order changed',m:fshort(j.date)+': '+j.address+' is now job '+(k+1)+' of '+pos.n+'.',job:j.id}]);toast('Now job '+(k+1)+' of '+pos.n);}catch(e){fail(e);}
+    try{for(var i=0;i<ids.length;i++){if((S.jobs.get(ids[i]).seq||0)!==i+1)await S.db.doc('jobs/'+ids[i]).update({seq:i+1});}if(inWin(j.date))tell([{to:j.ch,k:'job',t:'Job order changed',m:fshort(j.date)+': '+j.address+' is now job '+(k+1)+' of '+pos.n+'.',job:j.id}]);toast('Now job '+(k+1)+' of '+pos.n);}catch(e){fail(e);}
   },
   scaf:function(b){go({k:'scaf',id:b.dataset.id});},
   inspnew:function(b){var s=S.scafs.get(b.dataset.id);if(!s)return;S.sheet={k:'insp',pk:s.id,result:'ok',found:'',done:'',todo:'',pos:(S.crew.get(myCrew())||{}).pos||'',files:[],err:''};render(true);},
@@ -2732,8 +2851,8 @@ var ACT={
   demowalk:function(){demoWalk();},
   demolook:function(){demoLook();},
   demoend:function(){demoEnd();},
-  step:function(b){var f=S.form,i=b.dataset.i,q=Math.max(0,Math.min(999,(f.extra[i]||0)+(+b.dataset.d)));if(KIT[i])f.kit=false;if(q)f.extra[i]=q;else delete f.extra[i];render(true);},
-  xtick:function(b){var f=S.form,i=b.dataset.i;if(KIT[i])f.kit=false;if(f.extra[i]>0)delete f.extra[i];else f.extra[i]=1;render(true);},
+  step:function(b){var f=S.form,i=b.dataset.i,q=Math.max(0,Math.min(999,(f.extra[i]||0)+(+b.dataset.d)));if(q)f.extra[i]=q;else delete f.extra[i];render(true);},
+  xtick:function(b){var f=S.form,i=b.dataset.i;if(f.extra[i]>0)delete f.extra[i];else f.extra[i]=1;render(true);},
   qw:function(b){ // a tapped word goes on the end of what the job is; tapped again, it comes off
     var f=S.form,w=b.dataset.w,parts=String(f.what||'').split(',').map(function(x){return x.trim();}).filter(Boolean),at=-1;
     parts.forEach(function(x,k){if(x.replace(/\.$/,'').toLowerCase()===w.toLowerCase())at=k;});
@@ -2754,7 +2873,8 @@ var ACT={
   be:function(b){S.viewAs=b.dataset.id;S.sheet=null;S.page=null;S.form=null;S.lb=null;S.self=null;S.q='';S.tab='jobs';S.month=null;S.day=null;S.fresh=null;S.nav=true;window.scrollTo(0,0);render(true);toast('Now seeing what '+firstOf(S.viewAs)+' sees');},
   link:async function(b){try{await S.db.doc('people/'+S.me).set({crewId:b.dataset.id,linkedAt:Date.now()});toast('Thanks, '+firstOf(b.dataset.id));}catch(e){fail(e);}},
   yard:async function(b){var c=S.crew.get(b.dataset.id);if(!c)return;try{await S.db.doc('crew/'+c.id).update({yard:!c.yard});}catch(e){fail(e);}},
-  boss:async function(b){var id=b.dataset.id,l=S.bosses.slice(),i=l.indexOf(id);if(i>=0)l.splice(i,1);else l.push(id);try{await S.db.doc('settings/roles').set({bosses:l});}catch(e){fail(e);}},
+  boss:async function(b){var id=b.dataset.id,l=S.bosses.slice(),i=l.indexOf(id);if(i>=0)l.splice(i,1);else l.push(id);try{await S.db.doc('settings/roles').set({bosses:l,supers:(S.supers||[]).slice()});}catch(e){fail(e);}},
+  sup:async function(b){var id=b.dataset.id,l=(S.supers||[]).slice(),i=l.indexOf(id);if(i>=0)l.splice(i,1);else l.push(id);try{await S.db.doc('settings/roles').set({bosses:S.bosses.slice(),supers:l});toast(i>=0?firstOf(id)+' is no longer a supervisor':firstOf(id)+' is a supervisor now, and sees everything you see');}catch(e){fail(e);}},
   staffdel:async function(b){var id=b.dataset.id;if(!two('st'+id))return;try{await S.db.doc('crew/'+id).update({removed:true});toast('Removed');}catch(e){fail(e);}},
   vandel:async function(b){var id=b.dataset.id;if(!two('vn'+id))return;try{await S.db.doc('vehicles/'+id).update({removed:true});toast('Removed');}catch(e){fail(e);}},
   keydel:function(){if(!two('key'))return;try{localStorage.removeItem('fcs-addr-key');}catch(_){ }toast('Key removed');render(true);},
@@ -2782,7 +2902,7 @@ document.addEventListener('input',function(e){
   if(t.id==='q'){S.q=t.value;var el=document.getElementById('joblist');if(el){el.innerHTML=jobListHtml();fillThumbs();}return;}
   if(d.f&&S.form){S.form[d.f]=t.value;S.form.err='';S.deferred=true;if(d.f==='line')suggest(t.value);return;}
   if(d.p&&S.form){S.form.prop[d.p]=t.value;return;}
-  if(d.x&&S.form){var q=Math.max(0,Math.min(999,parseInt(t.value,10)||0));if(KIT[d.x])S.form.kit=false;if(q)S.form.extra[d.x]=q;else delete S.form.extra[d.x];S.deferred=true;return;}
+  if(d.x&&S.form){var q=Math.max(0,Math.min(999,parseInt(t.value,10)||0));if(q)S.form.extra[d.x]=q;else delete S.form.extra[d.x];S.deferred=true;return;}
   if(d.o&&S.sheet&&(t.tagName==='TEXTAREA'||(t.tagName==='INPUT'&&t.type!=='date'))){
     S.sheet[d.o]=t.value;
     if(S.sheet.err){S.sheet.err='';var er=document.querySelector('.sheet .err');if(er)er.parentNode.removeChild(er);}
@@ -2838,6 +2958,7 @@ document.addEventListener('keydown',function(e){if((e.key==='Enter'||e.key===' '
 var wasWide=window.innerWidth>=1000;
 window.addEventListener('resize',function(){var w=window.innerWidth>=1000;if(w!==wasWide){wasWide=w;S.nav=true;render();}});
 boot();
+clockSoon();   // the practice version has its jobs straight away, so the reminders that are due are checked as soon as the app opens
 })();
 
 if('serviceWorker' in navigator&&(location.protocol==='https:'||location.hostname==='localhost')){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
